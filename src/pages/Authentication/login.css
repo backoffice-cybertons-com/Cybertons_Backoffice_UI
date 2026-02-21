@@ -1,0 +1,14 @@
+/* Hero Title Spacing */
+.auth-hero-title {
+  padding-top: 70px;
+}
+
+/* Logo Size */
+.auth-logo-img {
+  height: 120px;
+  width: auto;
+}
+
+.auth-tagline {
+  margin-top: -10px;   /* tighter spacing */
+}
