@@ -23,6 +23,7 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { authService } from '../services/api/authService';
 import secureStorage from '../utils/secureStorage';
 import { jwtDecode } from 'jwt-decode';
+import { clearSelectedFiscalYearId } from '../utils/fiscalYearStorage';
 
 /**
  * ASYNC ACTION: loginUser
@@ -49,7 +50,7 @@ export const loginUser = createAsyncThunk(
       // 3. Decode token to get user info (JWT claims)
       const decoded = jwtDecode(token);
       
-      // 4. Store user data in sessionStorage for LayoutMenuData compatibility
+      // 4. Store user data in localStorage for LayoutMenuData compatibility
       // Format: { user: { id: ..., username: ..., email: ..., fullName: ..., ... } }
       const sessionUser = {
         user: {
@@ -62,7 +63,7 @@ export const loginUser = createAsyncThunk(
         },
         token: token
       };
-      sessionStorage.setItem('authUser', JSON.stringify(sessionUser));
+      localStorage.setItem('authUser', JSON.stringify(sessionUser));
       
       return {
         user: decoded, // Contains claims like sub, email, role
@@ -88,8 +89,9 @@ let user = null;
 if (token) {
   try {
     user = jwtDecode(token);
-    // Restore sessionStorage if it doesn't exist but we have a valid token
-    if (!sessionStorage.getItem('authUser') && user) {
+    // Restore localStorage if it doesn't exist but we have a valid token
+    if (!localStorage.getItem('authUser') && user) {
+      console.log(`[Auth Diagnostic] Token found, but authUser missing in localStorage. Restoring...`);
       const companyId = secureStorage.getPlain('companyId') || '1';
       const sessionUser = {
         user: {
@@ -102,12 +104,17 @@ if (token) {
         },
         token: token
       };
-      sessionStorage.setItem('authUser', JSON.stringify(sessionUser));
+      localStorage.setItem('authUser', JSON.stringify(sessionUser));
+    } else if (user) {
+      console.log(`[Auth Diagnostic] Session restored successfully for: ${user.Name || user.username}`);
     }
   } catch (e) {
+    console.error(`[Auth Diagnostic] Session restoration failed! Clearing storage.`, e);
     secureStorage.clear();
-    sessionStorage.removeItem('authUser');
+    localStorage.removeItem('authUser');
   }
+} else {
+  console.log(`[Auth Diagnostic] No authToken found. Redirection to login expected if page is protected.`);
 }
 
 const initialState = {
@@ -116,6 +123,7 @@ const initialState = {
   isAuthenticated: !!token,
   loading: false,
   error: null,
+  permissions: [], // Store available tab permissions
 };
 
 const authSlice = createSlice({
@@ -124,14 +132,19 @@ const authSlice = createSlice({
   reducers: {
     logoutUser: (state) => {
       secureStorage.clear();
-      sessionStorage.removeItem('authUser'); // Clear sessionStorage on logout
+      localStorage.removeItem('authUser'); // Clear localStorage on logout
+      clearSelectedFiscalYearId();
       state.user = null;
       state.token = null;
       state.isAuthenticated = false;
       state.error = null;
+      state.permissions = [];
     },
     clearError: (state) => {
       state.error = null;
+    },
+    setPermissions: (state, action) => {
+      state.permissions = action.payload;
     }
   },
   extraReducers: (builder) => {
@@ -157,5 +170,5 @@ const authSlice = createSlice({
   },
 });
 
-export const { logoutUser, clearError } = authSlice.actions;
+export const { logoutUser, clearError, setPermissions } = authSlice.actions;
 export default authSlice.reducer;

@@ -28,10 +28,10 @@ const ProfileDropdown = () => {
         // Try to get user name from multiple sources
         let name = "Admin"; // Default fallback
         
-        // 1. Check sessionStorage (new auth structure)
-        if (sessionStorage.getItem("authUser")) {
+        // 1. Check localStorage (new auth structure)
+        if (localStorage.getItem("authUser")) {
             try {
-                const obj = JSON.parse(sessionStorage.getItem("authUser"));
+                const obj = JSON.parse(localStorage.getItem("authUser"));
                 const userObj = obj.user || obj.User || obj;
                 
                 // Try various name fields
@@ -42,7 +42,7 @@ const ProfileDropdown = () => {
                        userObj.email || userObj.Email ||
                        name;
             } catch (e) {
-                console.warn("ProfileDropdown: Failed to parse sessionStorage authUser", e);
+                console.warn("ProfileDropdown: Failed to parse localStorage authUser", e);
             }
         }
         
@@ -51,15 +51,15 @@ const ProfileDropdown = () => {
             name = authUser.Name || authUser.username || authUser.email || name;
         }
         
-        // 3. Check old Profile Redux state (legacy)
-        if (name === "Admin" && user && user.first_name) {
-            name = user.first_name;
+        // 3. Check old Profile Redux state (legacy) - guard nulls
+        if (name === "Admin" && user) {
+            name = user.first_name || user.firstName || user.username || user.email || name;
         }
         
-        // 4. Check old sessionStorage structure (legacy fake auth)
+        // 4. Check old localStorage structure (legacy fake auth)
         if (name === "Admin" && process.env.REACT_APP_DEFAULTAUTH === "fake") {
             try {
-                const obj = JSON.parse(sessionStorage.getItem("authUser") || "{}");
+                const obj = JSON.parse(localStorage.getItem("authUser") || "{}");
                 if (obj.data && obj.data.first_name) {
                     name = obj.data.first_name;
                 } else if (obj.username) {
@@ -73,7 +73,7 @@ const ProfileDropdown = () => {
         // 5. Firebase auth fallback
         if (name === "Admin" && process.env.REACT_APP_DEFAULTAUTH === "firebase") {
             try {
-                const obj = JSON.parse(sessionStorage.getItem("authUser") || "{}");
+                const obj = JSON.parse(localStorage.getItem("authUser") || "{}");
                 if (obj.email) {
                     name = obj.email;
                 }
@@ -106,7 +106,7 @@ const ProfileDropdown = () => {
                 <DropdownMenu className="dropdown-menu-end">
                     <h6 className="dropdown-header">Welcome {userName}!</h6>
                     <DropdownItem className='p-0'>
-                        <Link to= "/profile" className="dropdown-item">
+                        <Link to="/masters/company-profile" className="dropdown-item">
                             <i className="mdi mdi-account-circle text-muted fs-16 align-middle me-1"></i>
                             <span className="align-middle">Profile</span>
                         </Link>

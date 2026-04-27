@@ -13,13 +13,17 @@ import {
 import DataTable from 'react-data-table-component';
 import BreadCrumb from '../../Components/Common/BreadCrumb';
 import { APIClient } from '../../helpers/api_helper';
-import { getProductColumns } from './ProductColumns';
+import { getProductColumns, PRODUCT_EXPORT_COLUMNS } from './ProductColumns';
 import { useNavigate } from 'react-router-dom';
 import DeleteModal from '../../Components/Common/DeleteModal';
 import ExportButton from '../../Components/Common/ExportButton';
 import { toast, ToastContainer } from 'react-toastify';
 import { useSelector } from 'react-redux';
 import { createSelector } from 'reselect';
+import {
+    SOFTBOOK_RDT_ROWS_PER_PAGE_OPTIONS,
+    SOFTBOOK_RDT_PAGINATION_COMPONENT_OPTIONS,
+} from '../../Components/Common/reactDataTableSoftBookDefaults';
 
 const apiClient = new APIClient();
 
@@ -44,6 +48,13 @@ const ProductIndex = () => {
     );
     const { layoutModeType } = useSelector(selectLayoutProperties);
     const isDarkMode = layoutModeType === "dark";
+
+    // Permissions
+    const permissions = useSelector(state => state.auth.permissions || []);
+    const pagePermissions = useMemo(() => {
+        const p = permissions.find(x => x.tabId === 1010);
+        return p || { canAdd: false, canEdit: false, canDelete: false, canView: true };
+    }, [permissions]);
 
     const fetchData = async () => {
         setLoading(true);
@@ -119,8 +130,8 @@ const ProductIndex = () => {
         });
     }, [data, filterText, columnFilters]);
 
-    const columns = useMemo(() => getProductColumns(handleEdit, handleDelete, columnFilters, setColumnFilters),
-        [handleEdit, handleDelete, columnFilters]);
+    const columns = useMemo(() => getProductColumns(handleEdit, handleDelete, columnFilters, setColumnFilters, pagePermissions),
+        [handleEdit, handleDelete, columnFilters, pagePermissions]);
 
     const customStyles = useMemo(() => ({
         headRow: {
@@ -192,28 +203,18 @@ const ProductIndex = () => {
                                         <div className="hstack gap-2">
                                             <ExportButton
                                                 data={filteredItems}
-                                                columns={[
-                                                    { label: "Product ID", accessor: "productId" },
-                                                    { label: "Type", accessor: "type" },
-                                                    { label: "Name", accessor: "name" },
-                                                    { label: "Product Group", accessor: "productGroupName" },
-                                                    { label: "Base Unit", accessor: "baseUnit" },
-                                                    { label: "Packing Unit", accessor: "packingUnit" },
-                                                    { label: "Tax Group", accessor: "taxGroupName" },
-                                                    { label: "Selling Price", accessor: "sellingPrice" },
-                                                    { label: "Cost Price", accessor: "costPrice" },
-                                                    { label: "HSN Code", accessor: "hsnCode" },
-                                                    { label: "SAC Code", accessor: "sacCode" }
-                                                ]}
+                                                columns={PRODUCT_EXPORT_COLUMNS}
                                                 fileName="ProductMaster"
                                                 iconOnly
                                             />
-                                            <Button
-                                                color="success"
-                                                onClick={() => navigate('/apps-product-master/create')}
-                                            >
-                                                <i className="ri-add-line align-bottom me-1"></i> Add Product
-                                            </Button>
+                                            {pagePermissions.canAdd && (
+                                                <Button
+                                                    color="success"
+                                                    onClick={() => navigate('/apps-product-master/create')}
+                                                >
+                                                    <i className="ri-add-line align-bottom me-1"></i> Add Product
+                                                </Button>
+                                            )}
                                         </div>
                                     </Col>
                                 </Row>
@@ -223,12 +224,17 @@ const ProductIndex = () => {
                                     columns={columns}
                                     data={filteredItems}
                                     pagination
-                                    loading={loading}
+                                    paginationPerPage={100}
+                                    paginationRowsPerPageOptions={SOFTBOOK_RDT_ROWS_PER_PAGE_OPTIONS}
+                                    paginationComponentOptions={SOFTBOOK_RDT_PAGINATION_COMPONENT_OPTIONS}
+                                    sortIcon={<span className="ri-arrow-up-down-line ms-1 text-muted" />}
+                                    progressPending={loading}
                                     noDataComponent={<div className="p-4 text-muted text-center">No products found.</div>}
                                     customStyles={customStyles}
                                     highlightOnHover
                                     striped
                                     dense
+                                    persistTableHead
                                 />
                             </CardBody>
                         </Card>

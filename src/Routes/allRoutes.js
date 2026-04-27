@@ -53,6 +53,24 @@ import InvoiceList from "../pages/Invoices/InvoiceList";
 import InvoiceCreate from "../pages/Invoices/InvoiceCreate";
 import InvoiceDetails from "../pages/Invoices/InvoiceDetails";
 
+// Sales Invoice
+import SalesInvoice from "../pages/SalesTransaction/SalesInvoice";
+
+// Reports
+import LedgerReport from "../pages/Reports/LedgerReport";
+
+import PayebleReceivableReport from "../pages/Reports/PayebleReceivableReport";
+import SalePurComparDatewise from "../pages/Reports/SalePurComparDatewise";
+
+import TrialBalanceReport from "../pages/Reports/TrialBalanceReport";
+
+import SalePurInvWiseRpt from "../pages/Reports/SalePurInvWiseRpt";
+import SalePurchaseRegisterItemwise from "../pages/Reports/SalePurchaseRegisterItemwise";
+import SalePurchaseRegisterDatewise from "../pages/Reports/SalePurchaseRegisterDatewise";
+import SalePurchaseRegisterPartywise from "../pages/Reports/SalePurchaseRegisterPartywise";
+import SaleRegisterReport from "../pages/Reports/SaleRegisterReport";
+import PurchaseRegisterReport from "../pages/Reports/PurchaseRegisterReport";
+
 // Support Tickets
 import ListView from '../pages/SupportTickets/ListView';
 import TicketsDetails from '../pages/SupportTickets/TicketsDetails';
@@ -252,8 +270,40 @@ import MastersDashboard from "../pages/Masters/MastersDashboard";
 import ProductIndex from "../pages/ProductMaster/ProductIndex";
 import ProductCreate from "../pages/ProductMaster/ProductCreate";
 import ProductEdit from "../pages/ProductMaster/ProductEdit";
+import PermissionManager from "../pages/Masters/AccessControl/PermissionManager";
+import PartyMasterList from "../pages/Masters/Party/PartyMasterList";
+import CompanyProfile from "../pages/Masters/CompanyProfile/CompanyProfile";
+import LedgerSettings from "../pages/Masters/LedgerSettings/LedgerSettings";
+
+// Delivery Challan
+import DeliveryChallanList from "../pages/DeliveryChallan/DeliveryChallanList";
+import DeliveryChallanCreate from "../pages/DeliveryChallan/DeliveryChallanCreate";
+
+// Purchase Transaction
+import PurchaseTransactionList from "../pages/PurchaseTransaction/PurchaseTransactionList";
+import PurchaseTransactionCreate from "../pages/PurchaseTransaction/PurchaseTransactionCreate";
+import PurchaseInvoice from "../pages/PurchaseTransaction/PurchaseInvoice";
+
+// Sales Transaction
+import SalesTransactionList from "../pages/SalesTransaction/SalesTransactionList";
+import SalesTransactionCreate from "../pages/SalesTransaction/SalesTransactionCreate";
+
+// Payment & Receipt
+import PaymentReceiptList from "../pages/PaymentReceipt/PaymentReceiptList";
+import PaymentReceiptCreate from "../pages/PaymentReceipt/PaymentReceiptCreate";
+
+// Expense (Direct Journal)
+import ExpenseList from "../pages/PurchaseTransaction/ExpenseList";
+import ExpenseCreate from "../pages/PurchaseTransaction/ExpenseCreate";
 
 const authProtectedRoutes = [
+  // Sales Transaction (Priority)
+  { path: "/sales-order", component: <SalesTransactionList /> },
+  { path: "/Sale/SaleOrderList", component: <SalesTransactionList /> },
+  { path: "/Sale/SaleOrdersList", component: <SalesTransactionList /> },
+  { path: "/sales-order/create", component: <SalesTransactionCreate /> },
+  { path: "/sales-order/edit/:id", component: <SalesTransactionCreate /> },
+
   { path: "/dashboard-analytics", component: <DashboardAnalytics /> },
   { path: "/dashboard-crm", component: <DashboardCrm /> },
   { path: "/dashboard", component: <DashboardEcommerce /> },
@@ -313,6 +363,21 @@ const authProtectedRoutes = [
   { path: "/apps-invoices-list", component: <InvoiceList /> },
   { path: "/apps-invoices-details", component: <InvoiceDetails /> },
   { path: "/apps-invoices-create", component: <InvoiceCreate /> },
+
+  // Reports
+  { path: "/reports/ledger", component: <LedgerReport /> },
+
+  { path: "/reports/payeble-receivable", component: <PayebleReceivableReport /> },
+  { path: "/reports/sale-purchase-datewise-comparison", component: <SalePurComparDatewise /> },
+
+  { path: "/reports/TrialBalanceReport", component: <TrialBalanceReport /> },
+
+  { path: "/reports/sale-pur-invwise", component: <SalePurInvWiseRpt /> },
+  { path: "/reports/sale-purchase-register-itemwise", component: <SalePurchaseRegisterItemwise /> },
+  { path: "/reports/sale-purchase-register-datewise", component: <SalePurchaseRegisterDatewise /> },
+  { path: "/reports/sale-purchase-register-partywise", component: <SalePurchaseRegisterPartywise /> },
+  { path: "/Sale/Sale-Register-Report", component: <SaleRegisterReport /> },
+  { path: "/purchase/Purchase-Register-Report", component: <PurchaseRegisterReport /> },
 
   //Supports Tickets
   { path: "/apps-tickets-list", component: <ListView /> },
@@ -464,13 +529,48 @@ const authProtectedRoutes = [
   { path: "/profile", component: <UserProfile /> },
 
   // Masters
-  { path: "/masters/:name", component: <GenericMasterList /> },
   { path: "/masters", component: <MastersDashboard /> },
+  { path: "/masters/company-profile", component: <CompanyProfile /> },
+  { path: "/masters/ledger-settings", component: <LedgerSettings /> },
+  { path: "/masters/permissions", component: <PermissionManager /> },
+  { path: "/masters/:name", component: <GenericMasterList /> },
 
   // Product Master
   { path: "/apps-product-master", component: <ProductIndex /> },
   { path: "/apps-product-master/create", component: <ProductCreate /> },
   { path: "/apps-product-master/edit/:id", component: <ProductEdit /> },
+
+  // Party Master
+  { path: "/party", component: <PartyMasterList /> },
+  { path: "/customer", component: <PartyMasterList /> },
+  { path: "/vendor", component: <PartyMasterList /> },
+
+  // Delivery Challan
+  { path: "/delivery-challan/list", component: <DeliveryChallanList /> },
+  { path: "/delivery-challan/create", component: <DeliveryChallanCreate /> },
+  { path: "/delivery-challan/edit/:id", component: <DeliveryChallanCreate /> },
+
+  // Purchase Transaction
+  { path: "/purchase-transaction/list", component: <PurchaseTransactionList /> },
+  { path: "/purchase-transaction/create", component: <PurchaseTransactionCreate /> },
+  { path: "/purchase-transaction/edit/:id", component: <PurchaseTransactionCreate /> },
+  { path: "/purchase-transaction/invoice/:id", component: <PurchaseInvoice /> },
+
+  // Sales Transaction
+  { path: "/sales-order/edit/:id", component: <SalesTransactionCreate /> },
+  { path: "/sales-order/invoice/:id", component: <SalesInvoice /> },
+
+  // Payment & Receipt
+  { path: "/payment-receipt", component: <PaymentReceiptList /> },
+  { path: "/payment-receipt/list", component: <PaymentReceiptList /> },
+  { path: "/payment-receipt/create", component: <PaymentReceiptCreate /> },
+  { path: "/payment-receipt/edit/:id", component: <PaymentReceiptCreate /> },
+
+  // Expenses (Direct JV)
+  { path: "/purchases/expense", component: <ExpenseList /> },
+  { path: "/purchases/expense/create", component: <ExpenseCreate /> },
+  { path: "/purchases/expense/edit/:gCode", component: <ExpenseCreate /> },
+
 
   // this route should be at the end of all other routes
   // eslint-disable-next-line react/display-name
@@ -479,7 +579,7 @@ const authProtectedRoutes = [
     exact: true,
     component: <Navigate to="/dashboard-crm" />,
   },
-  { path: "*", component: <Navigate to="/dashboard-crm" /> },
+  { path: "*", component: <h2>ROUTE NOT FOUND - REACT ROUTER FELL THROUGH</h2> },
 ];
 
 const publicRoutes = [

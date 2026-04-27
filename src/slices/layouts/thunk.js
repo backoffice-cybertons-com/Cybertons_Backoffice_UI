@@ -10,7 +10,8 @@ import {
     changeLeftsidebarViewTypeAction,
     changeSidebarImageTypeAction,
     changePreLoaderAction,
-    changeSidebarVisibilityAction
+    changeSidebarVisibilityAction,
+    changeBodyImageAction
 } from './reducer';
 
 /**
@@ -176,5 +177,15 @@ export const changeSidebarVisibility = (sidebarVisibilitytype) => async (dispatc
     try {
         changeHTMLAttribute("data-sidebar-visibility", sidebarVisibilitytype);
         dispatch(changeSidebarVisibilityAction(sidebarVisibilitytype));
+    } catch (error) { }
+};
+/**
+ * Changes the body image
+ * @param {*} param0
+ */
+export const changeBodyImage = (bodyImageType) => async (dispatch) => {
+    try {
+        changeHTMLAttribute("data-body-image", bodyImageType);
+        dispatch(changeBodyImageAction(bodyImageType));
     } catch (error) { }
 };

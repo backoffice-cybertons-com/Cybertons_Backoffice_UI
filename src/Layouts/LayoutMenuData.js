@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import { jwtDecode } from "jwt-decode";
 import secureStorage from "../utils/secureStorage";
 import { authService } from "../services/api/authService";
+import { setPermissions } from "../slices/authSlice";
 
-const Navdata = () => {
+const useNavData = () => {
   const history = useNavigate();
+  const dispatch = useDispatch();
   // Get auth state from Redux store
   const { user: reduxUser, token: reduxToken } = useSelector(state => state.auth || {});
 
@@ -17,22 +19,26 @@ const Navdata = () => {
 
   // Get User ID from multiple sources
   const getUserId = () => {
-    // 1. Try sessionStorage first
-    const authUser = sessionStorage.getItem("authUser");
+    // 1. Try localStorage first
+    const authUser = localStorage.getItem("authUser");
     if (authUser) {
       try {
         const parsed = JSON.parse(authUser);
         const userObj = parsed.user || parsed.User || parsed;
         const userId = userObj.id || userObj.Id || userObj.ID;
+        console.log(`[Sidebar Diagnostic] Found userId ${userId} in localStorage authUser`);
         if (userId) return userId;
       } catch (e) {
-        console.warn("LayoutMenuData: Failed to parse sessionStorage authUser", e);
+        console.warn("LayoutMenuData: Failed to parse localStorage authUser", e);
       }
+    } else {
+      console.log("[Sidebar Diagnostic] No authUser found in localStorage");
     }
 
     // 2. Try Redux store
     if (reduxUser) {
       const userId = reduxUser.NameIdentifier || reduxUser.sub || reduxUser.id || reduxUser.Id;
+      console.log(`[Sidebar Diagnostic] Found userId ${userId} in Redux store`);
       if (userId) return userId;
     }
 
@@ -137,9 +143,22 @@ const Navdata = () => {
     // Normalize Target ID
     const normalizedTargetId = targetParentId ? targetParentId.toString() : null;
 
+    // Tabs to hide completely from the UI
+    const hiddenTabs = [
+      // Sales
+      "quotes", "quates", "quote", "retainer invoices", "retainer invoice", "sales orders", "sales order", "delivery challans", "delivery challan", "payments received", "payment received", "credit notes", "credit note", "e-way bills", "e-way bill",
+      // Purchases
+      "recurring expense", "recurring expenses", "recurring bills", "recurring bill", "payment made", "payments made", "vendor credits", "vendor credit", "purchase orders", "purchase order"
+    ];
+
     const items = flatItems.filter(item => {
       const itemParentId = getVal(item, "parentId");
       const normalizedItemParentId = itemParentId ? itemParentId.toString() : null;
+
+      const tabName = getVal(item, "tabName");
+      if (tabName && hiddenTabs.includes(tabName.toLowerCase().trim())) {
+        return false;
+      }
 
       // Check match
       return normalizedItemParentId === normalizedTargetId;
@@ -186,11 +205,43 @@ const Navdata = () => {
         }
       }
 
+      let finalLink = hasChildren ? "/#" : (tabUrl || "/#");
+
+      if (tabName === "Customers" || tabName === "Customer") {
+        finalLink = "/customer?type=Customer";
+      } else if (tabName === "Vendors" || tabName === "Vendor") {
+        finalLink = "/vendor?type=Vendor";
+      } else if (tabName === "Traders" || tabName === "Trader") {
+        finalLink = "/party?type=Trader";
+      } else if (tabName === "Products" || tabName === "Product") {
+        finalLink = "/apps-product-master";
+      } else if (tabName === "Sales Order" || tabName === "Sales Orders") {
+        finalLink = "/sales-order";
+      } else if (tabName === "Invoices" || tabName === "Invoice") {
+        finalLink = "/sales-order"; // Map Invoices to sales functionality
+      } else if (tabName === "Bills" || tabName === "Bill") {
+        finalLink = "/purchase-transaction/list"; // Map Bills to purchase functionality
+      } else if (tabName === "Ledger Report" || tabName === "Ledger Statement") {
+        finalLink = "/reports/ledger";
+      } else if (tabName === "Sale Purchase Register Itemwise") {
+        finalLink = "/reports/sale-purchase-register-itemwise";
+      } else if (tabName === "Sale Purchase Register Datewise") {
+        finalLink = "/reports/sale-purchase-register-datewise";
+      } else if (tabName === "Sale Purchase Register Partywise") {
+        finalLink = "/reports/sale-purchase-register-partywise";
+      } else if (tabName === "Expense" || tabName === "Expenses") {
+        // The new independent Expense component
+        finalLink = "/purchases/expense";
+      } else if (tabName === "Pay/Rec" || tabName === "Payment & Receipt") {
+        // The old Payment & Receipt component
+        finalLink = "/payment-receipt/list";
+      }
+
       const mappedItem = {
         id: tabId.toString(),
         label: tabName,
         icon: normalizedIcon,
-        link: hasChildren ? "/#" : (tabUrl || "/#"),
+        link: finalLink,
         click: hasChildren ? (e) => toggleMenu(tabId.toString(), e) : undefined,
         stateVariables: !!menuStates[tabId.toString()],
         subItems: subItems,
@@ -206,6 +257,7 @@ const Navdata = () => {
 
   useEffect(() => {
     const userId = getUserId();
+    console.log(`[Sidebar Diagnostic] Effect triggered. userId: ${userId}, hasReduxToken: ${!!reduxToken}`);
     if (userId) {
       const companyId = secureStorage.getPlain('companyId') || 'Not Set';
       console.log(`[Sidebar Diagnostic] Fetching permissions for UserId: ${userId}, CompanyId: ${companyId}`);
@@ -216,6 +268,9 @@ const Navdata = () => {
         console.log("[Sidebar Diagnostic] Received Data:", data);
 
         if (Array.isArray(data)) {
+          // Sync permissions to Redux for use in other components (e.g., GenericMasterList)
+          dispatch(setPermissions(data));
+
           // Diagnostics: Check for orphans
           data.forEach(item => {
             const pid = item.parentId || item.ParentId;
@@ -230,12 +285,11 @@ const Navdata = () => {
             }
           });
 
-          const tree = buildMenuTree(data, null); // Start with null for root
-          console.log("LayoutMenuData: Built Tree:", tree);
-
+          const tree = buildMenuTree(data, null);
+          
           const finalMenu = [
             { label: "Menu", isHeader: true },
-            ...(tree || [])
+            ...(tree || []),
           ];
 
           setMenuItems(finalMenu);
@@ -248,7 +302,7 @@ const Navdata = () => {
 
   }, [menuStates, reduxUser, reduxToken]);
 
-  return <React.Fragment>{menuItems}</React.Fragment>;
+  return menuItems;
 };
 
-export default Navdata;
+export default useNavData;

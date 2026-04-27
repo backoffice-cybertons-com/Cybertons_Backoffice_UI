@@ -25,14 +25,32 @@ const ExportButton = ({
     disabled,
     children,
     iconOnly = false,
+    headerRows = [],
+    footerRows = []
 }) => {
-    const handleExport = () => {
+    const handleExport = async () => {
         try {
+            let exportData = data;
+            if (typeof data === 'function') {
+                exportData = await data();
+            }
+
+            if (!exportData || exportData.length === 0) {
+                // If we have header/footer data, we might still want to export even empty table
+                if (headerRows.length === 0 && footerRows.length === 0) {
+                    toast.warn("No data found to export");
+                    return;
+                }
+                exportData = [];
+            }
+
             exportToExcelFrontend({
-                data: data || [],
+                data: exportData,
                 columns,
                 fileName,
-                sheetName
+                sheetName,
+                headerRows,
+                footerRows
             });
         } catch (err) {
             console.error('[ExportButton] Failed to export Excel:', err);
@@ -40,7 +58,7 @@ const ExportButton = ({
         }
     };
 
-    const isDisabled = disabled || !data || data.length === 0 || !columns || columns.length === 0;
+    const isDisabled = disabled || !data || (Array.isArray(data) && data.length === 0);
 
     const resolvedColor = iconOnly ? 'link' : color;
     const label = children || 'Export';

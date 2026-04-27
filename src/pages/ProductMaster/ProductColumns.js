@@ -1,7 +1,52 @@
 import React from 'react';
-import { UncontrolledDropdown, DropdownToggle, DropdownMenu, DropdownItem, Input } from 'reactstrap';
+import { Input } from 'reactstrap';
+import { formatToTwoDecimals } from '../../utils/numberUtils';
 
-export const getProductColumns = (handleEdit, handleDelete, columnFilters, setColumnFilters) => [
+export const PRODUCT_EXPORT_COLUMNS = [
+    { label: "Product ID", accessor: "productId" },
+    { label: "Type", accessor: "type" },
+    { label: "Product Name", accessor: "name" },
+    { label: "Group", accessor: "productGroupName" },
+    {
+        label: "HSN/SAC",
+        accessor: (row) => (row?.type === 'Goods' ? row?.hsnCode : row?.sacCode) || ""
+    },
+    { label: "Cost Price", accessor: "costPrice" },
+    { label: "Sell Price", accessor: "sellingPrice" },
+    { label: "MRP", accessor: "mrp" },
+    { label: "GST", accessor: "taxGroupName" },
+];
+
+export const getProductColumns = (handleEdit, handleDelete, columnFilters, setColumnFilters, pagePermissions = { canEdit: false, canDelete: false }) => [
+    {
+        name: "Actions",
+        cell: (row) => (
+            <div className="d-flex align-items-center gap-1">
+                {pagePermissions.canEdit && (
+                    <button
+                        type="button"
+                        className="btn btn-sm btn-soft-info"
+                        onClick={() => handleEdit(row)}
+                        title="Edit"
+                    >
+                        <i className="ri-pencil-fill" />
+                    </button>
+                )}
+                {pagePermissions.canDelete && (
+                    <button
+                        type="button"
+                        className="btn btn-sm btn-soft-danger"
+                        onClick={() => handleDelete(row.productId)}
+                        title="Delete"
+                    >
+                        <i className="ri-delete-bin-fill" />
+                    </button>
+                )}
+            </div>
+        ),
+        width: '110px',
+        grow: 0
+    },
     {
         name: (
             <div className="d-flex flex-column">
@@ -57,24 +102,7 @@ export const getProductColumns = (handleEdit, handleDelete, columnFilters, setCo
         selector: row => row.name,
         sortable: true,
         wrap: true,
-        grow: 2
-    },
-    {
-        name: (
-            <div className="d-flex flex-column">
-                <span>Base Unit</span>
-                <Input
-                    bsSize="sm"
-                    className="mt-1"
-                    value={columnFilters.baseUnit || ""}
-                    onChange={e => setColumnFilters(prev => ({ ...prev, baseUnit: e.target.value }))}
-                    onClick={e => e.stopPropagation()}
-                />
-            </div>
-        ),
-        selector: row => row.baseUnit,
-        sortable: true,
-        width: '110px'
+        grow: 3
     },
     {
         name: (
@@ -91,24 +119,7 @@ export const getProductColumns = (handleEdit, handleDelete, columnFilters, setCo
         ),
         selector: row => row.productGroupName,
         sortable: true,
-        width: '130px'
-    },
-    {
-        name: (
-            <div className="d-flex flex-column">
-                <span>Tax Group</span>
-                <Input
-                    bsSize="sm"
-                    className="mt-1"
-                    value={columnFilters.taxGroupName || ""}
-                    onChange={e => setColumnFilters(prev => ({ ...prev, taxGroupName: e.target.value }))}
-                    onClick={e => e.stopPropagation()}
-                />
-            </div>
-        ),
-        selector: row => row.taxGroupName,
-        sortable: true,
-        width: '130px'
+        width: '150px'
     },
     {
         name: (
@@ -125,7 +136,26 @@ export const getProductColumns = (handleEdit, handleDelete, columnFilters, setCo
         ),
         selector: row => (row.type === 'Goods' ? row.hsnCode : row.sacCode) || 'N/A',
         sortable: true,
-        width: '110px'
+        width: '120px'
+    },
+    {
+        name: (
+            <div className="d-flex flex-column">
+                <span>Cost Price</span>
+                <Input
+                    bsSize="sm"
+                    className="mt-1"
+                    value={columnFilters.costPrice || ""}
+                    onChange={e => setColumnFilters(prev => ({ ...prev, costPrice: e.target.value }))}
+                    onClick={e => e.stopPropagation()}
+                />
+            </div>
+        ),
+        selector: row => row.costPrice,
+        sortable: true,
+        format: row => formatToTwoDecimals(row.costPrice),
+        width: '130px',
+        style: { justifyContent: 'flex-end' }
     },
     {
         name: (
@@ -142,35 +172,44 @@ export const getProductColumns = (handleEdit, handleDelete, columnFilters, setCo
         ),
         selector: row => row.sellingPrice,
         sortable: true,
-        format: row => row.sellingPrice ? `₹${parseFloat(row.sellingPrice).toLocaleString('en-IN', { minimumFractionDigits: 2 })}` : '₹0.00',
-        width: '120px',
-        right: true
+        format: row => formatToTwoDecimals(row.sellingPrice),
+        width: '130px',
+        style: { justifyContent: 'flex-end' }
     },
     {
-        name: "Actions",
-        cell: (row) => (
-            <UncontrolledDropdown>
-                <DropdownToggle
-                    href="#"
-                    className="btn btn-soft-secondary btn-sm"
-                    tag="button"
-                >
-                    <i className="ri-more-fill" />
-                </DropdownToggle>
-                <DropdownMenu className="dropdown-menu-end">
-                    <DropdownItem onClick={() => handleEdit(row)}>
-                        <i className="ri-pencil-fill align-bottom me-2 text-muted"></i> Edit
-                    </DropdownItem>
-                    <DropdownItem divider />
-                    <DropdownItem
-                        onClick={() => handleDelete(row.productId)}
-                        className="text-danger"
-                    >
-                        <i className="ri-delete-bin-fill align-bottom me-2 text-danger"></i> Delete
-                    </DropdownItem>
-                </DropdownMenu>
-            </UncontrolledDropdown>
+        name: (
+            <div className="d-flex flex-column">
+                <span>MRP</span>
+                <Input
+                    bsSize="sm"
+                    className="mt-1"
+                    value={columnFilters.mrp || ""}
+                    onChange={e => setColumnFilters(prev => ({ ...prev, mrp: e.target.value }))}
+                    onClick={e => e.stopPropagation()}
+                />
+            </div>
         ),
-        width: '80px'
-    }
+        selector: row => row.mrp,
+        sortable: true,
+        format: row => formatToTwoDecimals(row.mrp),
+        width: '130px',
+        style: { justifyContent: 'flex-end' }
+    },
+    {
+        name: (
+            <div className="d-flex flex-column">
+                <span>GST</span>
+                <Input
+                    bsSize="sm"
+                    className="mt-1"
+                    value={columnFilters.taxGroupName || ""}
+                    onChange={e => setColumnFilters(prev => ({ ...prev, taxGroupName: e.target.value }))}
+                    onClick={e => e.stopPropagation()}
+                />
+            </div>
+        ),
+        selector: row => row.taxGroupName,
+        sortable: true,
+        width: '140px'
+    },
 ];

@@ -19,8 +19,11 @@ import {
     changeLeftsidebarSizeType,
     changeLeftsidebarViewType,
     changeSidebarImageType,
-    changeSidebarVisibility
+    changeSidebarVisibility,
+    changeBodyImage
 } from "../slices/thunks";
+
+import { logoutUser } from "../slices/authSlice";
 
 //redux
 import { useSelector, useDispatch } from "react-redux";
@@ -44,6 +47,7 @@ const Layout = (props) => {
             leftSidebarViewType: layout.leftSidebarViewType,
             leftSidebarImageType: layout.leftSidebarImageType,
             preloader: layout.preloader,
+            bodyImageType: layout.bodyImageType,
             sidebarVisibilitytype: layout.sidebarVisibilitytype,
         })
     );
@@ -59,6 +63,7 @@ const Layout = (props) => {
         leftSidebarViewType,
         leftSidebarImageType,
         preloader,
+        bodyImageType,
         sidebarVisibilitytype
     } = useSelector(selectLayoutProperties);
 
@@ -76,6 +81,7 @@ const Layout = (props) => {
             leftsidbarSizeType ||
             leftSidebarViewType ||
             leftSidebarImageType ||
+            bodyImageType ||
             sidebarVisibilitytype
         ) {
             window.dispatchEvent(new Event('resize'));
@@ -89,6 +95,7 @@ const Layout = (props) => {
             dispatch(changeLayout(layoutType));
             dispatch(changeSidebarImageType(leftSidebarImageType));
             dispatch(changeSidebarVisibility(sidebarVisibilitytype));
+            dispatch(changeBodyImage(bodyImageType));
         }
     }, [layoutType,
         leftSidebarType,
@@ -99,6 +106,7 @@ const Layout = (props) => {
         leftsidbarSizeType,
         leftSidebarViewType,
         leftSidebarImageType,
+        bodyImageType,
         sidebarVisibilitytype,
         dispatch]);
     /*
@@ -131,6 +139,44 @@ const Layout = (props) => {
             document.querySelector(".hamburger-icon") && document.querySelector(".hamburger-icon").classList.add('open');
         }
     }, [sidebarVisibilitytype, layoutType]);
+
+
+        /*
+    Idle Timeout Implementation (1 Hour)
+    */
+    useEffect(() => {
+        let timeout;
+
+        const resetTimer = () => {
+            if (timeout) clearTimeout(timeout);
+
+            // 1 Hour = 3,600,000 ms
+            timeout = setTimeout(() => {
+                console.log("[Idle Timeout] User inactive for 1 hour. Logging out.");
+                dispatch(logoutUser());
+            }, 3600000);
+        };
+
+        // Events to watch for activity
+        const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'];
+
+        // Add event listeners
+        events.forEach(event => {
+            window.addEventListener(event, resetTimer);
+        });
+
+        // Initialize timer
+        resetTimer();
+
+        // Cleanup
+        return () => {
+            if (timeout) clearTimeout(timeout);
+            events.forEach(event => {
+                window.removeEventListener(event, resetTimer);
+            });
+        };
+    }, [dispatch]);
+
 
     return (
         <React.Fragment>

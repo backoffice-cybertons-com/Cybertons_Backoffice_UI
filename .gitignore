@@ -23,3 +23,14 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+*.zip
+
+*_2004.js
+*_2004.scss
+*_2004.css
+
+.vscode/
+.idea/
+
+Thumbs.db

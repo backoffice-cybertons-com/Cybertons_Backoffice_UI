@@ -56,6 +56,13 @@ const InvoiceList = () => {
     invoices, isInvoiceSuccess, error
   } = useSelector(selectinvoiceProperties);
 
+  // Permissions
+  const permissions = useSelector(state => state.auth.permissions || []);
+  const pagePermissions = useMemo(() => {
+    const p = permissions.find(x => x.tabId === 14); // Assuming Sales Tab 14 for Invoice module
+    return p || { canAdd: false, canEdit: false, canDelete: false, canView: true };
+  }, [permissions]);
+
 
   //delete invoice
   const [deleteModal, setDeleteModal] = useState(false);
@@ -248,10 +255,12 @@ const InvoiceList = () => {
                   View
                 </DropdownItem>
 
-                <DropdownItem href="/apps-invoices-create">
-                  <i className="ri-pencil-fill align-bottom me-2 text-muted"></i>{" "}
-                  Edit
-                </DropdownItem>
+                {pagePermissions.canEdit && (
+                  <DropdownItem href="/apps-invoices-create">
+                    <i className="ri-pencil-fill align-bottom me-2 text-muted"></i>{" "}
+                    Edit
+                  </DropdownItem>
+                )}
 
                 <DropdownItem href="/#">
                   <i className="ri-download-2-line align-bottom me-2 text-muted"></i>{" "}
@@ -260,13 +269,15 @@ const InvoiceList = () => {
 
                 <DropdownItem divider />
 
-                <DropdownItem
-                  href="#"
-                  onClick={() => { const invoiceData = cellProps.row.original; onClickDelete(invoiceData); }}
-                >
-                  <i className="ri-delete-bin-fill align-bottom me-2 text-muted"></i>{" "}
-                  Delete
-                </DropdownItem>
+                {pagePermissions.canDelete && (
+                  <DropdownItem
+                    href="#"
+                    onClick={() => { const invoiceData = cellProps.row.original; onClickDelete(invoiceData); }}
+                  >
+                    <i className="ri-delete-bin-fill align-bottom me-2 text-muted"></i>{" "}
+                    Delete
+                  </DropdownItem>
+                )}
               </DropdownMenu>
             </UncontrolledDropdown>
           );
@@ -367,13 +378,15 @@ const InvoiceList = () => {
                         {isMultiDeleteButton && <button className="btn btn-primary me-1"
                           onClick={() => setDeleteModalMulti(true)}
                         ><i className="ri-delete-bin-2-line"></i></button>}
-                        <Link
-                          to="/apps-invoices-create"
-                          className="btn btn-danger"
-                        >
-                          <i className="ri-add-line align-bottom me-1"></i> Create
-                          Invoice
-                        </Link>
+                        {pagePermissions.canAdd && (
+                          <Link
+                            to="/apps-invoices-create"
+                            className="btn btn-danger"
+                          >
+                            <i className="ri-add-line align-bottom me-1"></i> Create
+                            Invoice
+                          </Link>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -386,7 +399,7 @@ const InvoiceList = () => {
                         data={(invoices || [])}
                         isGlobalFilter={true}
                         isAddUserList={false}
-                        customPageSize={10}
+                        customPageSize={100}
                         className="custom-header-css"
                         isInvoiceListFilter={true}
                         theadClass="text-muted text-uppercase"

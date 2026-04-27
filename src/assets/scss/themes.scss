@@ -314,3 +314,20 @@ $value in $theme-colors {
       }
   }
 }
+// Sidebar minimization layout fix
+@media (min-width: 768px) {
+    [data-layout="vertical"] {
+        &[data-sidebar-size="sm"],
+        &[data-sidebar-size="sm-hover"],
+        &[data-sidebar-size="sm-hover-active"] {
+            .main-content {
+                margin-left: var(--vz-vertical-menu-width-sm) !important;
+            }
+        }
+        &[data-sidebar-size="md"] {
+            .main-content {
+                margin-left: var(--vz-vertical-menu-width-md) !important;
+            }
+        }
+    }
+}

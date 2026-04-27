@@ -3,6 +3,7 @@ import { Card, CardBody, Col, Container, Row, Button } from 'reactstrap';
 import BreadCrumb from '../../Components/Common/BreadCrumb';
 import { Link } from 'react-router-dom';
 import GenericMasterModal from '../../Components/Common/GenericMasterModal';
+import PartyMasterModal from './Party/PartyMasterModal';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -35,12 +36,14 @@ const MastersDashboard = () => {
         {
             category: "Parties & Finance",
             items: [
-                { id: "customers", label: "Party" },
+                { id: "party", label: "Party Master", customRoute: "/party" },
                 { id: "bank", label: "Bank" },
+                { id: "fiscalYears", label: "Fiscal Year" },
                 { id: "currency", label: "Currency" },
                 { id: "paymentMode", label: "Payment Mode" },
                 { id: "paymentTerm", label: "Payment Term" },
-                { id: "transporters", label: "Transporter" }
+                { id: "transporters", label: "Transporter" },
+                { id: "vehicles", label: "Vehicle" }
             ]
         },
         {
@@ -55,7 +58,8 @@ const MastersDashboard = () => {
             category: "Access Control",
             items: [
                 { id: "users", label: "User" },
-                { id: "roles", label: "Role" }
+                { id: "roles", label: "Role" },
+                { id: "permissions", label: "Permissions", customRoute: "/masters/permissions" }
             ]
         },
         {
@@ -63,13 +67,22 @@ const MastersDashboard = () => {
             items: [
                 { id: "salespersons", label: "Salesperson" }
             ]
+        },
+        {
+            category: "Accounting & Finance",
+            items: [
+                { id: "accountgroup", label: "Account Group" },
+                { id: "account", label: "Account Master" },
+                { id: "vouchertype", label: "Voucher Type" },
+                { id: "ledgersettings", label: "Ledger Settings", customRoute: "/masters/ledger-settings" }
+            ]
         }
     ];
 
     // Descriptions reused from the earlier flat list so cards stay informative
     const masterDescriptions = {
         products: "Maintain items/services including pricing and tax details.",
-        customers: "Create customers, vendors, and other ledger parties.",
+        party: "Manage all ledgers including Customers, Vendors, and Traders.",
         users: "Manage access controls, roles, and user profiles.",
         units: "Define units of measurement for products.",
         taxes: "Configure GST/VAT and other tax rates.",
@@ -85,12 +98,17 @@ const MastersDashboard = () => {
         tcs: "Tax Collected at Source configurations.",
         tds: "Tax Deducted at Source configurations.",
         transporters: "Manage logistics and transporter details.",
+        fiscalYears: "Manage fiscal year ranges and the current financial year.",
         bank: "Configure bank profiles for voucher and payment processing.",
         branch: "Keep every branch location, code, and address in sync.",
         currency: "Maintain supported currencies and conversion metadata.",
         paymentMode: "Control available payment modes for vouchers.",
         paymentTerm: "Define due-date rules and credit terms.",
-        project: "Configure job/project codes for tracking."
+        vehicles: "Manage vehicle fleet for logistics and transportation.",
+        project: "Configure job/project codes for tracking.",
+        accountgroup: "Define accounting groups for profit/loss and balance sheet structure.",
+        vouchertype: "Manage numbering and prefixes for different voucher types.",
+        ledgersettings: "Configure default accounts for automated transactions (Sales, Tax, etc.)."
     };
 
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -100,6 +118,8 @@ const MastersDashboard = () => {
         if (masterId) setSelectedMasterId(masterId);
         setIsModalOpen(!isModalOpen);
     };
+
+    const isPartyMaster = selectedMasterId === "party";
 
     return (
         <React.Fragment>
@@ -125,7 +145,7 @@ const MastersDashboard = () => {
                                                     {masterDescriptions[master.id] || `Manage ${master.label} master data.`}
                                                 </p>
                                                 <div className="d-flex gap-2">
-                                                    <Link to={`/masters/${master.id}`} className="btn btn-primary btn-sm flex-grow-1">
+                                                    <Link to={master.customRoute || `/masters/${master.id}`} className="btn btn-primary btn-sm flex-grow-1">
                                                         <i className="ri-list-check align-bottom me-1"></i> Open List
                                                     </Link>
                                                     <Button
@@ -147,11 +167,22 @@ const MastersDashboard = () => {
                 </Container>
             </div>
 
-            <GenericMasterModal
-                isOpen={isModalOpen}
-                toggle={() => setIsModalOpen(!isModalOpen)}
-                masterId={selectedMasterId}
-            />
+            {isPartyMaster ? (
+                <PartyMasterModal
+                    isOpen={isModalOpen}
+                    toggle={() => setIsModalOpen(!isModalOpen)}
+                    partyId={null}
+                    isEdit={false}
+                    defaultType={null}
+                    onSuccess={() => {}}
+                />
+            ) : (
+                <GenericMasterModal
+                    isOpen={isModalOpen}
+                    toggle={() => setIsModalOpen(!isModalOpen)}
+                    masterId={selectedMasterId}
+                />
+            )}
         </React.Fragment>
     );
 };

@@ -47,9 +47,9 @@ class SecureStorage {
         ).toString();
         
         // Save timestamp for key regeneration during session
-        sessionStorage.setItem('keyHint', timestamp);
-        // Save userId for key regeneration (in session storage, cleared on close)
-        sessionStorage.setItem('userHint', userId);
+        localStorage.setItem('keyHint', timestamp);
+        // Save userId for key regeneration
+        localStorage.setItem('userHint', userId);
     }
 
     /**
@@ -59,8 +59,8 @@ class SecureStorage {
     restoreKey() {
         if (this.key) return true;
 
-        const timestamp = sessionStorage.getItem('keyHint');
-        const userId = sessionStorage.getItem('userHint');
+        const timestamp = localStorage.getItem('keyHint');
+        const userId = localStorage.getItem('userHint');
         
         if (timestamp && userId) {
             const salt = process.env.REACT_APP_SECRET_SALT || 'softbook-secure-salt';
@@ -144,7 +144,6 @@ class SecureStorage {
      */
     clear() {
         localStorage.clear();
-        sessionStorage.clear();
         this.key = null;
     }
 }

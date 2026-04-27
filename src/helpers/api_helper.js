@@ -1,6 +1,7 @@
 import axios from "axios";
 import { api } from "../config";
 import secureStorage from "../utils/secureStorage";
+import { getSelectedFiscalYearId } from "../utils/fiscalYearStorage";
 
 // default
 axios.defaults.baseURL = api.API_URL;
@@ -19,6 +20,11 @@ axios.interceptors.request.use(
     
     if (companyId) {
       config.headers["X-Company-Id"] = companyId;
+    }
+
+    const fiscalYearId = getSelectedFiscalYearId();
+    if (fiscalYearId) {
+      config.headers["X-Fiscal-Year-Id"] = fiscalYearId;
     }
 
     return config;
@@ -113,22 +119,22 @@ class APIClient {
   /**
    * post given data to url
    */
-  post = (url, data) => {
-    return axios.post(url, data);
+  post = (url, data, config) => {
+    return axios.post(url, data, config);
   };
 
-  create = (url, data) => {
-    return axios.post(url, data);
+  create = (url, data, config) => {
+    return axios.post(url, data, config);
   };
   /**
    * Updates data
    */
-  update = (url, data) => {
-    return axios.patch(url, data);
+  update = (url, data, config) => {
+    return axios.patch(url, data, config);
   };
 
-  put = (url, data) => {
-    return axios.put(url, data);
+  put = (url, data, config) => {
+    return axios.put(url, data, config);
   };
   /**
    * Delete
@@ -138,7 +144,7 @@ class APIClient {
   };
 }
 const getLoggedinUser = () => {
-  const user = sessionStorage.getItem("authUser");
+  const user = localStorage.getItem("authUser");
   if (!user) {
     return null;
   } else {

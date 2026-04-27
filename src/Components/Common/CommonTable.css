@@ -1,0 +1,318 @@
+/* ============================================================
+   CommonTable.css  –  Professional Data Table Styles
+   ============================================================ */
+
+/* ── Wrapper / scroll container ────────────────────────────── */
+.ct-wrapper {
+    position: relative;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid #e3e6ea;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+}
+
+.ct-scroll-container {
+    overflow-x: auto;
+    overflow-y: auto;
+}
+
+/* ── Table base ─────────────────────────────────────────────── */
+.ct-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 12.5px;
+    /* font-family: "Inter", "Segoe UI", sans-serif; */
+    table-layout: fixed;
+}
+
+/* ── Head ───────────────────────────────────────────────────── */
+.ct-table thead {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.ct-head-group th {
+    background: #f0f3fb !important;
+    font-weight: 700;
+    text-align: center;
+    border-bottom: 0;
+}
+
+.ct-head-label th {
+    border-top: 0;
+}
+
+.ct-table thead tr.ct-head-label th {
+    background: #f0f3fb;
+    color: #3a3f5c;
+    font-weight: 700;
+    font-size: 11.5px;
+    letter-spacing: 0.3px;
+    padding: 9px 10px 4px;
+    border-bottom: none;
+    border-right: 1px solid #e3e6ea;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    user-select: none;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.ct-table thead tr.ct-head-label th:last-child {
+    border-right: none;
+}
+
+.ct-table thead tr.ct-head-label th:hover {
+    background: #eef0f6;
+}
+
+/* Sort indicator */
+.ct-sort-icon {
+    display: inline-block;
+    margin-left: 4px;
+    opacity: 0.45;
+    font-style: normal;
+    font-size: 10px;
+    vertical-align: middle;
+    transition: opacity 0.15s;
+}
+
+.ct-table thead tr.ct-head-label th:hover .ct-sort-icon,
+.ct-sort-icon.active {
+    opacity: 1;
+}
+
+/* Filter row */
+.ct-table thead tr.ct-head-filter th {
+    background: #f0f3fb;
+    padding: 4px 6px 8px;
+    border-bottom: 2px solid #d0d4e0;
+    border-right: 1px solid #e3e6ea;
+}
+
+.ct-table thead tr.ct-head-filter th:last-child {
+    border-right: none;
+}
+
+.ct-filter-input {
+    width: 100%;
+    height: 24px;
+    font-size: 11px;
+    padding: 2px 6px;
+    border: 1px solid #d0d4e0;
+    border-radius: 4px;
+    background: #ffffff;
+    color: #3a3f5c;
+    outline: none;
+    box-sizing: border-box;
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.ct-filter-input:focus {
+    border-color: #4d7ef7;
+    box-shadow: 0 0 0 2px rgba(77, 126, 247, 0.15);
+}
+
+/* ── Body rows ─────────────────────────────────────────────── */
+.ct-table tbody tr {
+    transition: background 0.1s;
+}
+
+.ct-table tbody tr:nth-child(even) {
+    background: #fafbfd;
+}
+
+.ct-table tbody tr:hover {
+    background: #eef3ff !important;
+}
+
+.ct-table tbody td {
+    padding: 6px 10px;
+    border-bottom: 1px solid #eaecf0;
+    border-right: 1px solid #eaecf0;
+    color: #3a3f5c;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    vertical-align: middle;
+}
+
+.ct-table tbody td:last-child {
+    border-right: none;
+}
+
+/* Link cells */
+.ct-inv-link {
+    color: #4d7ef7;
+    font-weight: 600;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    transition: color 0.15s;
+}
+
+.ct-inv-link:hover {
+    color: #2558d4;
+    text-decoration: underline;
+}
+
+.ct-inv-link i {
+    font-size: 11px;
+    opacity: 0.7;
+}
+
+/* ── Footer / Totals row ────────────────────────────────────── */
+.ct-table tfoot {
+    position: sticky;
+    bottom: 0;
+    z-index: 10;
+}
+
+.ct-table tfoot tr td {
+    background: #f0f3fb;
+    color: #1e2540;
+    font-weight: 700;
+    font-size: 12px;
+    padding: 7px 10px;
+    border-top: 2px solid #c8cfe0;
+    border-right: 1px solid #d0d4e0;
+    white-space: nowrap;
+}
+
+.ct-table tfoot tr td:last-child {
+    border-right: none;
+}
+
+.ct-footer-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11.5px;
+    color: #5c6880;
+    font-weight: 700;
+    letter-spacing: 0.2px;
+}
+
+.ct-footer-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    background: #4d7ef7;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    border-radius: 20px;
+    padding: 1px 7px;
+    letter-spacing: 0.3px;
+}
+
+/* ── Empty state ────────────────────────────────────────────── */
+.ct-empty {
+    text-align: center;
+    padding: 40px 20px;
+    color: #9aa0b4;
+    font-size: 13px;
+}
+
+.ct-empty-icon {
+    font-size: 32px;
+    display: block;
+    margin-bottom: 8px;
+    opacity: 0.45;
+}
+
+/* ── Loading ────────────────────────────────────────────────── */
+.ct-loading {
+    text-align: center;
+    padding: 40px;
+    color: #9aa0b4;
+    font-size: 13px;
+}
+
+.ct-spinner {
+    width: 28px;
+    height: 28px;
+    border: 3px solid #e0e4ef;
+    border-top-color: #4d7ef7;
+    border-radius: 50%;
+    animation: ct-spin 0.7s linear infinite;
+    margin: 0 auto 10px;
+}
+
+@keyframes ct-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* ── Number cells ───────────────────────────────────────────── */
+.ct-num {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.2px;
+}
+
+.ct-text-start {
+    text-align: left;
+}
+
+/* ── Dark mode ──────────────────────────────────────────────── */
+.ct-dark .ct-wrapper {
+    border-color: #2e3340;
+    box-shadow: 0 2px 16px rgba(0, 0, 0, 0.3);
+}
+
+.ct-dark .ct-table thead tr.ct-head-label th {
+    background: #1e2432;
+    color: #c8cfdf;
+    border-right-color: #2e3340;
+}
+
+.ct-dark .ct-table thead tr.ct-head-label th:hover {
+    background: #252b3b;
+}
+
+.ct-dark .ct-table thead tr.ct-head-filter th {
+    background: #1e2432;
+    border-bottom-color: #3a4155;
+    border-right-color: #2e3340;
+}
+
+.ct-dark .ct-filter-input {
+    background: #252b3b;
+    border-color: #3a4155;
+    color: #c8cfdf;
+}
+
+.ct-dark .ct-filter-input:focus {
+    border-color: #4d7ef7;
+}
+
+.ct-dark .ct-table tbody tr:nth-child(even) {
+    background: #1a1e2a;
+}
+
+.ct-dark .ct-table tbody tr:hover {
+    background: #1f2740 !important;
+}
+
+.ct-dark .ct-table tbody td {
+    border-bottom-color: #2a2f40;
+    border-right-color: #2a2f40;
+    color: #c8cfdf;
+}
+
+.ct-dark .ct-table tfoot tr td {
+    background: #161b28;
+    color: #d0d7e8;
+    border-top-color: #3a4155;
+    border-right-color: #2e3340;
+}
+
+.ct-dark .ct-footer-label {
+    color: #8892aa;
+}

@@ -15,6 +15,7 @@ import React, { useEffect } from "react";
 import { Navigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { logoutUser } from "../slices/authSlice";
+import FiscalYearGate from "../Components/Common/FiscalYearGate";
 
 const AuthProtected = (props) => {
   const dispatch = useDispatch();
@@ -45,7 +46,7 @@ const AuthProtected = (props) => {
   }
 
   // Render children (Protected Content)
-  return <>{props.children}</>;
+  return <FiscalYearGate>{props.children}</FiscalYearGate>;
 };
 
 const AccessRoute = ({ component: Component, ...rest }) => {

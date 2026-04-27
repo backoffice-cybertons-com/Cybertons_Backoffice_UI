@@ -17,6 +17,10 @@ File: Main Css File
 @import "variables";
 @import "variables-custom";
 @import "variables-dark";
+
+// Galaxy Configuration
+$galaxy-body-img: true;
+$galaxy-body-img-dark: true;
 @import "./node_modules/bootstrap/scss/mixins";
 
 
@@ -121,3 +125,4 @@ File: Main Css File
 @import "../../pages/to-do";
 @import "../../pages/jobs";
 @import "../../pages/job-landing";
+@import "../../pages/galaxy";

@@ -8,6 +8,7 @@ import {
 } from "../../../helpers/fakebackend_helper";
 
 import { loginSuccess, logoutUserSuccess, apiError, reset_login_flag } from './reducer';
+import { clearSelectedFiscalYearId } from "../../../utils/fiscalYearStorage";
 
 export const loginUser = (user, history) => async (dispatch) => {
   try {
@@ -35,7 +36,7 @@ export const loginUser = (user, history) => async (dispatch) => {
     console.log("Login Thunk: Received Response Data:", data);
 
     if (data) {
-      sessionStorage.setItem("authUser", JSON.stringify(data));
+      localStorage.setItem("authUser", JSON.stringify(data));
       if (process.env.REACT_APP_DEFAULTAUTH === "fake") {
         var finallogin = JSON.stringify(data);
         finallogin = JSON.parse(finallogin)
@@ -66,7 +67,8 @@ export const logoutUser = () => async (dispatch) => {
       console.error("Logout API call failed", e);
     }
 
-    sessionStorage.removeItem("authUser");
+    localStorage.removeItem("authUser");
+    clearSelectedFiscalYearId();
     let fireBaseBackend = getFirebaseBackend();
     if (process.env.REACT_APP_DEFAULTAUTH === "firebase") {
       const response = fireBaseBackend.logout;
@@ -94,7 +96,7 @@ export const socialLogin = (type, history) => async (dispatch) => {
 
     const socialdata = await response;
     if (socialdata) {
-      sessionStorage.setItem("authUser", JSON.stringify(response));
+      localStorage.setItem("authUser", JSON.stringify(response));
       dispatch(loginSuccess(response));
       history('/dashboard-crm')
     }

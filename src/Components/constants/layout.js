@@ -17,6 +17,7 @@ const leftSidebarTypes = {
   GRADIENT_2: "gradient-2",
   GRADIENT_3: "gradient-3",
   GRADIENT_4: "gradient-4",
+  CUSTOM: "custom",
 };
 
 const layoutWidthTypes = {
@@ -59,6 +60,13 @@ const preloaderTypes = {
   DISABLE: "disable"
 }
 
+const bodyImageTypes = {
+  NONE: "none",
+  IMG1: "img-1",
+  IMG2: "img-2",
+  IMG3: "img-3",
+};
+
 const sidebarVisibilitytypes = {
   SHOW: "show",
   HIDDEN: "hidden"
@@ -75,5 +83,6 @@ export {
   leftSidebarViewTypes,
   leftSidebarImageTypes,
   preloaderTypes,
+  bodyImageTypes,
   sidebarVisibilitytypes
 };

@@ -1,13 +1,19 @@
 export const masterConfig = {
     // 1. Product (Complex, handled by dedicated page usually, but kept here for ref)
     products: {
-        pk: "ProductId",
+        pk: "productId",
         label: "Product",
+        fetchUrl: "/api/Product/details",
         fields: [
-            { name: "ProductName", label: "Product Name", type: "text", required: true },
-            { name: "ProductType", label: "Type", type: "text" },
-            { name: "SellingPrice", label: "Selling Price", type: "number" },
-            { name: "CostPrice", label: "Cost Price", type: "number" }
+            { name: "productId", label: "Product ID", type: "text" },
+            { name: "type", label: "Type", type: "text" },
+            { name: "name", label: "Product Name", type: "text", required: true },
+            { name: "productGroupName", label: "Group", type: "text" },
+            { name: "hsnOrSACCode", label: "HSN/SAC", type: "text" },
+            { name: "costPrice", label: "Cost Price", type: "number" },
+            { name: "sellingPrice", label: "Sell Price", type: "number" },
+            { name: "mrp", label: "MRP", type: "number" },
+            { name: "taxGroupName", label: "GST", type: "text" }
         ]
     },
     // 2. Party (Customer/Vendor)
@@ -17,9 +23,11 @@ export const masterConfig = {
         fields: [
             { name: "DisplayName", label: "Display Name", type: "text", required: true },
             { name: "CompanyName", label: "Company Name", type: "text" },
+            { name: "PartyType", label: "Party Type", type: "select", url: "/api/partytypemaster", valueKey: "name", required: true },
             { name: "Email", label: "Email", type: "email" },
             { name: "PhoneMobile", label: "Mobile", type: "text" },
-            { name: "GstNo", label: "GST No", type: "text" }
+            { name: "OpeningBalance", label: "Opening Balance", type: "number" },
+            { name: "OpeningBalanceType", label: "Opening Balance Type", type: "text" }
         ]
     },
     // 3. User
@@ -30,16 +38,19 @@ export const masterConfig = {
             { name: "Username", label: "Username", type: "text", required: true },
             { name: "FullName", label: "Full Name", type: "text", required: true },
             { name: "Email", label: "Email", type: "email", required: true },
+            { name: "RoleId", label: "User Role", type: "select", masterName: "roles", required: true },
             { name: "PasswordHash", label: "Password", type: "password", required: true }
         ]
     },
-    // 4. Unit -> tab_unit_master (unit_name, uqc)
+    // 4. Unit -> tab_unit_master (unit_name, uqc, crt, packing_units)
     units: {
         pk: "UnitId",
         label: "Unit",
         fields: [
             { name: "UnitName", label: "Unit Name", type: "text", required: true },
-            { name: "Uqc", label: "UQC", type: "text" }
+            { name: "Uqc", label: "UQC", type: "text" },
+            { name: "Crt", label: "CRTs", type: "number" },
+            { name: "PackingUnits", label: "Packing Units", type: "number" }
         ]
     },
     // 5. Tax -> tab_tax_master (tax_name, rate_percent, tax_type)
@@ -97,7 +108,8 @@ export const masterConfig = {
         fields: [
             { name: "StartDate", label: "Start Date", type: "date", required: true },
             { name: "EndDate", label: "End Date", type: "date", required: true },
-            { name: "IsCurrent", label: "Is Current", type: "checkbox" }
+            { name: "IsCurrent", label: "Is Current", type: "checkbox" },
+            { name: "FiscalYearLabel", label: "Fiscal Year Label", type: "text" }
         ]
     },
     // 11. Role -> tab_role_master (role_name, is_active)
@@ -243,6 +255,51 @@ export const masterConfig = {
              { name: "StartDate", label: "Start Date", type: "date" },
               { name: "EndDate", label: "End Date", type: "date" },
                { name: "Description", label: "Description", type: "text" }
+        ]
+    },
+    // 25. Vehicle -> tab_vehicle_master (vehicle_no, transporter_id, vehicle_type, driver_name, is_active)
+    vehicles: {
+        pk: "VehicleId",
+        label: "Vehicle",
+        fields: [
+            { name: "TransporterId", label: "Transporter", type: "select", masterName: "transporters", required: true },
+            { name: "VehicleNo", label: "Vehicle Number", type: "text", required: true },
+            { name: "VehicleType", label: "Vehicle Type", type: "text" },
+            { name: "DriverName", label: "Driver Name", type: "text" },
+            { name: "DriverPhone", label: "Driver Phone", type: "text" },
+            { name: "RegistrationExpiry", label: "Registration Expiry", type: "date" },
+            { name: "IsActive", label: "Is Active", type: "checkbox" }
+        ]
+    },
+    // 26. Account Group -> tab_account_group_master (group_name, group_type, parent_group_id)
+    accountgroup: {
+        pk: "GroupId",
+        label: "Account Group",
+        fields: [
+            { name: "GroupName", label: "Group Name", type: "text", required: true },
+            { name: "GroupType", label: "Group Type", type: "text", required: true },
+            { name: "ParentGroupId", label: "Parent Group", type: "select", masterName: "accountgroup" }
+        ]
+    },
+    // 27. Voucher Type -> tab_voucher_type_master (v_type_name, prefix, starting_no)
+    vouchertype: {
+        pk: "VTypeId",
+        label: "Voucher Type",
+        fields: [
+            { name: "VTypeName", label: "Voucher Name", type: "text", required: true },
+            { name: "Prefix", label: "Prefix", type: "text" },
+            { name: "StartingNo", label: "Starting Number", type: "number" }
+        ]
+    },
+    // 28. Account Master -> tab_account_master (account_name, account_type, account_code, group_id)
+    account: {
+        pk: "PartyId",
+        label: "Account",
+        fields: [
+            { name: "CompanyName", label: "Account Name", type: "text", required: true },
+            { name: "PartyType", label: "Account Type", type: "select", url: "/api/partytypemaster", valueKey: "name" },
+            { name: "DisplayName", label: "Account Code", type: "text" },
+            { name: "GroupId", label: "Account Group", type: "select", masterName: "accountgroup" }
         ]
     }
 };

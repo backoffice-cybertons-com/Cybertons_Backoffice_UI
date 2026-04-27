@@ -20,10 +20,11 @@ import { APIClient } from '../../helpers/api_helper';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import FeatherIcon from 'feather-icons-react';
+import { formatToTwoDecimals } from '../../utils/numberUtils';
 
 const apiClient = new APIClient();
 
-const ProductForm = ({ isEdit = false, productId = null }) => {
+const ProductForm = ({ isEdit = false, productId = null, onSuccess = null, onCancel = null }) => {
     const navigate = useNavigate();
     const [units, setUnits] = useState([]);
     const [taxGroups, setTaxGroups] = useState([]);
@@ -48,26 +49,27 @@ const ProductForm = ({ isEdit = false, productId = null }) => {
         taxPreferenceId: '1',
         sellable: true,
         purchasable: true,
-        sellingPrice: 0,
-        sellingPrice2: 0,
-        sellingPrice3: 0,
-        sellingPrice4: 0,
-        sellingPrice5: 0,
+        mrp: "0.00",
+        sellingPrice: "0.00",
+        sellingPrice2: "0.00",
+        sellingPrice3: "0.00",
+        sellingPrice4: "0.00",
+        sellingPrice5: "0.00",
         salesAccount: '',
         salesDescription: '',
-        costPrice: 0,
+        costPrice: "0.00",
         purchaseAccount: '',
         purchaseDescription: '',
         taxGroupId: '',
         preferredVendorId: '',
-        openingQuantity: 0,
-        openingPrice: 0,
-        openingAmount: 0,
+        openingQuantity: "0.00",
+        openingPrice: "0.00",
+        openingAmount: "0.00",
         purchaseEffectedAccount: '',
         saleEffectedAccount: '',
-        minQuantity: 0,
-        maxQuantity: 0,
-        reOrderQuantity: 0,
+        minQuantity: "0.00",
+        maxQuantity: "0.00",
+        reOrderQuantity: "0.00",
         taxExemptionId: ''
     };
 
@@ -98,18 +100,23 @@ const ProductForm = ({ isEdit = false, productId = null }) => {
                     taxExemptionId: values.taxExemptionId ? parseInt(values.taxExemptionId) : null,
                     saleEffectedAccount: values.saleEffectedAccount ? parseInt(values.saleEffectedAccount) : null,
                     purchaseEffectedAccount: values.purchaseEffectedAccount ? parseInt(values.purchaseEffectedAccount) : null,
-                    sellingPrice: parseFloat(values.sellingPrice) || 0,
-                    sellingPrice2: parseFloat(values.sellingPrice2) || 0,
-                    sellingPrice3: parseFloat(values.sellingPrice3) || 0,
-                    sellingPrice4: parseFloat(values.sellingPrice4) || 0,
-                    sellingPrice5: parseFloat(values.sellingPrice5) || 0,
-                    costPrice: parseFloat(values.costPrice) || 0,
-                    openingQuantity: parseFloat(values.openingQuantity) || 0,
-                    openingPrice: parseFloat(values.openingPrice) || 0,
-                    openingAmount: parseFloat(values.openingAmount) || 0,
-                    minQuantity: parseFloat(values.minQuantity) || 0,
-                    maxQuantity: parseFloat(values.maxQuantity) || 0,
-                    reOrderQuantity: parseFloat(values.reOrderQuantity) || 0,
+                    mrp: values.mrp !== "" ? parseFloat(values.mrp) : null,
+                    sellingPrice: values.sellingPrice !== "" ? parseFloat(values.sellingPrice) : null,
+                    sellingPrice2: values.sellingPrice2 !== "" ? parseFloat(values.sellingPrice2) : null,
+                    sellingPrice3: values.sellingPrice3 !== "" ? parseFloat(values.sellingPrice3) : null,
+                    sellingPrice4: values.sellingPrice4 !== "" ? parseFloat(values.sellingPrice4) : null,
+                    sellingPrice5: values.sellingPrice5 !== "" ? parseFloat(values.sellingPrice5) : null,
+                    costPrice: values.costPrice !== "" ? parseFloat(values.costPrice) : null,
+                    openingQuantity: values.openingQuantity !== "" ? parseFloat(values.openingQuantity) : null,
+                    openingPrice: values.openingPrice !== "" ? parseFloat(values.openingPrice) : null,
+                    openingAmount: values.openingAmount !== "" ? parseFloat(values.openingAmount) : null,
+                    purchaseAccount: values.purchaseAccount || null,
+                    salesAccount: values.salesAccount || null,
+                    salesDescription: values.salesDescription || null,
+                    purchaseDescription: values.purchaseDescription || null,
+                    minQuantity: values.minQuantity !== "" ? parseFloat(values.minQuantity) : null,
+                    maxQuantity: values.maxQuantity !== "" ? parseFloat(values.maxQuantity) : null,
+                    reOrderQuantity: values.reOrderQuantity !== "" ? parseFloat(values.reOrderQuantity) : null
                 };
 
                 if (isEdit) {
@@ -119,7 +126,11 @@ const ProductForm = ({ isEdit = false, productId = null }) => {
                     await apiClient.post('/api/Product', payload);
                     toast.success("Product created successfully");
                 }
-                navigate('/apps-product-master');
+                if (onSuccess) {
+                    onSuccess();
+                } else {
+                    navigate('/apps-product-master');
+                }
             } catch (error) {
                 console.error("Save failed:", error);
                 toast.error(error.message || "Failed to save product");
@@ -180,13 +191,13 @@ const ProductForm = ({ isEdit = false, productId = null }) => {
                 try {
                     const response = await apiClient.get(`/api/Product/${productId}`);
                     if (response) {
-                        formik.setValues({
+                        const productData = {
                             ...initialValues,
                             ...response,
-                            // Map field names if they differ slightly from backend to formik
                             sellable: response.sellable ?? true,
                             purchasable: response.purchasable ?? true
-                        });
+                        };
+                        formik.setValues(productData);
                         if (response.taxGroupId) {
                             setIsTaxRateLocked(true);
                         }
@@ -229,6 +240,10 @@ const ProductForm = ({ isEdit = false, productId = null }) => {
 
     const isGoods = formik.values.type === 'Goods';
     const isTaxable = formik.values.taxPreferenceId === '1';
+
+    // Show error after blur OR after a submit was attempted
+    const showError = (field) => (formik.touched[field] || formik.submitCount > 0) && formik.errors[field];
+    const isInvalid = (field) => !!(formik.touched[field] || formik.submitCount > 0) && !!formik.errors[field];
 
     return (
         <Form onSubmit={formik.handleSubmit}>
@@ -283,9 +298,9 @@ const ProductForm = ({ isEdit = false, productId = null }) => {
                                             onChange={formik.handleChange}
                                             onBlur={formik.handleBlur}
                                             value={formik.values.name}
-                                            invalid={formik.touched.name && formik.errors.name ? true : false}
+                                            invalid={isInvalid('name')}
                                         />
-                                        <FormFeedback>{formik.errors.name}</FormFeedback>
+                                        {showError('name') && <FormFeedback>{formik.errors.name}</FormFeedback>}
                                     </FormGroup>
                                 </Col>
                                 <Col md={3}>
@@ -317,7 +332,7 @@ const ProductForm = ({ isEdit = false, productId = null }) => {
                                             onChange={formik.handleChange}
                                             onBlur={formik.handleBlur}
                                             value={formik.values.unitId}
-                                            invalid={formik.touched.unitId && formik.errors.unitId ? true : false}
+                                            invalid={isInvalid('unitId')}
                                         >
                                             <option value="">Select Unit</option>
                                             {units.map(u => {
@@ -326,7 +341,7 @@ const ProductForm = ({ isEdit = false, productId = null }) => {
                                                 return <option key={id} value={id}>{name}</option>;
                                             })}
                                         </Input>
-                                        <FormFeedback>{formik.errors.unitId}</FormFeedback>
+                                        {showError('unitId') && <FormFeedback>{formik.errors.unitId}</FormFeedback>}
                                     </FormGroup>
                                 </Col>
                             </Row>
@@ -396,18 +411,21 @@ const ProductForm = ({ isEdit = false, productId = null }) => {
                                 )}
                                 <Col md={3}>
                                     <FormGroup className="mb-3">
-                                        <Label htmlFor="taxPreferenceId">Tax Preference</Label>
+                                        <Label htmlFor="taxPreferenceId">Tax Preference <span className="text-danger">*</span></Label>
                                         <Input
                                             id="taxPreferenceId"
                                             name="taxPreferenceId"
                                             type="select"
                                             onChange={formik.handleChange}
+                                            onBlur={formik.handleBlur}
                                             value={formik.values.taxPreferenceId}
+                                            invalid={isInvalid('taxPreferenceId')}
                                         >
                                             <option value="1">Taxable</option>
                                             <option value="2">Exempt</option>
                                             <option value="3">Non-Taxable</option>
                                         </Input>
+                                        {showError('taxPreferenceId') && <FormFeedback>{formik.errors.taxPreferenceId}</FormFeedback>}
                                     </FormGroup>
                                 </Col>
                             </Row>
@@ -534,26 +552,56 @@ const ProductForm = ({ isEdit = false, productId = null }) => {
                                 {formik.values.sellable && (
                                     <CardBody>
                                         <Row>
-                                            <Col md={6}>
+                                            <Col md={4}>
+                                                <FormGroup className="mb-3">
+                                                    <Label htmlFor="mrp">MRP</Label>
+                                                    <Input
+                                                        id="mrp"
+                                                        name="mrp"
+                                                        type="number"
+                                                        step="any"
+                                                        onChange={formik.handleChange}
+                                                        onBlur={(e) => {
+                                                            const val = formatToTwoDecimals(e.target.value);
+                                                            formik.setFieldValue('mrp', val);
+                                                            formik.handleBlur(e);
+                                                        }}
+                                                        value={formik.values.mrp}
+                                                    />
+                                                </FormGroup>
+                                            </Col>
+                                            <Col md={4}>
                                                 <FormGroup className="mb-3">
                                                     <Label htmlFor="sellingPrice">Selling Price 1</Label>
                                                     <Input
                                                         id="sellingPrice"
                                                         name="sellingPrice"
                                                         type="number"
+                                                        step="any"
                                                         onChange={formik.handleChange}
+                                                        onBlur={(e) => {
+                                                            const val = formatToTwoDecimals(e.target.value);
+                                                            formik.setFieldValue('sellingPrice', val);
+                                                            formik.handleBlur(e);
+                                                        }}
                                                         value={formik.values.sellingPrice}
                                                     />
                                                 </FormGroup>
                                             </Col>
-                                            <Col md={6}>
+                                            <Col md={4}>
                                                 <FormGroup className="mb-3">
                                                     <Label htmlFor="sellingPrice2">Selling Price 2</Label>
                                                     <Input
                                                         id="sellingPrice2"
                                                         name="sellingPrice2"
                                                         type="number"
+                                                        step="any"
                                                         onChange={formik.handleChange}
+                                                        onBlur={(e) => {
+                                                            const val = formatToTwoDecimals(e.target.value);
+                                                            formik.setFieldValue('sellingPrice2', val);
+                                                            formik.handleBlur(e);
+                                                        }}
                                                         value={formik.values.sellingPrice2}
                                                     />
                                                 </FormGroup>
@@ -567,7 +615,13 @@ const ProductForm = ({ isEdit = false, productId = null }) => {
                                                         id="sellingPrice3"
                                                         name="sellingPrice3"
                                                         type="number"
+                                                        step="any"
                                                         onChange={formik.handleChange}
+                                                        onBlur={(e) => {
+                                                            const val = formatToTwoDecimals(e.target.value);
+                                                            formik.setFieldValue('sellingPrice3', val);
+                                                            formik.handleBlur(e);
+                                                        }}
                                                         value={formik.values.sellingPrice3}
                                                     />
                                                 </FormGroup>
@@ -579,7 +633,13 @@ const ProductForm = ({ isEdit = false, productId = null }) => {
                                                         id="sellingPrice4"
                                                         name="sellingPrice4"
                                                         type="number"
+                                                        step="any"
                                                         onChange={formik.handleChange}
+                                                        onBlur={(e) => {
+                                                            const val = formatToTwoDecimals(e.target.value);
+                                                            formik.setFieldValue('sellingPrice4', val);
+                                                            formik.handleBlur(e);
+                                                        }}
                                                         value={formik.values.sellingPrice4}
                                                     />
                                                 </FormGroup>
@@ -591,14 +651,20 @@ const ProductForm = ({ isEdit = false, productId = null }) => {
                                                         id="sellingPrice5"
                                                         name="sellingPrice5"
                                                         type="number"
+                                                        step="any"
                                                         onChange={formik.handleChange}
+                                                        onBlur={(e) => {
+                                                            const val = formatToTwoDecimals(e.target.value);
+                                                            formik.setFieldValue('sellingPrice5', val);
+                                                            formik.handleBlur(e);
+                                                        }}
                                                         value={formik.values.sellingPrice5}
                                                     />
                                                 </FormGroup>
                                             </Col>
                                         </Row>
                                         <FormGroup className="mb-3">
-                                            <Label htmlFor="salesAccount">Account <span className="text-danger">*</span></Label>
+                                            <Label htmlFor="salesAccount">Account</Label>
                                             <Input
                                                 id="salesAccount"
                                                 name="salesAccount"
@@ -673,7 +739,13 @@ const ProductForm = ({ isEdit = false, productId = null }) => {
                                                         id="costPrice"
                                                         name="costPrice"
                                                         type="number"
+                                                        step="any"
                                                         onChange={formik.handleChange}
+                                                        onBlur={(e) => {
+                                                            const val = formatToTwoDecimals(e.target.value);
+                                                            formik.setFieldValue('costPrice', val);
+                                                            formik.handleBlur(e);
+                                                        }}
                                                         value={formik.values.costPrice}
                                                     />
                                                 </FormGroup>
@@ -699,7 +771,7 @@ const ProductForm = ({ isEdit = false, productId = null }) => {
                                             </Col>
                                         </Row>
                                         <FormGroup className="mb-3">
-                                            <Label htmlFor="purchaseAccount">Account <span className="text-danger">*</span></Label>
+                                            <Label htmlFor="purchaseAccount">Account</Label>
                                             <Input
                                                 id="purchaseAccount"
                                                 name="purchaseAccount"
@@ -764,7 +836,13 @@ const ProductForm = ({ isEdit = false, productId = null }) => {
                                                 id="openingQuantity"
                                                 name="openingQuantity"
                                                 type="number"
+                                                step="any"
                                                 onChange={formik.handleChange}
+                                                onBlur={(e) => {
+                                                    const val = formatToTwoDecimals(e.target.value);
+                                                    formik.setFieldValue('openingQuantity', val);
+                                                    formik.handleBlur(e);
+                                                }}
                                                 value={formik.values.openingQuantity}
                                             />
                                         </FormGroup>
@@ -776,7 +854,12 @@ const ProductForm = ({ isEdit = false, productId = null }) => {
                                                 id="openingPrice"
                                                 name="openingPrice"
                                                 type="number"
-                                                onChange={formik.handleChange}
+                                                step="any"
+                                                onBlur={(e) => {
+                                                    const val = formatToTwoDecimals(e.target.value);
+                                                    formik.setFieldValue('openingPrice', val);
+                                                    formik.handleBlur(e);
+                                                }}
                                                 value={formik.values.openingPrice}
                                             />
                                         </FormGroup>
@@ -788,9 +871,10 @@ const ProductForm = ({ isEdit = false, productId = null }) => {
                                                 id="openingAmount"
                                                 name="openingAmount"
                                                 type="number"
+                                                step="any"
                                                 readOnly
                                                 disabled
-                                                value={formik.values.openingAmount}
+                                                value={formatToTwoDecimals(formik.values.openingAmount)}
                                             />
                                         </FormGroup>
                                     </Col>
@@ -823,7 +907,12 @@ const ProductForm = ({ isEdit = false, productId = null }) => {
                                                 id="minQuantity"
                                                 name="minQuantity"
                                                 type="number"
-                                                onChange={formik.handleChange}
+                                                step="any"
+                                                onBlur={(e) => {
+                                                    const val = formatToTwoDecimals(e.target.value);
+                                                    formik.setFieldValue('minQuantity', val);
+                                                    formik.handleBlur(e);
+                                                }}
                                                 value={formik.values.minQuantity}
                                             />
                                         </FormGroup>
@@ -835,7 +924,12 @@ const ProductForm = ({ isEdit = false, productId = null }) => {
                                                 id="maxQuantity"
                                                 name="maxQuantity"
                                                 type="number"
-                                                onChange={formik.handleChange}
+                                                step="any"
+                                                onBlur={(e) => {
+                                                    const val = formatToTwoDecimals(e.target.value);
+                                                    formik.setFieldValue('maxQuantity', val);
+                                                    formik.handleBlur(e);
+                                                }}
                                                 value={formik.values.maxQuantity}
                                             />
                                         </FormGroup>
@@ -847,7 +941,12 @@ const ProductForm = ({ isEdit = false, productId = null }) => {
                                                 id="reOrderQuantity"
                                                 name="reOrderQuantity"
                                                 type="number"
-                                                onChange={formik.handleChange}
+                                                step="any"
+                                                onBlur={(e) => {
+                                                    const val = formatToTwoDecimals(e.target.value);
+                                                    formik.setFieldValue('reOrderQuantity', val);
+                                                    formik.handleBlur(e);
+                                                }}
                                                 value={formik.values.reOrderQuantity}
                                             />
                                         </FormGroup>
@@ -861,7 +960,7 @@ const ProductForm = ({ isEdit = false, productId = null }) => {
                         <Button
                             color="light"
                             className="me-2"
-                            onClick={() => navigate('/apps-product-master')}
+                            onClick={() => onCancel ? onCancel() : navigate('/apps-product-master')}
                             disabled={loading}
                         >
                             Cancel

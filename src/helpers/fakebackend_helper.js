@@ -186,7 +186,10 @@ export const updateContact = contact => api.update(url.UPDATE_CONTACT + '/' + co
 export const deleteContact = contact => api.delete(url.DELETE_CONTACT + '/' + contact);
 
 // get Companies
-export const getCompanies = () => api.get(url.GET_COMPANIES);
+export const getCompanies = () => api.get(url.GET_COMPANY_MASTER);
+export const getCompanyProfile = () => api.get(url.GET_COMPANY_PROFILE);
+export const updateCompanyProfile = (profile) => api.post(url.UPDATE_COMPANY_PROFILE, profile);
+export const uploadCompanyLogo = (data) => api.create(url.UPLOAD_COMPANY_LOGO, data, { headers: { 'Content-Type': 'multipart/form-data' } });
 
 // add Companies
 export const addNewCompanies = company => api.create(url.ADD_NEW_COMPANIES, company);
@@ -231,6 +234,56 @@ export const updateInvoice = invoice => api.update(url.UPDATE_INVOICE + '/' + in
 
 // delete Invoice
 export const deleteInvoice = invoice => api.delete(url.DELETE_INVOICE + '/' + invoice);
+
+// Purchase Transaction
+export const getPurchaseTransactions = () => api.get(url.GET_PURCHASE_TRANSACTIONS);
+export const addNewPurchaseTransaction = purchaseTransaction => api.create(url.ADD_NEW_PURCHASE_TRANSACTION, purchaseTransaction);
+export const updatePurchaseTransaction = purchaseTransaction => api.create(url.UPDATE_PURCHASE_TRANSACTION, purchaseTransaction);
+export const deletePurchaseTransaction = purchaseTransaction => api.delete(url.DELETE_PURCHASE_TRANSACTION + '/' + purchaseTransaction);
+export const getPurchaseTransactionDetails = id => api.get(url.GET_PURCHASE_TRANSACTION_DETAILS + '/' + id);
+
+// Sales Transaction
+export const getSalesTransactions = () => api.get(url.GET_SALES_TRANSACTIONS);
+export const addNewSalesTransaction = salesTransaction => api.create(url.ADD_NEW_SALES_TRANSACTION, salesTransaction);
+export const updateSalesTransaction = salesTransaction => api.create(url.UPDATE_SALES_TRANSACTION, salesTransaction);
+export const deleteSalesTransaction = salesTransaction => api.delete(url.DELETE_SALES_TRANSACTION + '/' + salesTransaction);
+export const getSalesTransactionDetails = (id) => api.get(`${url.GET_SALES_TRANSACTION_DETAILS}/${id}`);
+export const getPartyOutstanding = (partyId) => api.get(`${url.GET_PARTY_OUTSTANDING}/${partyId}`);
+
+// Payment & Receipt
+export const getPaymentReceipts = (params) => api.get(url.GET_PAYMENT_RECEIPTS, { params });
+export const addNewPaymentReceipt = (data) => api.create(url.ADD_NEW_PAYMENT_RECEIPT, data);
+export const updatePaymentReceipt = (data) => api.create(url.UPDATE_PAYMENT_RECEIPT, data);
+export const deletePaymentReceipt = (id) => api.delete(`${url.DELETE_PAYMENT_RECEIPT}/${id}`);
+export const getPaymentReceiptDetails = (id) => api.get(`${url.GET_PAYMENT_RECEIPT_DETAILS}/${id}`);
+export const getPendingInvoices = (partyId, trnType) => api.get(`${url.GET_PENDING_INVOICES}/${partyId}?trnType=${trnType}`);
+
+// Parties & Products for Purchase
+export const getVendors = () => api.get(url.GET_VENDORS);
+export const getPartyCustomers = () => api.get(url.GET_PARTY_CUSTOMERS);
+export const getParties = () => api.get(url.GET_PARTIES);
+export const getVehicles = (transporterId) => transporterId ? api.get(`${url.GET_VEHICLES}?filterId=${transporterId}`) : api.get(url.GET_VEHICLES);
+export const getDeliveryChallan = (id) => api.get(`${url.GET_DELIVERY_CHALLAN_DETAILS}/${id}`);
+export const getPartyDetails = id => api.get(url.GET_PARTY_DETAILS + '/' + id);
+export const uploadPartyProfile = (data) => api.create(url.UPLOAD_PARTY_PROFILE, data, { headers: { 'Content-Type': 'multipart/form-data' } });
+export const getProductsForPurchase = () => api.get(url.GET_PRODUCTS_DETAILS);
+export const getProductsForSales = () => api.get(url.GET_PRODUCTS_DETAILS);
+export const getTransporters = () => api.get(url.GET_TRANSPORTERS);
+export const getUnits = () => api.get(url.GET_UNITS);
+
+// Masters for transaction forms
+export const getFiscalYears = () => api.get("/api/fiscalyear");
+export const getBranches = () => api.get("/api/branch");
+
+// Delivery Challan
+export const getDeliveryChallans = () => api.get(url.GET_DELIVERY_CHALLANS);
+export const getDeliveryChallansDetailed = () => api.get(url.GET_DELIVERY_CHALLANS_DETAILED);
+export const addNewDeliveryChallan = challan => api.create(url.ADD_NEW_DELIVERY_CHALLAN, challan);
+export const updateDeliveryChallan = challan => api.put(url.UPDATE_DELIVERY_CHALLAN, challan);
+export const deleteDeliveryChallan = id => api.delete(url.DELETE_DELIVERY_CHALLAN + '/' + id);
+export const getDeliveryChallanDetails = id => api.get(url.GET_DELIVERY_CHALLAN_DETAILS + '/' + id);
+export const getCustomersSale = () => api.get(url.GET_CUSTOMERS_SALE);
+export const getTaxGroups = () => api.get(url.GET_TAX_GROUPS);
 
 // Support Tickets 
 // Tickets
@@ -371,3 +424,15 @@ export const getJobApplicationList = () => api.get(url.GET_APPLICATION_LIST);
 
 //API Key
 export const getAPIKey = () => api.get(url.GET_API_KEY);
+
+// Bank & Company
+export const getBanks = () => api.get(url.GET_BANKS);
+export const getAccounts = () => api.get(url.GET_ACCOUNTS);
+
+// Direct Journal
+export const getDirectJournals = (vType) => api.get(`${url.GET_DIRECT_JOURNALS}/${vType}`);
+export const addNewDirectJournal = (data) => api.create(url.ADD_NEW_DIRECT_JOURNAL, data);
+export const deleteDirectJournal = (gCode) => api.delete(`${url.DELETE_DIRECT_JOURNAL}/${gCode}`);
+
+//Report
+export const getTrialBalance = (companyId, date) => api.get(url.GET_TRIAL_BALANCE, { companyId, date });

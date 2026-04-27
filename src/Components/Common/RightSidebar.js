@@ -4,8 +4,10 @@ import {
     OffcanvasHeader,
     OffcanvasBody,
     Collapse,
+    Label,
 } from "reactstrap";
 import withRouter from './withRouter';
+import { getSelectedFiscalYearId } from '../../utils/fiscalYearStorage';
 
 //redux
 import {
@@ -19,7 +21,8 @@ import {
     changeLeftsidebarViewType,
     changeSidebarImageType,
     changePreLoader,
-    changeSidebarVisibility
+    changeSidebarVisibility,
+    changeBodyImage
     // resetValue
 } from "../../slices/thunks";
 
@@ -37,7 +40,8 @@ import {
     leftSidebarViewTypes,
     leftSidebarImageTypes,
     preloaderTypes,
-    sidebarVisibilitytypes
+    sidebarVisibilitytypes,
+    bodyImageTypes
 } from "../constants/layout";
 
 //SimpleBar
@@ -49,12 +53,41 @@ import img01 from "../../assets/images/sidebar/img-1.jpg";
 import img02 from "../../assets/images/sidebar/img-2.jpg";
 import img03 from "../../assets/images/sidebar/img-3.jpg";
 import img04 from "../../assets/images/sidebar/img-4.jpg";
+
+import bodyimg01 from "../../assets/images/galaxy/img-1.png";
+import bodyimg02 from "../../assets/images/galaxy/img-2.png";
+import bodyimg03 from "../../assets/images/galaxy/img-3.png";
+import bodyimg04 from "../../assets/images/galaxy/img-4.png";
+import bodyimg05 from "../../assets/images/galaxy/img-5.png";
+import bodyimgpattern from "../../assets/images/chat-bg-pattern.png";
+
 import { createSelector } from 'reselect';
 
 const RightSidebar = (props) => {
     const dispatch = useDispatch();
 
     const [show, setShow] = useState(false);
+    const [customColor, setCustomColor] = useState("#405189");
+    const [menuColor, setMenuColor] = useState("#ffffff");
+    const [subMenuColor, setSubMenuColor] = useState("#abb9e8");
+
+    const handleCustomColorChange = (color) => {
+        setCustomColor(color);
+        document.documentElement.style.setProperty("--vz-vertical-menu-bg-custom", color);
+        dispatch(changeSidebarTheme("custom"));
+    };
+
+    const handleMenuColorChange = (color) => {
+        setMenuColor(color);
+        document.documentElement.style.setProperty("--vz-vertical-menu-item-color-custom", color);
+        dispatch(changeSidebarTheme("custom"));
+    };
+
+    const handleSubMenuColorChange = (color) => {
+        setSubMenuColor(color);
+        document.documentElement.style.setProperty("--vz-vertical-menu-sub-item-color-custom", color);
+        dispatch(changeSidebarTheme("custom"));
+    };
 
     function tog_show() {
         setShow(!show);
@@ -83,6 +116,7 @@ const RightSidebar = (props) => {
             leftSidebarViewType: layout.leftSidebarViewType,
             leftSidebarImageType: layout.leftSidebarImageType,
             preloader: layout.preloader,
+            bodyImageType: layout.bodyImageType,
             sidebarVisibilitytype: layout.sidebarVisibilitytype,
         })
     );
@@ -98,11 +132,12 @@ const RightSidebar = (props) => {
         leftSidebarViewType,
         leftSidebarImageType,
         preloader,
+        bodyImageType,
         sidebarVisibilitytype
     } = useSelector(selectLayoutProperties);
 
     // open offcanvas
-    const [open, setOpen] = useState(true);
+    const [open, setOpen] = useState(!getSelectedFiscalYearId());
     const toggleLeftCanvas = () => {
         setOpen(!open);
     };
@@ -1014,6 +1049,78 @@ const RightSidebar = (props) => {
                                                     </button>
                                                     <h5 className="fs-13 text-center mt-2">Gradient</h5>
                                                 </div>
+
+                                                <div className="col-4">
+                                                    <div className="form-check sidebar-setting card-radio">
+                                                        <input
+                                                            className="form-check-input"
+                                                            type="radio"
+                                                            name="data-sidebar"
+                                                            id="sidebar-color-custom"
+                                                            value={leftSidebarTypes.CUSTOM}
+                                                            checked={leftSidebarType === leftSidebarTypes.CUSTOM}
+                                                            onChange={e => {
+                                                                setShow(false);
+                                                                if (e.target.checked) {
+                                                                    handleCustomColorChange(customColor);
+                                                                }
+                                                            }}
+                                                        />
+                                                        <label className="form-check-label p-0 avatar-md w-100" htmlFor="sidebar-color-custom">
+                                                            <span className="d-flex gap-1 h-100">
+                                                                <span className="flex-shrink-0">
+                                                                    <span className="d-flex h-100 flex-column gap-1 p-1" style={{ backgroundColor: customColor }}>
+                                                                        <span className="d-block p-1 px-2 bg-white bg-opacity-10 rounded mb-2"></span>
+                                                                        <span className="d-block p-1 px-2 pb-0 bg-white bg-opacity-10"></span>
+                                                                        <span className="d-block p-1 px-2 pb-0 bg-white bg-opacity-10"></span>
+                                                                        <span className="d-block p-1 px-2 pb-0 bg-white bg-opacity-10"></span>
+                                                                    </span>
+                                                                </span>
+                                                                <span className="flex-grow-1">
+                                                                    <span className="d-flex h-100 flex-column">
+                                                                        <span className="bg-light d-block p-1"></span>
+                                                                        <span className="bg-light d-block p-1 mt-auto"></span>
+                                                                    </span>
+                                                                </span>
+                                                            </span>
+                                                        </label>
+                                                    </div>
+                                                    <h5 className="fs-13 text-center mt-2">Custom</h5>
+                                                    {leftSidebarType === leftSidebarTypes.CUSTOM && (
+                                                        <div className="mt-3">
+                                                            <div className="mb-2">
+                                                                <Label className="form-label fs-12 text-muted mb-1">Sidebar Background</Label>
+                                                                <input
+                                                                    type="color"
+                                                                    className="form-control form-control-color w-100"
+                                                                    value={customColor}
+                                                                    onChange={(e) => handleCustomColorChange(e.target.value)}
+                                                                    title="Choose background color"
+                                                                />
+                                                            </div>
+                                                            <div className="mb-2">
+                                                                <Label className="form-label fs-12 text-muted mb-1">Menu Text/Icons</Label>
+                                                                <input
+                                                                    type="color"
+                                                                    className="form-control form-control-color w-100"
+                                                                    value={menuColor}
+                                                                    onChange={(e) => handleMenuColorChange(e.target.value)}
+                                                                    title="Choose menu color"
+                                                                />
+                                                            </div>
+                                                            <div className="mb-0">
+                                                                <Label className="form-label fs-12 text-muted mb-1">Submenu Text</Label>
+                                                                <input
+                                                                    type="color"
+                                                                    className="form-control form-control-color w-100"
+                                                                    value={subMenuColor}
+                                                                    onChange={(e) => handleSubMenuColorChange(e.target.value)}
+                                                                    title="Choose submenu color"
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
                                             </div>
                                             <Collapse
                                                 isOpen={show}
@@ -1276,6 +1383,87 @@ const RightSidebar = (props) => {
                                                 </label>
                                             </div>
                                             <h5 className="fs-13 text-center mt-2">Disable</h5>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div id="body-img">
+                                    <h6 className="mt-4 mb-0 fw-semibold text-uppercase">Background Image</h6>
+                                    <p className="text-muted">Choose a body background image.</p>
+
+                                    <div className="d-flex gap-2 flex-wrap img-switch">
+                                        <div className="form-check sidebar-setting card-radio">
+                                            <input className="form-check-input"
+                                                type="radio"
+                                                name="data-body-image"
+                                                id="body-img-none"
+                                                value={bodyImageTypes.NONE}
+                                                checked={bodyImageType === bodyImageTypes.NONE}
+                                                onChange={e => {
+                                                    if (e.target.checked) {
+                                                        dispatch(changeBodyImage(e.target.value));
+                                                    }
+                                                }}
+                                            />
+                                            <label className="form-check-label p-0 avatar-sm h-auto" htmlFor="body-img-none">
+                                                <span className="avatar-md w-auto bg-light d-flex align-items-center justify-content-center border ">
+                                                    <i className="ri-close-fill fs-20"></i>
+                                                </span>
+                                            </label>
+                                        </div>
+
+                                        <div className="form-check sidebar-setting card-radio">
+                                            <input className="form-check-input"
+                                                type="radio"
+                                                name="data-body-image"
+                                                id="body-img-one"
+                                                value={bodyImageTypes.IMG1}
+                                                checked={bodyImageType === bodyImageTypes.IMG1}
+                                                onChange={e => {
+                                                    if (e.target.checked) {
+                                                        dispatch(changeBodyImage(e.target.value));
+                                                    }
+                                                }}
+                                            />
+                                            <label className="form-check-label p-0 avatar-sm h-auto" htmlFor="body-img-one">
+                                                <img src={layoutModeType === "light" ? bodyimgpattern : bodyimg01} alt="" className="avatar-md w-auto object-fit-cover border " />
+                                            </label>
+                                        </div>
+
+                                        <div className="form-check sidebar-setting card-radio">
+                                            <input className="form-check-input"
+                                                type="radio"
+                                                name="data-body-image"
+                                                id="body-img-two"
+                                                value={bodyImageTypes.IMG2}
+                                                checked={bodyImageType === bodyImageTypes.IMG2}
+                                                onChange={e => {
+                                                    if (e.target.checked) {
+                                                        dispatch(changeBodyImage(e.target.value));
+                                                    }
+                                                }}
+                                            />
+                                            <label className="form-check-label p-0 avatar-sm h-auto" htmlFor="body-img-two">
+                                                <img src={layoutModeType === "light" ? bodyimg04 : bodyimg02} alt="" className="avatar-md w-auto object-fit-cover border " />
+                                            </label>
+                                        </div>
+
+                                        <div className="form-check sidebar-setting card-radio">
+                                            <input className="form-check-input"
+                                                type="radio"
+                                                name="data-body-image"
+                                                id="body-img-three"
+                                                value={bodyImageTypes.IMG3}
+                                                checked={bodyImageType === bodyImageTypes.IMG3}
+                                                onChange={e => {
+                                                    if (e.target.checked) {
+                                                        dispatch(changeBodyImage(e.target.value));
+                                                    }
+                                                }}
+                                            />
+                                            <label className="form-check-label p-0 avatar-sm h-auto" htmlFor="body-img-three">
+                                                <img src={layoutModeType === "light" ? bodyimg05 : bodyimg03} alt="" className="avatar-md w-auto object-fit-cover border " />
+                                            </label>
                                         </div>
                                     </div>
                                 </div>

@@ -66,6 +66,10 @@ import TodosReducer from "./todos/reducer";
 
 // Job
 import JobReducer from "./jobs/reducer";
+import DeliveryChallanReducer from "./deliveryChallan/reducer";
+import PurchaseTransactionReducer from "./purchaseTransaction/reducer";
+import SalesTransactionReducer from "./salesTransaction/reducer";
+import PaymentReceiptReducer from "./paymentReceipt/reducer";
 
 // API Key
 import APIKeyReducer from "./apiKey/reducer";
@@ -96,7 +100,11 @@ const rootReducer = combineReducers({
     FileManager: FileManagerReducer,
     Todos: TodosReducer,
     Jobs: JobReducer,
-    APIKey: APIKeyReducer
+    APIKey: APIKeyReducer,
+    DeliveryChallan: DeliveryChallanReducer,
+    PurchaseTransaction: PurchaseTransactionReducer,
+    SalesTransaction: SalesTransactionReducer,
+    PaymentReceipt: PaymentReceiptReducer
 });
 
 export default rootReducer;

@@ -1,5 +1,23 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Button, Card, CardBody, CardHeader, Col, Container, Row, Input, Modal, ModalHeader, ModalBody, ModalFooter, Form, FormGroup, Label, FormFeedback } from 'reactstrap';
+import {
+    Button,
+    Card,
+    CardBody,
+    CardHeader,
+    Col,
+    Container,
+    Row,
+    Input,
+    Modal,
+    ModalHeader,
+    ModalBody,
+    ModalFooter,
+    Form,
+    FormGroup,
+    Label,
+    FormFeedback,
+    DropdownItem
+} from 'reactstrap';
 import BreadCrumb from '../../Components/Common/BreadCrumb';
 import { Link, useParams } from 'react-router-dom';
 import { APIClient } from '../../helpers/api_helper';
@@ -12,6 +30,11 @@ import ExportButton from '../../Components/Common/ExportButton';
 import ResultModal from '../../Components/Common/ResultModal';
 import { useSelector } from 'react-redux';
 import { createSelector } from 'reselect';
+import { formatToTwoDecimals } from '../../utils/numberUtils';
+import {
+    SOFTBOOK_RDT_ROWS_PER_PAGE_OPTIONS,
+    SOFTBOOK_RDT_PAGINATION_COMPONENT_OPTIONS,
+} from '../../Components/Common/reactDataTableSoftBookDefaults';
 
 // Define custom dark theme for data table
 createTheme('solarized', {
@@ -80,6 +103,14 @@ const GenericMasterList = () => {
     );
     const { layoutModeType } = useSelector(selectLayoutProperties);
     const isDarkMode = layoutModeType === "dark";
+
+    // --- PERMISSION ENFORCEMENT ---
+    const { permissions } = useSelector(state => state.auth || { permissions: [] });
+    const [pagePermissions, setPagePermissions] = useState({
+        canAdd: true,
+        canEdit: true,
+        canDelete: true
+    });
 
     const customStyles = useMemo(() => ({
         header: {
@@ -150,28 +181,58 @@ const GenericMasterList = () => {
     // Capitalize and format name for display
     useEffect(() => {
         if (name) {
-            // Converts "fiscal-years" to "Fiscal Year"
+            // 1. Format Display Name
             const formattedName = currentConfig?.label || name
                 .split('-')
                 .map(word => word.charAt(0).toUpperCase() + word.slice(1))
                 .join(' ')
-                .replace(/([a-z])([A-Z])/g, '$1 $2'); // Split camelCase if present
+                .replace(/([a-z])([A-Z])/g, '$1 $2');
             setMasterName(formattedName);
+
+            // 2. Identify Permissions for this Master
+            if (permissions && permissions.length > 0) {
+                // Find permission matching current master name or URL
+                let perm = permissions.find(p =>
+                    p.tabUrl?.toLowerCase().includes(name.toLowerCase()) ||
+                    p.TabUrl?.toLowerCase().includes(name.toLowerCase()) ||
+                    p.tabName?.toLowerCase() === formattedName.toLowerCase() ||
+                    p.TabName?.toLowerCase() === formattedName.toLowerCase()
+                );
+
+                // Fallback to "Masters" (Tab 1011) if specific tab not found
+                if (!perm) {
+                    perm = permissions.find(p => p.tabId === 1011 || p.TabId === 1011);
+                    if (perm) {
+                        console.log(`[GenericMasterList] Fallback permissions (Tab 1011) applied for ${name}:`, perm);
+                    }
+                }
+
+                if (perm) {
+                    setPagePermissions({
+                        canAdd: perm.canAdd ?? perm.CanAdd ?? false,
+                        canEdit: perm.canEdit ?? perm.CanEdit ?? false,
+                        canDelete: perm.canDelete ?? perm.CanDelete ?? false
+                    });
+                } else {
+                    console.warn(`[GenericMasterList] No matching or fallback permissions found for ${name}. Denying actions.`);
+                    setPagePermissions({ canAdd: false, canEdit: false, canDelete: false });
+                }
+            }
+
             fetchData();
         }
-    }, [name, currentConfig]);
+    }, [name, currentConfig, permissions]);
 
     const fetchData = async () => {
         setLoading(true);
         try {
-            // Use the 'name' param directly as the masterName for the API
-            const response = await apiClient.get(`/api/Master/${name}`);
-            console.log(`[GenericMasterList] Response for ${name}:`, response); // DEBUG LOG
+            // Use custom fetchUrl if defined in masterConfig, otherwise default to generic Master API
+            const fetchUrl = currentConfig.fetchUrl ? currentConfig.fetchUrl : `/api/Master/${name}`;
+            const response = await apiClient.get(fetchUrl);
+
             if (response && Array.isArray(response)) {
-                console.log(`[GenericMasterList] Data found: ${response.length} items`); // DEBUG LOG
                 setData(response);
             } else {
-                console.warn(`[GenericMasterList] Empty or invalid response`, response); // DEBUG LOG
                 setData([]);
             }
         } catch (error) {
@@ -209,12 +270,42 @@ const GenericMasterList = () => {
         return [{ label: 'Name', accessor: 'name', type: 'text' }];
     }, [data, currentConfig]);
 
+    const toSnakeCase = (value) =>
+        String(value || "")
+            .replace(/([a-z0-9])([A-Z])/g, "$1_$2")
+            .replace(/[\s-]+/g, "_")
+            .toLowerCase();
+
+    const getRowValue = (row, accessor) => {
+        if (!row || !accessor) return undefined;
+        if (row[accessor] !== undefined) return row[accessor];
+
+        const accessorLower = String(accessor).toLowerCase();
+        const accessorSnake = toSnakeCase(accessor);
+
+        for (const rowKey of Object.keys(row)) {
+            const rowKeyLower = rowKey.toLowerCase();
+            const rowKeySnake = toSnakeCase(rowKey);
+            if (rowKeyLower === accessorLower || rowKeySnake === accessorSnake) {
+                return row[rowKey];
+            }
+        }
+
+        return undefined;
+    };
+
     const getCellText = (row, accessor) => {
-        const val = row?.[accessor];
+        const val = getRowValue(row, accessor);
         if (val === null || val === undefined) return "";
         if (typeof val === "boolean") return val ? "Yes" : "No";
         if (typeof val === "object") return JSON.stringify(val);
         return String(val);
+    };
+
+    const isNumericColumn = (col) => {
+        if (col?.type === "number") return true;
+        const sampleValue = data?.[0]?.[col?.accessor];
+        return typeof sampleValue === "number";
     };
 
     // Apply global search + per-column filters on the fly
@@ -240,15 +331,22 @@ const GenericMasterList = () => {
         });
     }, [data, globalSearch, columnFilters, columnMeta]);
 
+    const exportColumns = columnMeta.map(col => ({
+        label: col.label,
+        accessor: (row) => getCellText(row, col.accessor),
+    }));
+
     // DataTable column definitions with in-column filters (inputs under headers)
     const dataTableColumns = useMemo(() => {
-        const cols = columnMeta.map(col => ({
+        const cols = columnMeta.map(col => {
+            const isNumeric = isNumericColumn(col);
+            return {
             name: (
-                <div className="d-flex flex-column">
+                <div className={`d-flex flex-column ${isNumeric ? 'w-100 text-end' : ''}`}>
                     <span>{col.label}</span>
                     <Input
                         bsSize="sm"
-                        className="mt-1"
+                        className={`mt-1 ${isNumeric ? 'text-end' : ''}`}
                         value={columnFilters[col.accessor] || ""}
                         placeholder=""
                         onChange={e =>
@@ -265,27 +363,55 @@ const GenericMasterList = () => {
             wrap: true,
             cell: row => {
                 const raw = row?.[col.accessor];
+                if (col.type === "number") {
+                    return <div className="w-100 text-end">{formatToTwoDecimals(raw)}</div>;
+                }
+                if (typeof raw === "number") {
+                    return <div className="w-100 text-end">{raw}</div>;
+                }
                 if (typeof raw === "boolean") return raw ? "Yes" : "No";
                 if (raw === null || raw === undefined) return "";
                 return String(raw);
-            }
-        }));
-
-        cols.push({
-            name: "Actions",
-            button: true,
-            sortable: false,
-            width: "170px",
-            cell: row => (
-                <div className="d-flex gap-2">
-                    <button className="btn btn-sm btn-warning" onClick={() => handleEdit(row)}>Edit</button>
-                    <button className="btn btn-sm btn-danger" onClick={() => handleDelete(row)}>Delete</button>
-                </div>
-            )
+            },
+        };
         });
 
-        return cols;
-    }, [columnMeta, columnFilters]);
+        const actionCol = {
+            name: "Actions",
+            cell: (row) => (
+                <div className="d-flex align-items-center gap-1 flex-nowrap">
+                    {pagePermissions.canEdit && (
+                        <button
+                            type="button"
+                            className="btn btn-sm btn-soft-info"
+                            onClick={() => handleEdit(row)}
+                            title="Edit"
+                        >
+                            <i className="ri-pencil-fill" />
+                        </button>
+                    )}
+                    {pagePermissions.canDelete && (
+                        <button
+                            type="button"
+                            className="btn btn-sm btn-soft-danger"
+                            onClick={() => handleDelete(row)}
+                            title="Delete"
+                        >
+                            <i className="ri-delete-bin-fill" />
+                        </button>
+                    )}
+                    {!pagePermissions.canEdit && !pagePermissions.canDelete && (
+                        <DropdownItem disabled>No Actions Allowed</DropdownItem>
+                    )}
+                </div>
+            ),
+            width: '110px',
+            minWidth: '110px',
+            grow: 0
+        };
+
+        return [actionCol, ...cols];
+    }, [columnMeta, columnFilters, data]);
 
     const toggle = () => {
         setModal(!modal);
@@ -333,51 +459,51 @@ const GenericMasterList = () => {
         }
     };
 
-    document.title = `${masterName} List | SoftBook`;
+    document.title = `${masterName} | SoftBook`;
 
     return (
         <React.Fragment>
             <div className="page-content">
                 <ToastContainer closeButton={false} limit={1} />
                 <Container fluid>
-                    <BreadCrumb title={`${masterName}`} pageTitle="Masters" />
+                    <BreadCrumb title={masterName} pageTitle="Masters" />
                     <Row>
                         <Col lg={12}>
                             <Card>
-                                <CardHeader>
-                                    <h4 className="card-title mb-0">{masterName} List</h4>
-                                </CardHeader>
-
-                                <CardBody>
-                                    <div className="listjs-table" id="customerList">
-                                        <Row className="g-2 g-sm-4 mb-3 align-items-center">
-                                            <Col className="col-sm-auto d-flex gap-2 mb-2 mb-sm-0 align-items-center">
-                                                <Button color="primary" className="add-btn" onClick={toggle}>
-                                                    <i className="ri-add-line align-bottom me-1"></i> Create New
-                                                </Button>
+                                <CardHeader className="border-0">
+                                    <Row className="g-4 align-items-center">
+                                        <Col sm={3}>
+                                            <div className="search-box">
+                                                <Input
+                                                    type="text"
+                                                    className="form-control search"
+                                                    placeholder="Global Search..."
+                                                    value={globalSearch}
+                                                    onChange={(e) => setGlobalSearch(e.target.value)}
+                                                />
+                                                <i className="ri-search-line search-icon"></i>
+                                            </div>
+                                        </Col>
+                                        <Col className="col-sm-auto ms-auto">
+                                            <div className="hstack gap-2">
                                                 <ExportButton
                                                     data={filteredData}
-                                                    columns={columnMeta}
+                                                    columns={exportColumns}
                                                     fileName={`${masterName || 'Master'}_${new Date().toISOString().slice(0, 10)}`}
                                                     iconOnly
-                                                    className="ms-1"
                                                 />
-                                            </Col>
-                                            <Col className="col-sm">
-                                                <div className="d-flex justify-content-sm-end">
-                                                    <div className="search-box ms-2">
-                                                        <Input
-                                                            type="text"
-                                                            className="form-control search"
-                                                            placeholder="Search..."
-                                                            value={globalSearch}
-                                                            onChange={e => setGlobalSearch(e.target.value)}
-                                                        />
-                                                        <i className="ri-search-line search-icon"></i>
-                                                    </div>
-                                                </div>
-                                            </Col>
-                                        </Row>
+                                                {pagePermissions.canAdd && (
+                                                    <Button color="success" onClick={toggle}>
+                                                        <i className="ri-add-line align-bottom me-1"></i> Add {masterName}
+                                                    </Button>
+                                                )}
+                                            </div>
+                                        </Col>
+                                    </Row>
+                                </CardHeader>
+
+                                <CardBody className="pt-0">
+                                    <div className="listjs-table" id="customerList">
 
                                         <DataTable
                                             columns={dataTableColumns}
@@ -387,8 +513,9 @@ const GenericMasterList = () => {
                                             theme={isDarkMode ? "solarized" : "default"}
                                             sortIcon={<span className="ri-arrow-up-down-line ms-1 text-muted" />}
                                             pagination
-                                            paginationPerPage={10}
-                                            paginationRowsPerPageOptions={[10, 25, 50, 100]}
+                                            paginationPerPage={100}
+                                            paginationRowsPerPageOptions={SOFTBOOK_RDT_ROWS_PER_PAGE_OPTIONS}
+                                            paginationComponentOptions={SOFTBOOK_RDT_PAGINATION_COMPONENT_OPTIONS}
                                             highlightOnHover
                                             striped
                                             dense
@@ -448,3 +575,4 @@ const GenericMasterList = () => {
 };
 
 export default GenericMasterList;
+

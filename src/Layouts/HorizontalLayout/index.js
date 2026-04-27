@@ -5,13 +5,13 @@ import { Col, Collapse, Row } from 'reactstrap';
 import withRouter from '../../Components/Common/withRouter';
 
 // Import Data
-import navdata from "../LayoutMenuData";
+import useNavData from "../LayoutMenuData";
 //i18n
 import { withTranslation } from "react-i18next";
 
 const HorizontalLayout = (props) => {
     const [isMoreMenu, setIsMoreMenu] = useState(false);
-    const navData = navdata().props.children;
+    const navData = useNavData();
     let menuItems = [];
     let splitMenuItems = [];
     let menuSplitContainer = 6;

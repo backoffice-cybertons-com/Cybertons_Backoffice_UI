@@ -1,0 +1,10 @@
+.sb-fiscalyear-blur {
+  filter: blur(4px);
+  pointer-events: none;
+  user-select: none;
+}
+
+.sb-fiscalyear-modal {
+  z-index: 1055;
+}
+

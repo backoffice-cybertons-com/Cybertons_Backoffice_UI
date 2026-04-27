@@ -18,6 +18,7 @@
 
 import axios from 'axios';
 import secureStorage from '../../utils/secureStorage';
+import { getSelectedFiscalYearId } from '../../utils/fiscalYearStorage';
 
 // Create config object
 const config = {
@@ -50,6 +51,11 @@ apiClient.interceptors.request.use(
     const companyId = secureStorage.getPlain('companyId');
     if (companyId) {
       config.headers['X-Company-Id'] = companyId;
+    }
+
+    const fiscalYearId = getSelectedFiscalYearId();
+    if (fiscalYearId) {
+      config.headers['X-Fiscal-Year-Id'] = fiscalYearId;
     }
 
     return config;

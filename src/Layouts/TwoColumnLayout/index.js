@@ -10,14 +10,14 @@ import logoSm from "../../assets/images/logo-sm.png";
 import { withTranslation } from "react-i18next";
 
 // Import Data
-import navdata from "../LayoutMenuData";
+import useNavData from "../LayoutMenuData";
 import VerticalLayout from "../VerticalLayouts";
 
 //SimpleBar
 import SimpleBar from "simplebar-react";
 
 const TwoColumnLayout = (props) => {
-    const navData = navdata().props.children;
+    const navData = useNavData();
     const activateParentDropdown = useCallback((item) => {
         item.classList.add("active");
         let parentCollapseDiv = item.closest(".collapse.menu-dropdown");

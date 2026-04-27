@@ -140,6 +140,18 @@
             --#{$prefix}vertical-menu-border:                           #{$vertical-menu-border-gradient-4};
             --#{$prefix}twocolumn-menu-iconview-bg:                     #{$twocolumn-menu-iconview-bg-gradient-4};
         }
+
+        &[data-sidebar="custom"] {
+            --#{$prefix}vertical-menu-bg:                               var(--#{$prefix}vertical-menu-bg-custom);
+            --#{$prefix}vertical-menu-border:                           var(--#{$prefix}vertical-menu-bg-custom);
+            --#{$prefix}twocolumn-menu-iconview-bg:                     var(--#{$prefix}vertical-menu-bg-custom);
+            --#{$prefix}vertical-menu-item-color:                       var(--#{$prefix}vertical-menu-item-color-custom, #{$white});
+            --#{$prefix}vertical-menu-item-active-color:                var(--#{$prefix}vertical-menu-item-color-custom, #{$white});
+            --#{$prefix}vertical-menu-item-active-bg:                   rgba(255, 255, 255, 0.1);
+            --#{$prefix}vertical-menu-sub-item-color:                   var(--#{$prefix}vertical-menu-sub-item-color-custom, rgba(255, 255, 255, 0.7));
+            --#{$prefix}vertical-menu-sub-item-active-color:            var(--#{$prefix}vertical-menu-item-color-custom, #{$white});
+            --#{$prefix}vertical-menu-title-color:                      var(--#{$prefix}vertical-menu-item-color-custom, rgba(255, 255, 255, 0.5));
+        }
     }    
 }
 

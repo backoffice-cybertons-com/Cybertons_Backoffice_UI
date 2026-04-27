@@ -96,6 +96,78 @@ export const ADD_NEW_INVOICE = "/apps/invoice";
 export const UPDATE_INVOICE = "/apps/invoice";
 export const DELETE_INVOICE = "/apps/invoice";
 
+// Purchase Transaction
+export const GET_PURCHASE_TRANSACTIONS = "/api/purchaseTransaction";
+export const ADD_NEW_PURCHASE_TRANSACTION = "/api/purchaseTransaction/composite";
+export const UPDATE_PURCHASE_TRANSACTION = "/api/purchaseTransaction/composite";
+export const DELETE_PURCHASE_TRANSACTION = "/api/purchaseTransaction";
+export const GET_PURCHASE_TRANSACTION_DETAILS = "/api/purchaseTransaction";
+// Parties & Products for Purchase
+export const GET_VENDORS = "/api/party/type/Vendor,Trader";
+export const GET_PARTY_CUSTOMERS = "/api/party/type/Customer,Trader";
+export const GET_PARTIES = "/api/party";
+export const GET_PARTY_DETAILS = "/api/party/composite";
+export const UPLOAD_PARTY_PROFILE = "/api/party/upload-profile";
+export const GET_PRODUCTS_DETAILS = "/api/product/details";
+export const GET_TRANSPORTERS = "/api/transporter";
+export const GET_UNITS = "/api/unit";
+
+// Sales Transaction
+export const GET_SALES_TRANSACTIONS = "/api/salesTransaction";
+export const ADD_NEW_SALES_TRANSACTION = "/api/salesTransaction/composite";
+export const UPDATE_SALES_TRANSACTION = "/api/salesTransaction/composite";
+export const DELETE_SALES_TRANSACTION = "/api/salesTransaction";
+export const GET_SALES_TRANSACTION_DETAILS = "/api/salesTransaction";
+export const GET_PARTY_OUTSTANDING = "/api/salesTransaction/outstanding";
+
+// Payment & Receipt
+export const GET_PAYMENT_RECEIPTS = "/api/paymentReceipt/list";
+export const ADD_NEW_PAYMENT_RECEIPT = "/api/paymentReceipt/composite";
+export const UPDATE_PAYMENT_RECEIPT = "/api/paymentReceipt/composite";
+export const DELETE_PAYMENT_RECEIPT = "/api/paymentReceipt";
+export const GET_PAYMENT_RECEIPT_DETAILS = "/api/paymentReceipt";
+export const GET_PENDING_INVOICES = "/api/paymentReceipt/pending";
+
+// Journal
+export const GET_DIRECT_JOURNALS = "/api/journal/direct";
+export const ADD_NEW_DIRECT_JOURNAL = "/api/journal/direct";
+export const UPDATE_DIRECT_JOURNAL = "/api/journal/direct";
+export const DELETE_DIRECT_JOURNAL = "/api/journal/direct";
+
+// Bank & Company
+export const GET_BANKS = "/api/Bank";
+export const GET_ACCOUNTS = "/api/master/account";
+
+export const GET_COMPANY_MASTER = "/api/Company";
+export const GET_COMPANY_PROFILE = "/api/CompanyProfile";
+export const UPDATE_COMPANY_PROFILE = "/api/CompanyProfile";
+export const UPLOAD_COMPANY_LOGO = "/api/CompanyProfile/upload-logo";
+
+// Delivery Challan
+export const GET_DELIVERY_CHALLANS = "/api/deliveryChallan";
+export const GET_DELIVERY_CHALLANS_DETAILED = "/api/deliveryChallan/detailed";
+export const ADD_NEW_DELIVERY_CHALLAN = "/api/deliveryChallan/composite";
+export const UPDATE_DELIVERY_CHALLAN = "/api/deliveryChallan/composite";
+export const DELETE_DELIVERY_CHALLAN = "/api/deliveryChallan";
+export const GET_DELIVERY_CHALLAN_DETAILS = "/api/deliveryChallan";
+export const GET_CUSTOMERS_SALE = "/api/party/type/Customer";
+export const GET_TAX_GROUPS = "/api/taxgroup";
+export const GET_VEHICLES = "/api/vehicle";
+
+// Reports
+export const GET_LEDGER_REPORT = "/api/report/ledger";
+
+export const GET_PAYRECRPT_REPORT = "/api/report/payeble-receivable";
+export const GET_SALE_PUR_COMPAR_DATEWISE = "/api/report/sale-purchase-datewise-comparison";
+
+export const GET_TRIAL_BALANCE = "/api/Report/trial-balance";
+
+export const GET_SALE_PUR_INVWISE = "/api/report/sale-pur-invwise";
+export const GET_SALE_PURCHASE_REGISTER_ITEMWISE = "/api/report/sale-purchase-register-itemwise";
+export const GET_SALE_PURCHASE_REGISTER_DATEWISE = "/api/report/sale-purchase-register-datewise";
+export const GET_SALE_PURCHASE_REGISTER_PARTYWISE = "/api/report/sale-purchase-register-partywise";
+export const GET_SALE_PURCHASE_REGISTER_MONTHWISE = "/api/report/sale-purchase-register-monthwise";
+
 // TicketsList
 export const GET_TICKETS_LIST = "/apps/ticket";
 export const ADD_NEW_TICKET = "/apps/ticket";
