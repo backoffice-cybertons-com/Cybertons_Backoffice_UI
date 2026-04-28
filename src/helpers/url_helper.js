@@ -157,6 +157,8 @@ export const GET_VEHICLES = "/api/vehicle";
 // Reports
 export const GET_LEDGER_REPORT = "/api/report/ledger";
 
+export const GET_GSTR3B = "/api/report/GSTR-3B-Report";
+
 export const GET_PAYRECRPT_REPORT = "/api/report/payeble-receivable";
 export const GET_SALE_PUR_COMPAR_DATEWISE = "/api/report/sale-purchase-datewise-comparison";
 

@@ -9,7 +9,7 @@ import {
     getDeliveryChallanDetails
 } from "../../helpers/fakebackend_helper";
 import { api } from "../../config";
-import sumulLogo from "../../assets/images/Sumul logo.png";
+import sumulLogo from "../../assets/images/sumul-logo.png";
 import "./PurchaseInvoice.css";
 
 const fmt = (n) => Number(n || 0).toFixed(2);
