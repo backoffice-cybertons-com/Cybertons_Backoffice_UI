@@ -15,7 +15,9 @@ import {
   sidebarVisibilitytypes
 } from "../../Components/constants/layout";
 
-export const initialState = {
+const LAYOUT_PREFERENCES_KEY = "sb_layout_preferences_v1";
+
+const defaultLayoutState = {
   layoutType: layoutTypes.VERTICAL,
   leftSidebarType: leftSidebarTypes.DARK,
   layoutModeType: layoutModeTypes.LIGHTMODE,
@@ -28,6 +30,22 @@ export const initialState = {
   preloader: preloaderTypes.DISABLE,
   bodyImageType: bodyImageTypes.NONE,
   sidebarVisibilitytype: sidebarVisibilitytypes.SHOW
+};
+
+const loadPersistedLayoutState = () => {
+  try {
+    const raw = localStorage.getItem(LAYOUT_PREFERENCES_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw);
+    return (parsed && typeof parsed === "object") ? parsed : {};
+  } catch (e) {
+    return {};
+  }
+};
+
+export const initialState = {
+  ...defaultLayoutState,
+  ...loadPersistedLayoutState(),
 };
 
 const LayoutSlice = createSlice({

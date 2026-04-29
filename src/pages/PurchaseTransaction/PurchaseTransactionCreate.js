@@ -658,6 +658,34 @@ const PurchaseTransactionCreate = () => {
         </div>
     );
 
+    const itemTotals = useMemo(() => {
+        return (validation.values.lines || []).reduce((acc, line) => {
+            acc.quantity += Number(line?.quantity || 0);
+            acc.subUnitQuantity += Number(line?.subUnitQuantity || 0);
+            acc.rate += Number(line?.rate || 0);
+            acc.mrp += Number(line?.mrp || 0);
+            acc.cgstPercent += Number(line?.cgstPercent || 0);
+            acc.sgstPercent += Number(line?.sgstPercent || 0);
+            acc.totalAmount += Number(line?.totalAmount || 0);
+            return acc;
+        }, {
+            quantity: 0,
+            subUnitQuantity: 0,
+            rate: 0,
+            mrp: 0,
+            cgstPercent: 0,
+            sgstPercent: 0,
+            totalAmount: 0
+        });
+    }, [validation.values.lines]);
+
+    const stickyFooterCellStyle = {
+        position: "sticky",
+        bottom: 0,
+        background: "#f3f6f9",
+        zIndex: 2
+    };
+
     document.title = isView ? "View Purchase Transaction | SoftBook" : (isEdit ? "Edit Purchase Transaction | SoftBook" : "Create Purchase Transaction | SoftBook");
 
     return (
@@ -888,23 +916,23 @@ const PurchaseTransactionCreate = () => {
                                             )}
                                         </Row>
 
-                                        <div className="table-responsive mt-4">
+                                        <div className="table-responsive mt-4" style={{ maxHeight: "380px", overflowY: "auto", overflowX: "auto" }}>
                                             <Table className="table-nowrap align-middle mb-0 border" style={{ minWidth: "1500px" }}>
                                                 <thead className="table-light">
                                                     <tr>
-                                                        <th scope="col" style={{ minWidth: '250px' }}>Item Details</th>
-                                                        <th scope="col" style={{ minWidth: '120px' }}>Batch No</th>
-                                                        <th scope="col" style={{ minWidth: '150px' }}>Batch Date</th>
-                                                        <th scope="col" style={{ minWidth: '100px' }}>Unit</th>
-                                                        <th scope="col" style={{ minWidth: '100px' }}>Quantity</th>
-                                                        <th scope="col" style={{ minWidth: '120px' }}>Sub Unit</th>
-                                                        <th scope="col" style={{ minWidth: '100px' }}>Sub Qty</th>
-                                                        <th scope="col" style={{ minWidth: '120px' }}>Rate</th>
-                                                        <th scope="col" style={{ minWidth: '100px' }}>MRP</th>
-                                                        <th scope="col" style={{ minWidth: '80px' }}>CGST %</th>
-                                                        <th scope="col" style={{ minWidth: '80px' }}>SGST %</th>
-                                                        <th scope="col" style={{ minWidth: '120px' }}>Amount</th>
-                                                        <th scope="col"></th>
+                                                        <th scope="col" style={{ minWidth: '250px', position: "sticky", top: 0, zIndex: 2, background: "#f3f6f9" }}>Item Details</th>
+                                                        <th scope="col" style={{ minWidth: '120px', position: "sticky", top: 0, zIndex: 2, background: "#f3f6f9" }}>Batch No</th>
+                                                        <th scope="col" style={{ minWidth: '150px', position: "sticky", top: 0, zIndex: 2, background: "#f3f6f9" }}>Batch Date</th>
+                                                        <th scope="col" style={{ minWidth: '100px', position: "sticky", top: 0, zIndex: 2, background: "#f3f6f9" }}>Unit</th>
+                                                        <th scope="col" style={{ minWidth: '100px', position: "sticky", top: 0, zIndex: 2, background: "#f3f6f9" }}>Quantity</th>
+                                                        <th scope="col" style={{ minWidth: '120px', position: "sticky", top: 0, zIndex: 2, background: "#f3f6f9" }}>Sub Unit</th>
+                                                        <th scope="col" style={{ minWidth: '100px', position: "sticky", top: 0, zIndex: 2, background: "#f3f6f9" }}>Sub Qty</th>
+                                                        <th scope="col" style={{ minWidth: '120px', position: "sticky", top: 0, zIndex: 2, background: "#f3f6f9" }}>Rate</th>
+                                                        <th scope="col" style={{ minWidth: '100px', position: "sticky", top: 0, zIndex: 2, background: "#f3f6f9" }}>MRP</th>
+                                                        <th scope="col" style={{ minWidth: '80px', position: "sticky", top: 0, zIndex: 2, background: "#f3f6f9" }}>CGST %</th>
+                                                        <th scope="col" style={{ minWidth: '80px', position: "sticky", top: 0, zIndex: 2, background: "#f3f6f9" }}>SGST %</th>
+                                                        <th scope="col" style={{ minWidth: '120px', position: "sticky", top: 0, zIndex: 2, background: "#f3f6f9" }}>Amount</th>
+                                                        <th scope="col" style={{ position: "sticky", top: 0, zIndex: 2, background: "#f3f6f9" }}></th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
@@ -1020,6 +1048,23 @@ const PurchaseTransactionCreate = () => {
                                                         );
                                                     })}
                                                 </tbody>
+                                                <tfoot>
+                                                    <tr className="table-light fw-semibold">
+                                                        <td style={stickyFooterCellStyle}>Total</td>
+                                                        <td style={stickyFooterCellStyle}></td>
+                                                        <td style={stickyFooterCellStyle}></td>
+                                                        <td style={stickyFooterCellStyle}></td>
+                                                        <td style={stickyFooterCellStyle}>{formatToTwoDecimals(itemTotals.quantity)}</td>
+                                                        <td style={stickyFooterCellStyle}></td>
+                                                        <td style={stickyFooterCellStyle}>{formatToTwoDecimals(itemTotals.subUnitQuantity)}</td>
+                                                        <td style={stickyFooterCellStyle}>{formatToTwoDecimals(itemTotals.rate)}</td>
+                                                        <td style={stickyFooterCellStyle}>{formatToTwoDecimals(itemTotals.mrp)}</td>
+                                                        <td style={stickyFooterCellStyle}>{formatToTwoDecimals(itemTotals.cgstPercent)}</td>
+                                                        <td style={stickyFooterCellStyle}>{formatToTwoDecimals(itemTotals.sgstPercent)}</td>
+                                                        <td style={stickyFooterCellStyle}>{formatToTwoDecimals(itemTotals.totalAmount)}</td>
+                                                        <td style={stickyFooterCellStyle}></td>
+                                                    </tr>
+                                                </tfoot>
                                             </Table>
                                         </div>
                                         {!isView && (

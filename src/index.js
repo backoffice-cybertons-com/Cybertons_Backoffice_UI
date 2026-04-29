@@ -8,6 +8,18 @@ import { configureStore } from "@reduxjs/toolkit";
 import rootReducer from "./slices";
 
 const store = configureStore({ reducer: rootReducer, devTools: true });
+const LAYOUT_PREFERENCES_KEY = "sb_layout_preferences_v1";
+
+// Persist theme/layout customizer choices for next sessions.
+store.subscribe(() => {
+  try {
+    const layout = store.getState()?.Layout;
+    if (!layout) return;
+    localStorage.setItem(LAYOUT_PREFERENCES_KEY, JSON.stringify(layout));
+  } catch (e) {
+    // Ignore storage write errors.
+  }
+});
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
 
