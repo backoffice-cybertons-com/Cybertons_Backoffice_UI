@@ -17,7 +17,7 @@ import {
     updateSalesTransaction as onUpdateSalesTransaction,
 } from "../../slices/thunks";
 import { resetSalesTransactionCreated } from "../../slices/salesTransaction/reducer";
-import { getVendors, getPartyCustomers, getProductsForSales, getPartyDetails, getTransporters, getUnits, getSalesTransactionDetails, getDeliveryChallans, getSalesTransactions, getBanks, getCompanies, getPartyOutstanding, getVehicles, getDeliveryChallan } from "../../helpers/fakebackend_helper";
+import { getVendors, getPartyCustomers, getProductsForSales, getPartyDetails, getTransporters, getUnits, getSalesTransactionDetails, getDeliveryChallans, getSalesTransactions, getBanks, getCompanies, getPartyOutstanding, getVehicles } from "../../helpers/fakebackend_helper";
 import { getSelectedFiscalYearId } from "../../utils/fiscalYearStorage";
 
 const SalesTransactionCreate = () => {
@@ -909,16 +909,6 @@ const SalesTransactionCreate = () => {
                                                     onChange={async (opt) => {
                                                         validation.setFieldValue("deliveryNo", opt ? opt.value : "");
                                                         setTouchedSelects(p => ({ ...p, deliveryNo: true }));
-                                                        if (opt && opt.value) {
-                                                            try {
-                                                                const dcDetail = await getDeliveryChallan(opt.value);
-                                                                if (dcDetail && dcDetail.header) {
-                                                                    validation.setFieldValue("deliveryDate", dcDetail.header.challanDate || dcDetail.header.ChallanDate || "");
-                                                                }
-                                                            } catch (err) {
-                                                                console.warn("Failed to fetch DC details:", err);
-                                                            }
-                                                        }
                                                     }}
                                                     onBlur={() => setTouchedSelects(p => ({ ...p, deliveryNo: true }))}
                                                     styles={{ control: base => ({ ...base, borderColor: (touchedSelects.deliveryNo && !validation.values.deliveryNo) ? '#f06548' : base.borderColor }) }}
@@ -988,6 +978,8 @@ const SalesTransactionCreate = () => {
                                                     noOptionsMessage={() => "No vehicles found for this transporter"}
                                                     value={vehicleOptions.find(v => v.value === validation.values.vehicleNo) || (validation.values.vehicleNo ? { label: validation.values.vehicleNo, value: validation.values.vehicleNo } : null)}
                                                     onChange={(opt) => validation.setFieldValue("vehicleNo", opt ? opt.value : "")}
+                                                    menuPortalTarget={document.body}
+                                                    styles={{ menuPortal: base => ({ ...base, zIndex: 9999 }) }}
                                                 />
                                             </Col>
                                         </Row>
@@ -1002,7 +994,7 @@ const SalesTransactionCreate = () => {
                                                         <th scope="col" style={{ minWidth: '100px', position: "sticky", top: 0, zIndex: 2, background: "#f3f6f9" }}>Unit</th>
                                                         <th scope="col" style={{ minWidth: '120px', position: "sticky", top: 0, zIndex: 2, background: "#f3f6f9" }}>Sub Unit</th>
                                                         <th scope="col" style={{ minWidth: '100px', position: "sticky", top: 0, zIndex: 2, background: "#f3f6f9" }}>Sub Qty</th>
-                                                        <th scope="col" style={{ minWidth: '80px', position: "sticky", top: 0, zIndex: 2, background: "#f3f6f9" }}>CRT</th>
+                                                        <th scope="col" style={{ minWidth: '80px', position: "sticky", top: 0, zIndex: 2, background: "#f3f6f9" }}>Qty</th>
                                                         <th scope="col" style={{ minWidth: '100px', position: "sticky", top: 0, zIndex: 2, background: "#f3f6f9" }}>Packing</th>
                                                         <th scope="col" style={{ minWidth: '80px', position: "sticky", top: 0, zIndex: 2, background: "#f3f6f9" }}>Adj.</th>
                                                         <th scope="col" style={{ minWidth: '120px', position: "sticky", top: 0, zIndex: 2, background: "#f3f6f9" }}>Rate</th>
