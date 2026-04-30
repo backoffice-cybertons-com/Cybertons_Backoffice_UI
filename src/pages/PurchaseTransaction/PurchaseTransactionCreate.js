@@ -693,6 +693,56 @@ const PurchaseTransactionCreate = () => {
         zIndex: 2
     };
 
+    const getSelectStyles = useCallback((hasError = false) => ({
+        control: (base, state) => ({
+            ...base,
+            borderColor: hasError ? "#f06548" : (state.isFocused ? "#405189" : base.borderColor),
+            boxShadow: state.isFocused ? "0 0 0 0.1rem rgba(64,81,137,0.15)" : base.boxShadow,
+            "&:hover": {
+                borderColor: hasError ? "#f06548" : "#405189"
+            }
+        }),
+        singleValue: (base) => ({
+            ...base,
+            color: "var(--vz-body-color)"
+        }),
+        input: (base) => ({
+            ...base,
+            color: "var(--vz-body-color)"
+        }),
+        placeholder: (base) => ({
+            ...base,
+            color: "var(--vz-secondary-color)"
+        }),
+        valueContainer: (base) => ({
+            ...base,
+            color: "var(--vz-body-color)"
+        }),
+        menu: (base) => ({
+            ...base,
+            backgroundColor: "var(--vz-secondary-bg)",
+            color: "var(--vz-body-color)"
+        }),
+        option: (base, state) => ({
+            ...base,
+            backgroundColor: state.isSelected
+                ? "var(--vz-primary)"
+                : state.isFocused
+                    ? "var(--vz-light)"
+                    : "var(--vz-secondary-bg)",
+            color: state.isSelected ? "#fff" : "var(--vz-body-color)"
+        }),
+        menuPortal: (base) => ({
+            ...base,
+            zIndex: 9999
+        })
+    }), []);
+
+    const findOptionByValue = useCallback((options, value) => {
+        if (value === null || value === undefined || value === "") return null;
+        return (options || []).find((opt) => String(opt.value) === String(value)) || null;
+    }, []);
+
     document.title = isView ? "View Purchase Transaction | SoftBook" : (isEdit ? "Edit Purchase Transaction | SoftBook" : "Create Purchase Transaction | SoftBook");
 
     return (
@@ -718,7 +768,7 @@ const PurchaseTransactionCreate = () => {
                                                             placeholder="Select Vendor"
                                                             classNamePrefix="select"
                                                             value={vendors.find(v => v.value === validation.values.partyId) || null}
-                                                            styles={{ control: base => ({ ...base, borderColor: (touchedSelects.partyId && !validation.values.partyId) ? '#f06548' : base.borderColor }) }}
+                                                            styles={getSelectStyles(touchedSelects.partyId && !validation.values.partyId)}
                                                         />
                                                     </div>
                                                     <Button color="primary" onClick={() => setIsAddressModalOpen(true)} disabled={!validation.values.partyId || isView}>
@@ -840,12 +890,12 @@ const PurchaseTransactionCreate = () => {
                                                     options={deliveryChallanOptions}
                                                     isClearable
                                                     placeholder="Select Delivery Challan"
-                                                    value={deliveryChallanOptions.find(
-                                                        dc => dc.value === (validation.values.deliveryNo ? parseInt(validation.values.deliveryNo) : null)
-                                                    ) || null}
-                                                    onChange={(opt) => { validation.setFieldValue("deliveryNo", opt ? opt.value : ""); setTouchedSelects(p => ({ ...p, deliveryNo: true })); }}
+                                                    classNamePrefix="select"
+                                                    menuPortalTarget={document.body}
+                                                    value={findOptionByValue(deliveryChallanOptions, validation.values.deliveryNo)}
+                                                    onChange={(opt) => { validation.setFieldValue("deliveryNo", opt ? String(opt.value) : ""); setTouchedSelects(p => ({ ...p, deliveryNo: true })); }}
                                                     onBlur={() => setTouchedSelects(p => ({ ...p, deliveryNo: true }))}
-                                                    styles={{ control: base => ({ ...base, borderColor: (touchedSelects.deliveryNo && !validation.values.deliveryNo) ? '#f06548' : base.borderColor }) }}
+                                                    styles={getSelectStyles(touchedSelects.deliveryNo && !validation.values.deliveryNo)}
                                                 />
                                                 {(touchedSelects.deliveryNo || validation.submitCount > 0) && validation.errors.deliveryNo && <div className="text-danger small mt-1">{validation.errors.deliveryNo}</div>}
                                             </Col>
@@ -859,9 +909,12 @@ const PurchaseTransactionCreate = () => {
                                                     options={banks}
                                                     isClearable={!isView}
                                                     isDisabled={isView}
-                                                    onChange={(opt) => validation.setFieldValue("bankId", opt ? opt.value : "")}
+                                                    menuPortalTarget={document.body}
+                                                    onChange={(opt) => validation.setFieldValue("bankId", opt ? String(opt.value) : "")}
                                                     placeholder="Select Bank"
-                                                    value={banks.find(b => b.value === validation.values.bankId) || null}
+                                                    classNamePrefix="select"
+                                                    value={findOptionByValue(banks, validation.values.bankId)}
+                                                    styles={getSelectStyles(false)}
                                                 />
                                             </Col>
                                             <Col md={3}>
@@ -897,12 +950,10 @@ const PurchaseTransactionCreate = () => {
                                                     }}
                                                     onBlur={() => setTouchedSelects(p => ({ ...p, transporterId: true }))}
                                                     placeholder="Select Transporter"
+                                                    classNamePrefix="select"
                                                     value={transporters.find(t => t.value === validation.values.transporterId) || null}
                                                     menuPortalTarget={document.body}
-                                                    styles={{
-                                                        menuPortal: base => ({ ...base, zIndex: 9999 }),
-                                                        control: base => ({ ...base, borderColor: (touchedSelects.transporterId && !validation.values.transporterId) ? '#f06548' : base.borderColor })
-                                                    }}
+                                                    styles={getSelectStyles(touchedSelects.transporterId && !validation.values.transporterId)}
                                                 />
                                                 {(touchedSelects.transporterId || validation.submitCount > 0) && validation.errors.transporterId && <div className="text-danger small mt-1">{validation.errors.transporterId}</div>}
                                             </Col>
@@ -914,6 +965,7 @@ const PurchaseTransactionCreate = () => {
                                                         isClearable={!isView}
                                                         isDisabled={isView}
                                                         placeholder="Select or Enter Vehicle"
+                                                        classNamePrefix="select"
                                                         noOptionsMessage={() => "No vehicles found for this transporter"}
                                                         value={
                                                             vehicleOptions.find(v => v.value === validation.values.vehicleNo) ||
@@ -923,7 +975,7 @@ const PurchaseTransactionCreate = () => {
                                                         }
                                                         onChange={(opt) => validation.setFieldValue("vehicleNo", opt ? opt.value : "")}
                                                         menuPortalTarget={document.body}
-                                                        styles={{ menuPortal: base => ({ ...base, zIndex: 9999 }) }}
+                                                        styles={getSelectStyles(false)}
                                                     />
                                                 </Col>
                                             )}
@@ -966,13 +1018,14 @@ const PurchaseTransactionCreate = () => {
                                                                         formatOptionLabel={formatProductOption}
                                                                         value={products.find(p => p.value === line.productId) || null}
                                                                         className="mb-1"
+                                                                        classNamePrefix="select"
                                                                         onChange={(opt) => {
                                                                          if (!opt) return;
                                                                          handleLineChange(index, "productId", opt.value);
                                                                          validation.setFieldTouched(`lines[${index}].productId`, true);
                                                                      }}
                                                                         menuPortalTarget={document.body}
-                                                                        styles={{ menuPortal: base => ({ ...base, zIndex: 9999 }), control: base => ({ ...base, borderColor: showErr('productId') ? '#f06548' : base.borderColor }) }}
+                                                                        styles={getSelectStyles(showErr('productId'))}
                                                                     />
                                                                     {showErr('productId') && <div className="text-danger" style={{ fontSize: '11px' }}>{lineErrors.productId}</div>}
                                                                     <Input type="textarea" rows="1" placeholder="Description" className="form-control-sm mt-1" value={line.description} onChange={(e) => handleLineChange(index, "description", e.target.value)} disabled={isView} />
@@ -988,7 +1041,7 @@ const PurchaseTransactionCreate = () => {
                                                                         placeholder="Unit*"
                                                                         isDisabled={isView || !!line.productId}
                                                                         menuPortalTarget={document.body}
-                                                                        styles={{ menuPortal: base => ({ ...base, zIndex: 9999 }), control: base => ({ ...base, borderColor: showErr('unit') ? '#f06548' : base.borderColor }) }}
+                                                                        styles={getSelectStyles(showErr('unit'))}
                                                                     />
                                                                     {showErr('unit') && <div className="text-danger" style={{ fontSize: '11px' }}>{lineErrors.unit}</div>}
                                                                 </td>
@@ -1012,7 +1065,7 @@ const PurchaseTransactionCreate = () => {
                                                                         placeholder="SubUnit*"
                                                                         isDisabled={isView || !!line.productId}
                                                                         menuPortalTarget={document.body}
-                                                                        styles={{ menuPortal: base => ({ ...base, zIndex: 9999 }), control: base => ({ ...base, borderColor: showErr('subUnit') ? '#f06548' : base.borderColor }) }}
+                                                                        styles={getSelectStyles(showErr('subUnit'))}
                                                                     />
                                                                     {showErr('subUnit') && <div className="text-danger" style={{ fontSize: '11px' }}>{lineErrors.subUnit}</div>}
                                                                 </td>
