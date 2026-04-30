@@ -182,6 +182,9 @@ export const ADD_TASKS = "/add/tasks";
 export const UPDATE_TASKS = "/update/tasks";
 export const DELETE_TASKS = "/delete/tasks";
 
+// Dashboard
+export const POST_DASHBOARD_DATA = "/api/dashboard";
+
 // Dashboard Analytics
 
 // Sessions by Countries

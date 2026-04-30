@@ -88,12 +88,13 @@ const TableContainer = ({
   showAllPageOption = true,
   SearchPlaceholder,
   onVisibleDataChange,
+  defaultColumnFilters = {},
 }) => {
   const layoutModeType = useSelector((state) => state?.Layout?.layoutModeType);
   const isDarkMode = layoutModeType === "dark";
 
   const [globalFilter, setGlobalFilter] = useState("");
-  const [columnFilters, setColumnFilters] = useState({});
+  const [columnFilters, setColumnFilters] = useState(defaultColumnFilters);
   const [sortState, setSortState] = useState({ accessor: null, direction: null }); // direction: 'asc' | 'desc' | null
 
   const getAccessor = (col) => col.accessorKey || col.accessor || col.id || col.header;
