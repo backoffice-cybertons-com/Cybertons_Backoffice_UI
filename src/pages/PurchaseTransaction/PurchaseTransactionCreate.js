@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo, useCallback } from "react";
+import React, { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import {
     CardBody, Row, Col, Card, Container, Form, Input, Label, Table, FormFeedback, Button,
     Modal, ModalHeader, ModalBody, ModalFooter, Badge, UncontrolledTooltip
@@ -43,6 +43,7 @@ const PurchaseTransactionCreate = () => {
     const [selectedVendorDetails, setSelectedVendorDetails] = useState(null);
     const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
     const [discountType, setDiscountType] = useState('percent'); // 'percent' or 'amount'
+    const itemTableScrollRef = useRef(null);
 
     // Stabilize constant values outside or with useMemo
     const today = useMemo(() => new Date(), []);
@@ -530,6 +531,12 @@ const PurchaseTransactionCreate = () => {
             }
         ];
         validation.setFieldValue("lines", newLines);
+        // Keep the new blank row immediately visible
+        setTimeout(() => {
+            if (itemTableScrollRef.current) {
+                itemTableScrollRef.current.scrollTop = itemTableScrollRef.current.scrollHeight;
+            }
+        }, 0);
     };
 
     const handleRemoveLine = (index) => {
@@ -891,7 +898,11 @@ const PurchaseTransactionCreate = () => {
                                                     onBlur={() => setTouchedSelects(p => ({ ...p, transporterId: true }))}
                                                     placeholder="Select Transporter"
                                                     value={transporters.find(t => t.value === validation.values.transporterId) || null}
-                                                    styles={{ control: base => ({ ...base, borderColor: (touchedSelects.transporterId && !validation.values.transporterId) ? '#f06548' : base.borderColor }) }}
+                                                    menuPortalTarget={document.body}
+                                                    styles={{
+                                                        menuPortal: base => ({ ...base, zIndex: 9999 }),
+                                                        control: base => ({ ...base, borderColor: (touchedSelects.transporterId && !validation.values.transporterId) ? '#f06548' : base.borderColor })
+                                                    }}
                                                 />
                                                 {(touchedSelects.transporterId || validation.submitCount > 0) && validation.errors.transporterId && <div className="text-danger small mt-1">{validation.errors.transporterId}</div>}
                                             </Col>
@@ -911,12 +922,18 @@ const PurchaseTransactionCreate = () => {
                                                                 : null)
                                                         }
                                                         onChange={(opt) => validation.setFieldValue("vehicleNo", opt ? opt.value : "")}
+                                                        menuPortalTarget={document.body}
+                                                        styles={{ menuPortal: base => ({ ...base, zIndex: 9999 }) }}
                                                     />
                                                 </Col>
                                             )}
                                         </Row>
 
-                                        <div className="table-responsive mt-4" style={{ maxHeight: "380px", overflowY: "auto", overflowX: "auto" }}>
+                                        <div
+                                            className="table-responsive mt-4"
+                                            ref={itemTableScrollRef}
+                                            style={{ maxHeight: "600px", overflowY: "auto", overflowX: "auto" }}
+                                        >
                                             <Table className="table-nowrap align-middle mb-0 border" style={{ minWidth: "1500px" }}>
                                                 <thead className="table-light">
                                                     <tr>
@@ -1047,8 +1064,20 @@ const PurchaseTransactionCreate = () => {
                                                             </tr>
                                                         );
                                                     })}
-                                                </tbody>
-                                                <tfoot>
+                                                    {!isView && (
+                                                        <tr>
+                                                            <td colSpan={13} className="py-2" style={{ background: "#fff" }}>
+                                                                <Button
+                                                                    type="button"
+                                                                    color="link"
+                                                                    className="text-primary p-0 fw-medium"
+                                                                    onClick={handleAddLine}
+                                                                >
+                                                                    <i className="ri-add-line align-bottom"></i> Add New Row
+                                                                </Button>
+                                                            </td>
+                                                        </tr>
+                                                    )}
                                                     <tr className="table-light fw-semibold">
                                                         <td style={stickyFooterCellStyle}>Total</td>
                                                         <td style={stickyFooterCellStyle}></td>
@@ -1064,14 +1093,9 @@ const PurchaseTransactionCreate = () => {
                                                         <td style={stickyFooterCellStyle}>{formatToTwoDecimals(itemTotals.totalAmount)}</td>
                                                         <td style={stickyFooterCellStyle}></td>
                                                     </tr>
-                                                </tfoot>
+                                                </tbody>
                                             </Table>
                                         </div>
-                                        {!isView && (
-                                            <Button color="link" className="mt-3 text-primary p-0 fw-medium" onClick={handleAddLine}>
-                                                <i className="ri-add-line align-bottom"></i> Add New Row
-                                            </Button>
-                                        )}
 
                                         <Row className="mt-4">
                                             <Col md={8}>
