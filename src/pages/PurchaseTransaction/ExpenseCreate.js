@@ -32,6 +32,33 @@ const ExpenseCreate = () => {
 
     const today = useMemo(() => new Date(), []);
 
+    const parseAmount = (value) => {
+        const raw = String(value ?? "").replace(/,/g, "").trim();
+        const n = parseFloat(raw);
+        return Number.isFinite(n) ? n : 0;
+    };
+
+    const formatIndianAmount = (value) => {
+        const raw = String(value ?? "").replace(/,/g, "").trim();
+        if (!raw) return "";
+        const n = Number(raw);
+        if (!Number.isFinite(n)) return "";
+        const hasDecimal = raw.includes(".");
+        return n.toLocaleString("en-IN", {
+            minimumFractionDigits: hasDecimal ? 2 : 0,
+            maximumFractionDigits: 2,
+        });
+    };
+
+    const sanitizeAmountInput = (value) => {
+        // Keep digits and at most one decimal point.
+        const raw = String(value ?? "").replace(/,/g, "");
+        const cleaned = raw.replace(/[^\d.]/g, "");
+        const firstDot = cleaned.indexOf(".");
+        if (firstDot === -1) return cleaned;
+        return cleaned.slice(0, firstDot + 1) + cleaned.slice(firstDot + 1).replace(/\./g, "");
+    };
+
     useEffect(() => {
         const fetchInitialData = async () => {
             try {
@@ -132,8 +159,10 @@ const ExpenseCreate = () => {
         }),
         onSubmit: async (values) => {
             const fiscalYearId = getSelectedFiscalYearId();
-            const actualAmount = values.receivedDr > 0 ? values.receivedDr : values.paidCr;
-            const finalVType = values.receivedDr > 0 ? "Income" : "Expense";
+            const received = parseAmount(values.receivedDr);
+            const paid = parseAmount(values.paidCr);
+            const actualAmount = received > 0 ? received : paid;
+            const finalVType = received > 0 ? "Income" : "Expense";
             
             if (actualAmount <= 0) {
                 toast.error("Please enter a valid amount in Received or Paid!");
@@ -161,7 +190,19 @@ const ExpenseCreate = () => {
                 const response = await addNewDirectJournal(entries);
                 if (response && (response.success || response.Success || response.data?.success)) {
                     toast.success("Transaction saved successfully!");
-                    history("/purchases/expense");
+                    // Stay on create page and reset to a fresh entry
+                    setVchType("Income");
+                    validation.resetForm({
+                        values: {
+                            date: today,
+                            mainAccountId: "",
+                            trnAccountId: "",
+                            receivedDr: "0.00",
+                            paidCr: "0.00",
+                            description: "",
+                            gCode: ""
+                        }
+                    });
                 } else {
                     toast.error("Failed to save transaction");
                 }
@@ -172,8 +213,9 @@ const ExpenseCreate = () => {
     });
 
     const handleReceivedChange = (e) => {
-        const val = parseFloat(e.target.value) || 0;
-        validation.setFieldValue("receivedDr", Math.abs(val));
+        const raw = sanitizeAmountInput(e.target.value);
+        const val = parseAmount(raw);
+        validation.setFieldValue("receivedDr", raw === "" ? "" : String(Math.abs(val)));
         if (Math.abs(val) > 0) {
             setVchType("Income");
             validation.setFieldValue("paidCr", 0);
@@ -181,8 +223,9 @@ const ExpenseCreate = () => {
     };
 
     const handlePaidChange = (e) => {
-        const val = parseFloat(e.target.value) || 0;
-        validation.setFieldValue("paidCr", Math.abs(val));
+        const raw = sanitizeAmountInput(e.target.value);
+        const val = parseAmount(raw);
+        validation.setFieldValue("paidCr", raw === "" ? "" : String(Math.abs(val)));
         if (Math.abs(val) > 0) {
             setVchType("Expense");
             validation.setFieldValue("receivedDr", 0);
@@ -242,14 +285,15 @@ const ExpenseCreate = () => {
                                             <Col md={2}>
                                                 <Label className="text-muted text-uppercase fw-semibold" style={{ fontSize: '11px' }}>Received [Dr.]</Label>
                                                 <Input 
-                                                    type="number" 
+                                                    type="text"
+                                                    inputMode="decimal"
                                                     min="0" 
                                                     step="any"
                                                     placeholder="0.00"
-                                                    value={validation.values.receivedDr} 
+                                                    value={formatIndianAmount(validation.values.receivedDr)} 
                                                     onChange={handleReceivedChange} 
-                                                    onBlur={(e) => validation.setFieldValue("receivedDr", formatToTwoDecimals(e.target.value))}
-                                                    disabled={isView || validation.values.paidCr > 0} 
+                                                    onBlur={(e) => validation.setFieldValue("receivedDr", formatToTwoDecimals(parseAmount(e.target.value)))}
+                                                    disabled={isView || parseAmount(validation.values.paidCr) > 0} 
                                                     className="w-100 text-center no-spin-input" 
                                                 />
                                             </Col>
@@ -257,14 +301,15 @@ const ExpenseCreate = () => {
                                             <Col md={2}>
                                                 <Label className="text-muted text-uppercase fw-semibold" style={{ fontSize: '11px' }}>Paid [Cr.]</Label>
                                                 <Input 
-                                                    type="number" 
+                                                    type="text"
+                                                    inputMode="decimal"
                                                     min="0" 
                                                     step="any"
                                                     placeholder="0.00"
-                                                    value={validation.values.paidCr} 
+                                                    value={formatIndianAmount(validation.values.paidCr)} 
                                                     onChange={handlePaidChange} 
-                                                    onBlur={(e) => validation.setFieldValue("paidCr", formatToTwoDecimals(e.target.value))}
-                                                    disabled={isView || validation.values.receivedDr > 0} 
+                                                    onBlur={(e) => validation.setFieldValue("paidCr", formatToTwoDecimals(parseAmount(e.target.value)))}
+                                                    disabled={isView || parseAmount(validation.values.receivedDr) > 0} 
                                                     className="w-100 text-center no-spin-input" 
                                                 />
                                             </Col>
