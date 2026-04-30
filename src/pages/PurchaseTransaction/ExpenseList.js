@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import {
     CardBody, Row, Col, Card, Container, CardHeader,
 } from "reactstrap";
-import { Link } from "react-router-dom";
+import { useLocation, Link } from "react-router-dom";
 import moment from "moment";
 import BreadCrumb from "../../Components/Common/BreadCrumb";
 import TableContainer from "../../Components/Common/TableContainer";
@@ -16,6 +16,10 @@ import { useSelector } from "react-redux";
 import { getDirectJournals, deleteDirectJournal } from "../../helpers/fakebackend_helper";
 
 const ExpenseList = () => {
+    const location = useLocation();
+    const queryParams = new URLSearchParams(location.search);
+    const defaultType = queryParams.get("vType");
+
     const [expenses, setExpenses] = useState([]);
     const [visibleRows, setVisibleRows] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
@@ -262,6 +266,7 @@ const ExpenseList = () => {
                                                 className="custom-header-css"
                                                 theadClass="text-muted text-uppercase"
                                                 SearchPlaceholder='Search for GCode, description...'
+                                                defaultColumnFilters={defaultType ? { vType: defaultType } : {}}
                                             />
                                         ) : (<Loader error={error} />)}
                                         <ToastContainer closeButton={false} limit={1} />

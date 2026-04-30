@@ -10,6 +10,8 @@ import DashboardCrypto from "../pages/DashboardCrypto";
 import DashboardProject from "../pages/DashboardProject";
 import DashboardNFT from "../pages/DashboardNFT";
 import DashboardJob from "../pages/DashboardJob/";
+import DashboardMain from "../pages/DashboardMain";
+
 
 //Calendar
 import Calendar from "../pages/Calendar/Maincalender";
@@ -307,8 +309,9 @@ const authProtectedRoutes = [
 
   { path: "/dashboard-analytics", component: <DashboardAnalytics /> },
   { path: "/dashboard-crm", component: <DashboardCrm /> },
-  { path: "/dashboard", component: <DashboardEcommerce /> },
-  { path: "/index", component: <DashboardEcommerce /> },
+  { path: "/dashboard", component: <DashboardMain /> },
+  { path: "/index", component: <DashboardMain /> },
+
   { path: "/dashboard-crypto", component: <DashboardCrypto /> },
   { path: "/dashboard-projects", component: <DashboardProject /> },
   { path: "/dashboard-nft", component: <DashboardNFT /> },
@@ -580,8 +583,9 @@ const authProtectedRoutes = [
   {
     path: "/",
     exact: true,
-    component: <Navigate to="/dashboard-crm" />,
+    component: <Navigate to="/dashboard" />,
   },
+
   { path: "*", component: <h2>ROUTE NOT FOUND - REACT ROUTER FELL THROUGH</h2> },
 ];
 

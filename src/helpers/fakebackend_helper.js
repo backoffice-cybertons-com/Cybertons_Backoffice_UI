@@ -270,6 +270,7 @@ export const getProductsForPurchase = () => api.get(url.GET_PRODUCTS_DETAILS);
 export const getProductsForSales = () => api.get(url.GET_PRODUCTS_DETAILS);
 export const getTransporters = () => api.get(url.GET_TRANSPORTERS);
 export const getUnits = () => api.get(url.GET_UNITS);
+export const getPartyTypeMaster = () => api.get("/api/partytypemaster");
 
 // Masters for transaction forms
 export const getFiscalYears = () => api.get("/api/fiscalyear");
@@ -297,6 +298,9 @@ export const updateTicket = ticket => api.update(url.UPDATE_TICKET + '/' + ticke
 
 // delete Tickets 
 export const deleteTicket = ticket => api.delete(url.DELETE_TICKET + '/' + ticket);
+
+// Dashboard
+export const getDashboardData = (data) => api.create(url.POST_DASHBOARD_DATA, data);
 
 // Dashboard Analytics
 
