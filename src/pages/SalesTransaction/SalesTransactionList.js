@@ -280,6 +280,11 @@ const SalesTransactionList = () => {
                                     <i className="ri-pencil-fill" />
                                 </Link>
                             )}
+                            {pagePermissions.canAdd && (
+                                <Link to={`/sales-order/create?copyId=${code}`} className="btn btn-sm btn-soft-warning" title="Copy Invoice">
+                                    <i className="ri-file-copy-line" />
+                                </Link>
+                            )}
                             <Link to={`/sales-order/invoice/${code}`} className="btn btn-sm btn-soft-success" title="Invoice">
                                 <i className="ri-printer-line" />
                             </Link>

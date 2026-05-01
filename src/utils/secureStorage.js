@@ -139,11 +139,19 @@ class SecureStorage {
     }
     
     /**
-     * Clear all storage
-     * CALL on logout to remove all data
+     * Clear only auth/security storage.
+     * Keeps UI preferences (theme/sidebar customizer) across logout/login.
      */
     clear() {
-        localStorage.clear();
+        const authKeys = [
+            'authToken',
+            'companyId',
+            'authUser',
+            'keyHint',
+            'userHint'
+        ];
+
+        authKeys.forEach((key) => localStorage.removeItem(key));
         this.key = null;
     }
 }

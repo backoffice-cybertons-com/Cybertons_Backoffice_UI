@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo, useCallback } from "react";
+import React, { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import {
     CardBody, Row, Col, Card, Container, Form, Input, Label, Table, FormFeedback, Button,
     Modal, ModalHeader, ModalBody, ModalFooter, Badge, UncontrolledTooltip
@@ -27,7 +27,9 @@ const PurchaseTransactionCreate = () => {
     const location = useLocation();
     const queryParams = new URLSearchParams(location.search);
     const isView = queryParams.get('view') === 'true';
+    const copyId = queryParams.get('copyId');
     const isEdit = !!id;
+    const isCopy = !!copyId;
 
     const { isPurchaseTransactionCreated } = useSelector(state => state.PurchaseTransaction);
 
@@ -41,8 +43,11 @@ const PurchaseTransactionCreate = () => {
     const [vehicleOptions, setVehicleOptions] = useState([]);
     const [touchedSelects, setTouchedSelects] = useState({});
     const [selectedVendorDetails, setSelectedVendorDetails] = useState(null);
-    const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
+    const [isCopyPreviousModalOpen, setIsCopyPreviousModalOpen] = useState(false);
+    const [previousInvoices, setPreviousInvoices] = useState([]);
+    const [qtyByCode, setQtyByCode] = useState({});
     const [discountType, setDiscountType] = useState('percent'); // 'percent' or 'amount'
+    const itemTableScrollRef = useRef(null);
 
     // Stabilize constant values outside or with useMemo
     const today = useMemo(() => new Date(), []);
@@ -169,9 +174,10 @@ const PurchaseTransactionCreate = () => {
                     console.warn("bankData is not an array:", bankData);
                 }
 
-                if (isEdit) {
-                    const editData = await getPurchaseTransactionDetails(id);
-                    console.log("Edit data fetched:", editData);
+                if (isEdit || isCopy) {
+                    const fetchId = isEdit ? id : copyId;
+                    const editData = await getPurchaseTransactionDetails(fetchId);
+                    console.log(isEdit ? "Edit data fetched:" : "Copy data fetched:", editData);
                     if (editData && editData.header) {
                         const header = editData.header;
                         const parseDate = (val) => {
@@ -182,11 +188,15 @@ const PurchaseTransactionCreate = () => {
                         validation.setValues({
                             ...initialValues,
                             ...header,
-                            invDate: parseDate(header.invDate || header.InvDate) || today,
-                            salesOrderDate: parseDate(header.salesOrderDate || header.SalesOrderDate) || "",
-                            poOrderDate: parseDate(header.poOrderDate || header.PoOrderDate) || "",
-                            deliveryDate: parseDate(header.deliveryDate || header.DeliveryDate) || "",
-                            deliveryNo: header.deliveryNo || header.DeliveryNo || "",
+                            invNo: isCopy ? "" : (header.invNo || header.InvNo || ""),
+                            invDate: isCopy ? today : (parseDate(header.invDate || header.InvDate) || today),
+                            salesOrderNo: isCopy ? "" : (header.salesOrderNo || header.SalesOrderNo || ""),
+                            salesOrderDate: isCopy ? today : (parseDate(header.salesOrderDate || header.SalesOrderDate) || ""),
+                            poOrderNo: isCopy ? "" : (header.poOrderNo || header.PoOrderNo || ""),
+                            poOrderDate: isCopy ? today : (parseDate(header.poOrderDate || header.PoOrderDate) || ""),
+                            deliveryDate: isCopy ? today : (parseDate(header.deliveryDate || header.DeliveryDate) || ""),
+                            deliveryNo: isCopy ? "" : (header.deliveryNo || header.DeliveryNo || ""),
+                            spUniqueCode: isCopy ? 0 : (header.spUniqueCode || header.SpUniqueCode || 0),
                             totDiscount: parseFloat(header.totDiscount ?? header.TotDiscount ?? 0),
                             discountPercent: (() => {
                                 const dp = parseFloat(header.discountPercent ?? header.DiscountPercent ?? 0);
@@ -200,7 +210,8 @@ const PurchaseTransactionCreate = () => {
                             roundOff: parseFloat(header.roundOff ?? header.RoundOff ?? 0),
                             lines: (editData.lines || []).map(l => ({
                                 ...l,
-                                batchDate: parseDate(l.batchDate || l.BatchDate) || "",
+                                spUniqueCode: isCopy ? 0 : (l.spUniqueCode || l.SpUniqueCode || 0),
+                                batchDate: isCopy ? today : (parseDate(l.batchDate || l.BatchDate) || ""),
                                 discountPer: parseFloat(l.discountPer ?? l.DiscountPer ?? 0)
                             }))
                         });
@@ -212,7 +223,7 @@ const PurchaseTransactionCreate = () => {
             }
         };
         fetchInitialData();
-    }, [id, isEdit]);
+    }, [id, isEdit, isCopy, copyId]);
 
     const initialValues = useMemo(() => ({
         companyId: parseInt(secureStorage.getPlain('companyId')) || 1,
@@ -530,6 +541,12 @@ const PurchaseTransactionCreate = () => {
             }
         ];
         validation.setFieldValue("lines", newLines);
+        // Keep the new blank row immediately visible
+        setTimeout(() => {
+            if (itemTableScrollRef.current) {
+                itemTableScrollRef.current.scrollTop = itemTableScrollRef.current.scrollHeight;
+            }
+        }, 0);
     };
 
     const handleRemoveLine = (index) => {
@@ -686,13 +703,136 @@ const PurchaseTransactionCreate = () => {
         zIndex: 2
     };
 
-    document.title = isView ? "View Purchase Transaction | SoftBook" : (isEdit ? "Edit Purchase Transaction | SoftBook" : "Create Purchase Transaction | SoftBook");
+    const getSelectStyles = useCallback((hasError = false) => ({
+        control: (base, state) => ({
+            ...base,
+            borderColor: hasError ? "#f06548" : (state.isFocused ? "#405189" : base.borderColor),
+            boxShadow: state.isFocused ? "0 0 0 0.1rem rgba(64,81,137,0.15)" : base.boxShadow,
+            "&:hover": {
+                borderColor: hasError ? "#f06548" : "#405189"
+            }
+        }),
+        singleValue: (base) => ({
+            ...base,
+            color: "var(--vz-body-color)"
+        }),
+        input: (base) => ({
+            ...base,
+            color: "var(--vz-body-color)"
+        }),
+        placeholder: (base) => ({
+            ...base,
+            color: "var(--vz-secondary-color)"
+        }),
+        valueContainer: (base) => ({
+            ...base,
+            color: "var(--vz-body-color)"
+        }),
+        menu: (base) => ({
+            ...base,
+            backgroundColor: "var(--vz-secondary-bg)",
+            color: "var(--vz-body-color)"
+        }),
+        option: (base, state) => ({
+            ...base,
+            backgroundColor: state.isSelected
+                ? "var(--vz-primary)"
+                : state.isFocused
+                    ? "var(--vz-light)"
+                    : "var(--vz-secondary-bg)",
+            color: state.isSelected ? "#fff" : "var(--vz-body-color)"
+        }),
+        menuPortal: (base) => ({
+            ...base,
+            zIndex: 9999
+        })
+    }), []);
+
+    const findOptionByValue = useCallback((options, value) => {
+        if (value === null || value === undefined || value === "") return null;
+        return (options || []).find((opt) => String(opt.value) === String(value)) || null;
+    }, []);
+
+    const handleCopyFromPrevious = useCallback(() => {
+        if (!validation.values.partyId) return;
+        const vendorInvoices = allPurchaseOrders.filter(tx => (tx.partyId === validation.values.partyId || tx.PartyId === validation.values.partyId));
+        // Sort by date descending
+        const sorted = [...vendorInvoices].sort((a, b) => new Date(b.invDate || b.InvDate) - new Date(a.invDate || a.InvDate));
+        setPreviousInvoices(sorted);
+        setIsCopyPreviousModalOpen(true);
+
+        // Fetch quantities in background
+        sorted.forEach(async (inv) => {
+            const code = inv.spUniqueCode || inv.SpUniqueCode;
+            if (code && !qtyByCode[code]) {
+                try {
+                    const res = await getPurchaseTransactionDetails(code);
+                    const details = res?.data || res;
+                    const lines = details?.lines || details?.Lines || [];
+                    const totalQty = lines.reduce((acc, l) => acc + Number(l.quantity || l.Quantity || 0), 0);
+                    setQtyByCode(prev => ({ ...prev, [code]: totalQty }));
+                } catch (e) {
+                    console.error("Error fetching qty for", code, e);
+                }
+            }
+        });
+    }, [validation.values.partyId, allPurchaseOrders, qtyByCode]);
+
+    const selectPreviousInvoice = async (copyId) => {
+        try {
+            const editData = await getPurchaseTransactionDetails(copyId);
+            if (editData && editData.header) {
+                const header = editData.header;
+                const parseDate = (val) => {
+                    if (!val) return null;
+                    const d = new Date(val);
+                    return isNaN(d.getTime()) ? null : d;
+                };
+                validation.setValues({
+                    ...initialValues,
+                    ...header,
+                    invNo: "",
+                    invDate: today,
+                    salesOrderNo: "",
+                    salesOrderDate: today,
+                    poOrderNo: "",
+                    poOrderDate: today,
+                    deliveryDate: today,
+                    deliveryNo: "",
+                    spUniqueCode: 0,
+                    totDiscount: parseFloat(header.totDiscount ?? header.TotDiscount ?? 0),
+                    discountPercent: (() => {
+                        const dp = parseFloat(header.discountPercent ?? header.DiscountPercent ?? 0);
+                        if (dp === 0) {
+                            const ta = parseFloat(header.taxableAmount ?? header.TaxableAmount ?? 0);
+                            const td = parseFloat(header.totDiscount ?? header.TotDiscount ?? 0);
+                            if (ta > 0 && td > 0) return parseFloat(((td / ta) * 100).toFixed(2));
+                        }
+                        return dp;
+                    })(),
+                    roundOff: parseFloat(header.roundOff ?? header.RoundOff ?? 0),
+                    lines: (editData.lines || []).map(l => ({
+                        ...l,
+                        spUniqueCode: 0,
+                        batchDate: today,
+                        discountPer: parseFloat(l.discountPer ?? l.DiscountPer ?? 0)
+                    }))
+                });
+                handleVendorChange({ value: header.partyId || header.PartyId });
+                setIsCopyPreviousModalOpen(false);
+            }
+        } catch (error) {
+            console.error("Error copying invoice:", error);
+        }
+    };
+
+    document.title = isView ? "View Purchase Transaction | SoftBook" : (isCopy ? "Copy Purchase Transaction | SoftBook" : (isEdit ? "Edit Purchase Transaction | SoftBook" : "Create Purchase Transaction | SoftBook"));
 
     return (
         <React.Fragment>
             <div className="page-content">
                 <Container fluid>
-                    <BreadCrumb title={isView ? "View Purchase Order" : (isEdit ? "Edit Purchase Order" : "New Purchase Order")} pageTitle="Purchase Transactions" />
+                    <BreadCrumb title={isView ? "View Purchase Order" : (isCopy ? "Copy Purchase Order" : (isEdit ? "Edit Purchase Order" : "New Purchase Order"))} pageTitle="Purchase Transactions" />
                     <Row>
                         <Col lg={12}>
                             <Card>
@@ -711,11 +851,11 @@ const PurchaseTransactionCreate = () => {
                                                             placeholder="Select Vendor"
                                                             classNamePrefix="select"
                                                             value={vendors.find(v => v.value === validation.values.partyId) || null}
-                                                            styles={{ control: base => ({ ...base, borderColor: (touchedSelects.partyId && !validation.values.partyId) ? '#f06548' : base.borderColor }) }}
+                                                            styles={getSelectStyles(touchedSelects.partyId && !validation.values.partyId)}
                                                         />
                                                     </div>
-                                                    <Button color="primary" onClick={() => setIsAddressModalOpen(true)} disabled={!validation.values.partyId || isView}>
-                                                        <i className="ri-edit-2-line"></i>
+                                                    <Button color="info" onClick={handleCopyFromPrevious} disabled={!validation.values.partyId || isView} title="Copy from Previous Invoice">
+                                                        <i className="ri-file-copy-line"></i>
                                                     </Button>
                                                 </div>
                                                 {(touchedSelects.partyId || validation.submitCount > 0) && validation.errors.partyId && <div className="text-danger mt-1 small">{validation.errors.partyId}</div>}
@@ -833,12 +973,12 @@ const PurchaseTransactionCreate = () => {
                                                     options={deliveryChallanOptions}
                                                     isClearable
                                                     placeholder="Select Delivery Challan"
-                                                    value={deliveryChallanOptions.find(
-                                                        dc => dc.value === (validation.values.deliveryNo ? parseInt(validation.values.deliveryNo) : null)
-                                                    ) || null}
-                                                    onChange={(opt) => { validation.setFieldValue("deliveryNo", opt ? opt.value : ""); setTouchedSelects(p => ({ ...p, deliveryNo: true })); }}
+                                                    classNamePrefix="select"
+                                                    menuPortalTarget={document.body}
+                                                    value={findOptionByValue(deliveryChallanOptions, validation.values.deliveryNo)}
+                                                    onChange={(opt) => { validation.setFieldValue("deliveryNo", opt ? String(opt.value) : ""); setTouchedSelects(p => ({ ...p, deliveryNo: true })); }}
                                                     onBlur={() => setTouchedSelects(p => ({ ...p, deliveryNo: true }))}
-                                                    styles={{ control: base => ({ ...base, borderColor: (touchedSelects.deliveryNo && !validation.values.deliveryNo) ? '#f06548' : base.borderColor }) }}
+                                                    styles={getSelectStyles(touchedSelects.deliveryNo && !validation.values.deliveryNo)}
                                                 />
                                                 {(touchedSelects.deliveryNo || validation.submitCount > 0) && validation.errors.deliveryNo && <div className="text-danger small mt-1">{validation.errors.deliveryNo}</div>}
                                             </Col>
@@ -852,9 +992,12 @@ const PurchaseTransactionCreate = () => {
                                                     options={banks}
                                                     isClearable={!isView}
                                                     isDisabled={isView}
-                                                    onChange={(opt) => validation.setFieldValue("bankId", opt ? opt.value : "")}
+                                                    menuPortalTarget={document.body}
+                                                    onChange={(opt) => validation.setFieldValue("bankId", opt ? String(opt.value) : "")}
                                                     placeholder="Select Bank"
-                                                    value={banks.find(b => b.value === validation.values.bankId) || null}
+                                                    classNamePrefix="select"
+                                                    value={findOptionByValue(banks, validation.values.bankId)}
+                                                    styles={getSelectStyles(false)}
                                                 />
                                             </Col>
                                             <Col md={3}>
@@ -890,8 +1033,10 @@ const PurchaseTransactionCreate = () => {
                                                     }}
                                                     onBlur={() => setTouchedSelects(p => ({ ...p, transporterId: true }))}
                                                     placeholder="Select Transporter"
+                                                    classNamePrefix="select"
                                                     value={transporters.find(t => t.value === validation.values.transporterId) || null}
-                                                    styles={{ control: base => ({ ...base, borderColor: (touchedSelects.transporterId && !validation.values.transporterId) ? '#f06548' : base.borderColor }) }}
+                                                    menuPortalTarget={document.body}
+                                                    styles={getSelectStyles(touchedSelects.transporterId && !validation.values.transporterId)}
                                                 />
                                                 {(touchedSelects.transporterId || validation.submitCount > 0) && validation.errors.transporterId && <div className="text-danger small mt-1">{validation.errors.transporterId}</div>}
                                             </Col>
@@ -903,6 +1048,7 @@ const PurchaseTransactionCreate = () => {
                                                         isClearable={!isView}
                                                         isDisabled={isView}
                                                         placeholder="Select or Enter Vehicle"
+                                                        classNamePrefix="select"
                                                         noOptionsMessage={() => "No vehicles found for this transporter"}
                                                         value={
                                                             vehicleOptions.find(v => v.value === validation.values.vehicleNo) ||
@@ -911,12 +1057,18 @@ const PurchaseTransactionCreate = () => {
                                                                 : null)
                                                         }
                                                         onChange={(opt) => validation.setFieldValue("vehicleNo", opt ? opt.value : "")}
+                                                        menuPortalTarget={document.body}
+                                                        styles={getSelectStyles(false)}
                                                     />
                                                 </Col>
                                             )}
                                         </Row>
 
-                                        <div className="table-responsive mt-4" style={{ maxHeight: "380px", overflowY: "auto", overflowX: "auto" }}>
+                                        <div
+                                            className="table-responsive mt-4"
+                                            ref={itemTableScrollRef}
+                                            style={{ maxHeight: "600px", overflowY: "auto", overflowX: "auto" }}
+                                        >
                                             <Table className="table-nowrap align-middle mb-0 border" style={{ minWidth: "1500px" }}>
                                                 <thead className="table-light">
                                                     <tr>
@@ -949,13 +1101,14 @@ const PurchaseTransactionCreate = () => {
                                                                         formatOptionLabel={formatProductOption}
                                                                         value={products.find(p => p.value === line.productId) || null}
                                                                         className="mb-1"
+                                                                        classNamePrefix="select"
                                                                         onChange={(opt) => {
                                                                          if (!opt) return;
                                                                          handleLineChange(index, "productId", opt.value);
                                                                          validation.setFieldTouched(`lines[${index}].productId`, true);
                                                                      }}
                                                                         menuPortalTarget={document.body}
-                                                                        styles={{ menuPortal: base => ({ ...base, zIndex: 9999 }), control: base => ({ ...base, borderColor: showErr('productId') ? '#f06548' : base.borderColor }) }}
+                                                                        styles={getSelectStyles(showErr('productId'))}
                                                                     />
                                                                     {showErr('productId') && <div className="text-danger" style={{ fontSize: '11px' }}>{lineErrors.productId}</div>}
                                                                     <Input type="textarea" rows="1" placeholder="Description" className="form-control-sm mt-1" value={line.description} onChange={(e) => handleLineChange(index, "description", e.target.value)} disabled={isView} />
@@ -971,7 +1124,7 @@ const PurchaseTransactionCreate = () => {
                                                                         placeholder="Unit*"
                                                                         isDisabled={isView || !!line.productId}
                                                                         menuPortalTarget={document.body}
-                                                                        styles={{ menuPortal: base => ({ ...base, zIndex: 9999 }), control: base => ({ ...base, borderColor: showErr('unit') ? '#f06548' : base.borderColor }) }}
+                                                                        styles={getSelectStyles(showErr('unit'))}
                                                                     />
                                                                     {showErr('unit') && <div className="text-danger" style={{ fontSize: '11px' }}>{lineErrors.unit}</div>}
                                                                 </td>
@@ -995,7 +1148,7 @@ const PurchaseTransactionCreate = () => {
                                                                         placeholder="SubUnit*"
                                                                         isDisabled={isView || !!line.productId}
                                                                         menuPortalTarget={document.body}
-                                                                        styles={{ menuPortal: base => ({ ...base, zIndex: 9999 }), control: base => ({ ...base, borderColor: showErr('subUnit') ? '#f06548' : base.borderColor }) }}
+                                                                        styles={getSelectStyles(showErr('subUnit'))}
                                                                     />
                                                                     {showErr('subUnit') && <div className="text-danger" style={{ fontSize: '11px' }}>{lineErrors.subUnit}</div>}
                                                                 </td>
@@ -1047,8 +1200,20 @@ const PurchaseTransactionCreate = () => {
                                                             </tr>
                                                         );
                                                     })}
-                                                </tbody>
-                                                <tfoot>
+                                                    {!isView && (
+                                                        <tr>
+                                                            <td colSpan={13} className="py-2" style={{ background: "#fff" }}>
+                                                                <Button
+                                                                    type="button"
+                                                                    color="link"
+                                                                    className="text-primary p-0 fw-medium"
+                                                                    onClick={handleAddLine}
+                                                                >
+                                                                    <i className="ri-add-line align-bottom"></i> Add New Row
+                                                                </Button>
+                                                            </td>
+                                                        </tr>
+                                                    )}
                                                     <tr className="table-light fw-semibold">
                                                         <td style={stickyFooterCellStyle}>Total</td>
                                                         <td style={stickyFooterCellStyle}></td>
@@ -1064,14 +1229,9 @@ const PurchaseTransactionCreate = () => {
                                                         <td style={stickyFooterCellStyle}>{formatToTwoDecimals(itemTotals.totalAmount)}</td>
                                                         <td style={stickyFooterCellStyle}></td>
                                                     </tr>
-                                                </tfoot>
+                                                </tbody>
                                             </Table>
                                         </div>
-                                        {!isView && (
-                                            <Button color="link" className="mt-3 text-primary p-0 fw-medium" onClick={handleAddLine}>
-                                                <i className="ri-add-line align-bottom"></i> Add New Row
-                                            </Button>
-                                        )}
 
                                         <Row className="mt-4">
                                             <Col md={8}>
@@ -1203,41 +1363,49 @@ const PurchaseTransactionCreate = () => {
                                         </div>
                                     </Form>
 
-                                    {/* Address/Details Modal */}
-                                    <Modal isOpen={isAddressModalOpen} toggle={() => setIsAddressModalOpen(!isAddressModalOpen)} size="lg">
-                                        <ModalHeader toggle={() => setIsAddressModalOpen(false)}>Edit Vendor Details</ModalHeader>
+                                    <Modal isOpen={isCopyPreviousModalOpen} toggle={() => setIsCopyPreviousModalOpen(!isCopyPreviousModalOpen)} size="lg">
+                                        <ModalHeader toggle={() => setIsCopyPreviousModalOpen(false)}>Copy from Previous Invoice</ModalHeader>
                                         <ModalBody>
-                                            <Row>
-                                                <Col md={6} className="mb-3">
-                                                    <Label>Billing Address</Label>
-                                                    <Input type="textarea" rows="3" value={validation.values.billingAddress} onChange={(e) => validation.setFieldValue("billingAddress", e.target.value)} disabled={isView} />
-                                                </Col>
-                                                <Col md={6} className="mb-3">
-                                                    <Label>Shipping Address</Label>
-                                                    <Input type="textarea" rows="3" value={validation.values.shippingAddress} onChange={(e) => validation.setFieldValue("shippingAddress", e.target.value)} disabled={isView} />
-                                                </Col>
-                                                <Col md={4} className="mb-3">
-                                                    <Label>GST Treatment</Label>
-                                                    <Input type="select" value={validation.values.gstTreatment} onChange={(e) => validation.setFieldValue("gstTreatment", e.target.value)} disabled={isView}>
-                                                        <option>Registered Business</option>
-                                                        <option>Unregistered Business</option>
-                                                        <option>Consumer</option>
-                                                        <option>Overseas</option>
-                                                    </Input>
-                                                </Col>
-                                                <Col md={4} className="mb-3">
-                                                    <Label>GST No</Label>
-                                                    <Input value={validation.values.gstNo} onChange={(e) => validation.setFieldValue("gstNo", e.target.value)} />
-                                                </Col>
-                                                <Col md={4} className="mb-3">
-                                                    <Label>Place of Supply</Label>
-                                                    <Input value={validation.values.placeOfSupply} onChange={(e) => validation.setFieldValue("placeOfSupply", e.target.value)} />
-                                                </Col>
-                                            </Row>
+                                            <div className="table-responsive" style={{ maxHeight: '450px', overflowY: 'auto' }}>
+                                                <Table className="align-middle table-nowrap mb-0">
+                                                    <thead className="table-light text-muted">
+                                                        <tr>
+                                                            <th scope="col">Inv No</th>
+                                                            <th scope="col">Date</th>
+                                                            <th scope="col" className="text-end">Total Qty</th>
+                                                            <th scope="col" className="text-end">Amount</th>
+                                                            <th scope="col" className="text-center">Action</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {previousInvoices.length > 0 ? (
+                                                            previousInvoices.map((inv, idx) => {
+                                                                const code = inv.spUniqueCode || inv.SpUniqueCode;
+                                                                return (
+                                                                    <tr key={idx}>
+                                                                        <td>{inv.invNo || inv.InvNo}</td>
+                                                                        <td>{new Date(inv.invDate || inv.InvDate).toLocaleDateString('en-GB')}</td>
+                                                                        <td className="text-end">{qtyByCode[code] !== undefined ? Number(qtyByCode[code]).toFixed(2) : <span className="text-muted small italic">Loading...</span>}</td>
+                                                                        <td className="text-end">{formatToTwoDecimals(inv.grandTotal || inv.GrandTotal)}</td>
+                                                                        <td className="text-center">
+                                                                            <Button color="soft-info" size="sm" onClick={() => selectPreviousInvoice(code)}>
+                                                                                Select & Copy
+                                                                            </Button>
+                                                                        </td>
+                                                                    </tr>
+                                                                );
+                                                            })
+                                                        ) : (
+                                                            <tr>
+                                                                <td colSpan="4" className="text-center">No previous invoices found for this vendor</td>
+                                                            </tr>
+                                                        )}
+                                                    </tbody>
+                                                </Table>
+                                            </div>
                                         </ModalBody>
                                         <ModalFooter>
-                                            <Button color="secondary" onClick={() => setIsAddressModalOpen(false)}>Close</Button>
-                                            <Button color="primary" onClick={() => setIsAddressModalOpen(false)}>Done</Button>
+                                            <Button color="secondary" onClick={() => setIsCopyPreviousModalOpen(false)}>Close</Button>
                                         </ModalFooter>
                                     </Modal>
                                 </CardBody>

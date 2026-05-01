@@ -65,27 +65,53 @@ import { createSelector } from 'reselect';
 
 const RightSidebar = (props) => {
     const dispatch = useDispatch();
+    const SIDEBAR_CUSTOM_COLORS_KEY = "sb_sidebar_custom_colors_v1";
+    const defaultSidebarCustomColors = {
+        customColor: "#405189",
+        menuColor: "#ffffff",
+        subMenuColor: "#abb9e8",
+    };
 
     const [show, setShow] = useState(false);
     const [customColor, setCustomColor] = useState("#405189");
     const [menuColor, setMenuColor] = useState("#ffffff");
     const [subMenuColor, setSubMenuColor] = useState("#abb9e8");
 
+    const applySidebarCustomColors = (colors) => {
+        document.documentElement.style.setProperty("--vz-vertical-menu-bg-custom", colors.customColor);
+        document.documentElement.style.setProperty("--vz-vertical-menu-item-color-custom", colors.menuColor);
+        document.documentElement.style.setProperty("--vz-vertical-menu-sub-item-color-custom", colors.subMenuColor);
+    };
+
+    const persistSidebarCustomColors = (colors) => {
+        try {
+            localStorage.setItem(SIDEBAR_CUSTOM_COLORS_KEY, JSON.stringify(colors));
+        } catch (e) {
+            // Ignore storage write errors.
+        }
+    };
+
     const handleCustomColorChange = (color) => {
         setCustomColor(color);
-        document.documentElement.style.setProperty("--vz-vertical-menu-bg-custom", color);
+        const updated = { customColor: color, menuColor, subMenuColor };
+        applySidebarCustomColors(updated);
+        persistSidebarCustomColors(updated);
         dispatch(changeSidebarTheme("custom"));
     };
 
     const handleMenuColorChange = (color) => {
         setMenuColor(color);
-        document.documentElement.style.setProperty("--vz-vertical-menu-item-color-custom", color);
+        const updated = { customColor, menuColor: color, subMenuColor };
+        applySidebarCustomColors(updated);
+        persistSidebarCustomColors(updated);
         dispatch(changeSidebarTheme("custom"));
     };
 
     const handleSubMenuColorChange = (color) => {
         setSubMenuColor(color);
-        document.documentElement.style.setProperty("--vz-vertical-menu-sub-item-color-custom", color);
+        const updated = { customColor, menuColor, subMenuColor: color };
+        applySidebarCustomColors(updated);
+        persistSidebarCustomColors(updated);
         dispatch(changeSidebarTheme("custom"));
     };
 
@@ -135,6 +161,39 @@ const RightSidebar = (props) => {
         bodyImageType,
         sidebarVisibilitytype
     } = useSelector(selectLayoutProperties);
+
+    useEffect(() => {
+        try {
+            const saved = localStorage.getItem(SIDEBAR_CUSTOM_COLORS_KEY);
+            const parsed = saved ? JSON.parse(saved) : null;
+            const restored = {
+                customColor: parsed?.customColor || defaultSidebarCustomColors.customColor,
+                menuColor: parsed?.menuColor || defaultSidebarCustomColors.menuColor,
+                subMenuColor: parsed?.subMenuColor || defaultSidebarCustomColors.subMenuColor,
+            };
+
+            setCustomColor(restored.customColor);
+            setMenuColor(restored.menuColor);
+            setSubMenuColor(restored.subMenuColor);
+            applySidebarCustomColors(restored);
+
+            // Ensure custom theme has valid CSS vars even when no saved value existed.
+            if (!saved) {
+                persistSidebarCustomColors(restored);
+            }
+        } catch (e) {
+            setCustomColor(defaultSidebarCustomColors.customColor);
+            setMenuColor(defaultSidebarCustomColors.menuColor);
+            setSubMenuColor(defaultSidebarCustomColors.subMenuColor);
+            applySidebarCustomColors(defaultSidebarCustomColors);
+        }
+    }, []);
+
+    useEffect(() => {
+        if (leftSidebarType === "custom") {
+            applySidebarCustomColors({ customColor, menuColor, subMenuColor });
+        }
+    }, [leftSidebarType, customColor, menuColor, subMenuColor]);
 
     // open offcanvas
     const [open, setOpen] = useState(!getSelectedFiscalYearId());
