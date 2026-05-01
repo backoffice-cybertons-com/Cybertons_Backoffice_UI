@@ -1,0 +1,88 @@
+.tb-table-wrap{
+  max-height: 640px;
+  overflow: auto;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(0,0,0,0.08);
+  background: #fff;
+}
+
+.tb-table thead th{
+  white-space: nowrap;
+}
+
+.tb-total-row{
+  background: #111827; /* slate-900 */
+  color: #fff;
+}
+
+.tb-th-btn{
+  appearance: none;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  color: inherit;
+  font: inherit;
+  text-transform: inherit;
+  letter-spacing: inherit;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.tb-th-btn-end{
+  justify-content: flex-end;
+  width: 100%;
+}
+
+.tb-th-btn i{
+  opacity: 0.7;
+}
+
+.tb-account{
+  color: #0f172a; /* slate-900 */
+}
+
+.tb-pill{
+  border-radius: 999px;
+  padding: 0.35rem 0.6rem;
+  font-weight: 600;
+}
+
+.tb-summary-card{
+  border-radius: 0.75rem;
+}
+
+.tb-icon-btn{
+  width: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tb-actions{
+  border: 1px solid rgba(0,0,0,0.10);
+  border-radius: 0.75rem;
+  padding: 0.35rem 0.5rem;
+  background: rgba(248,250,252,0.8);
+}
+
+.tb-action-btn{
+  width: 44px;
+  height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+@media print{
+  .tb-table-wrap{
+    max-height: none !important;
+    overflow: visible !important;
+    border: 0 !important;
+  }
+  .tb-th-btn i{ display:none !important; }
+  .tb-actions{ border: 0 !important; background: transparent !important; padding: 0 !important; }
+}
+
