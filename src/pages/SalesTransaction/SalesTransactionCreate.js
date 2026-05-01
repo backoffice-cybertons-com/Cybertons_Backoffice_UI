@@ -27,7 +27,9 @@ const SalesTransactionCreate = () => {
     const location = useLocation();
     const queryParams = new URLSearchParams(location.search);
     const isView = queryParams.get('view') === 'true';
+    const copyId = queryParams.get('copyId');
     const isEdit = !!id;
+    const isCopy = !!copyId;
 
     const { isSalesTransactionCreated } = useSelector(state => state.SalesTransaction);
 
@@ -71,7 +73,9 @@ const SalesTransactionCreate = () => {
     }, [units]);
     const [touchedSelects, setTouchedSelects] = useState({});
     const [selectedCustomerDetails, setSelectedCustomerDetails] = useState(null);
-    const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
+    const [isCopyPreviousModalOpen, setIsCopyPreviousModalOpen] = useState(false);
+    const [previousInvoices, setPreviousInvoices] = useState([]);
+    const [qtyByCode, setQtyByCode] = useState({});
 
     // Stabilize constant values outside or with useMemo
     const today = useMemo(() => new Date(), []);
@@ -196,9 +200,10 @@ const SalesTransactionCreate = () => {
                     }
                 } catch (e) { console.error("[SalesOrder] Company fetch failed:", e); }
 
-                if (isEdit) {
-                    const editData = await getSalesTransactionDetails(id);
-                    console.log("Edit data fetched:", editData);
+                if (isEdit || isCopy) {
+                    const fetchId = isEdit ? id : copyId;
+                    const editData = await getSalesTransactionDetails(fetchId);
+                    console.log(isEdit ? "Edit data fetched:" : "Copy data fetched:", editData);
                     if (editData && editData.header) {
                         const header = editData.header;
                         const parseDate = (val) => {
@@ -210,17 +215,21 @@ const SalesTransactionCreate = () => {
                             ...initialValues,
                             ...header,
                             partyId: header.partyId || header.PartyId || "",
-                            deliveryNo: header.deliveryNo || header.DeliveryNo || "",
-                            invNo: header.invNo || header.InvNo || "",
-                            invDate: parseDate(header.invDate || header.InvDate) || today,
-                            salesOrderDate: parseDate(header.salesOrderDate || header.SalesOrderDate) || "",
-                            poOrderDate: parseDate(header.poOrderDate || header.PoOrderDate) || "",
-                            deliveryDate: parseDate(header.deliveryDate || header.DeliveryDate) || "",
+                            deliveryNo: isCopy ? "" : (header.deliveryNo || header.DeliveryNo || ""),
+                            invNo: isCopy ? "" : (header.invNo || header.InvNo || ""),
+                            invDate: isCopy ? today : (parseDate(header.invDate || header.InvDate) || today),
+                            salesOrderNo: isCopy ? "" : (header.salesOrderNo || header.SalesOrderNo || ""),
+                            salesOrderDate: isCopy ? today : (parseDate(header.salesOrderDate || header.SalesOrderDate) || ""),
+                            poOrderNo: isCopy ? "" : (header.poOrderNo || header.PoOrderNo || ""),
+                            poOrderDate: isCopy ? today : (parseDate(header.poOrderDate || header.PoOrderDate) || ""),
+                            deliveryDate: isCopy ? today : (parseDate(header.deliveryDate || header.DeliveryDate) || ""),
+                            spUniqueCode: isCopy ? 0 : (header.spUniqueCode || header.SpUniqueCode || 0),
                             lines: (editData.lines || editData.Lines || []).map(line => ({
                                 ...line,
+                                spUniqueCode: isCopy ? 0 : (line.spUniqueCode || line.SpUniqueCode || 0),
                                 productId: line.productId || line.ProductId || "",
                                 batchNo: line.batchNo || line.BatchNo || "",
-                                batchDate: parseDate(line.batchDate || line.BatchDate) || "",
+                                batchDate: isCopy ? today : (parseDate(line.batchDate || line.BatchDate) || ""),
                                 unit: line.unit || line.Unit || "",
                                 subUnit: line.subUnit || line.SubUnit || "",
                                 subUnitQuantity: line.subUnitQuantity || line.SubUnitQuantity || 0,
@@ -245,7 +254,7 @@ const SalesTransactionCreate = () => {
             }
         };
         fetchInitialData();
-    }, [id, isEdit]);
+    }, [id, isEdit, isCopy, copyId]);
 
     const initialValues = useMemo(() => ({
         companyId: parseInt(secureStorage.getPlain('companyId')) || 1,
@@ -773,13 +782,91 @@ const SalesTransactionCreate = () => {
         zIndex: 2
     };
 
-    document.title = isView ? "View Sales Transaction | SoftBook" : (isEdit ? "Edit Sales Transaction | SoftBook" : "Create Sales Transaction | SoftBook");
+    const handleCopyFromPrevious = useCallback(() => {
+        if (!validation.values.partyId) return;
+        const customerInvoices = allSalesOrders.filter(tx => (tx.partyId === validation.values.partyId || tx.PartyId === validation.values.partyId));
+        // Sort by date descending
+        const sorted = [...customerInvoices].sort((a, b) => new Date(b.invDate || b.InvDate) - new Date(a.invDate || a.InvDate));
+        setPreviousInvoices(sorted);
+        setIsCopyPreviousModalOpen(true);
+
+        // Fetch quantities in background
+        sorted.forEach(async (inv) => {
+            const code = inv.spUniqueCode || inv.SpUniqueCode;
+            if (code && !qtyByCode[code]) {
+                try {
+                    const res = await getSalesTransactionDetails(code);
+                    const details = res?.data || res;
+                    const lines = details?.lines || details?.Lines || [];
+                    const totalQty = lines.reduce((acc, l) => acc + Number(l.quantity || l.Quantity || 0), 0);
+                    setQtyByCode(prev => ({ ...prev, [code]: totalQty }));
+                } catch (e) {
+                    console.error("Error fetching qty for", code, e);
+                }
+            }
+        });
+    }, [validation.values.partyId, allSalesOrders, qtyByCode]);
+
+    const selectPreviousInvoice = async (copyId) => {
+        try {
+            const editData = await getSalesTransactionDetails(copyId);
+            if (editData && editData.header) {
+                const header = editData.header;
+                const parseDate = (val) => {
+                    if (!val) return null;
+                    const d = new Date(val);
+                    return isNaN(d.getTime()) ? null : d;
+                };
+                validation.setValues({
+                    ...initialValues,
+                    ...header,
+                    partyId: header.partyId || header.PartyId || "",
+                    deliveryNo: "",
+                    invNo: "",
+                    invDate: today,
+                    salesOrderNo: "",
+                    salesOrderDate: today,
+                    poOrderNo: "",
+                    poOrderDate: today,
+                    deliveryDate: today,
+                    spUniqueCode: 0,
+                    lines: (editData.lines || editData.Lines || []).map(line => ({
+                        ...line,
+                        spUniqueCode: 0,
+                        productId: line.productId || line.ProductId || "",
+                        batchNo: line.batchNo || line.BatchNo || "",
+                        batchDate: today,
+                        unit: line.unit || line.Unit || "",
+                        subUnit: line.subUnit || line.SubUnit || "",
+                        subUnitQuantity: line.subUnitQuantity || line.SubUnitQuantity || 0,
+                        crt: line.crt || line.Crt || 0,
+                        packing: line.packing || line.Packing || 0,
+                        rate: line.rate || line.Rate || 0,
+                        mrp: line.mrp || line.Mrp || 0,
+                        cgstPercent: line.cgstPercent || line.CgstPercent || 0,
+                        sgstPercent: line.sgstPercent || line.SgstPercent || 0,
+                        amount: line.amount || line.Amount || 0,
+                        totalAmount: line.totalAmount || line.TotalAmount || 0,
+                        originalRate: line.rate || line.Rate || 0,
+                        rateDiff: line.rateDiff || line.RateDiff || 0,
+                        cogs: line.cogs || line.Cogs || 0
+                    }))
+                });
+                handleCustomerChange({ value: header.partyId || header.PartyId }, true);
+                setIsCopyPreviousModalOpen(false);
+            }
+        } catch (error) {
+            console.error("Error copying invoice:", error);
+        }
+    };
+
+    document.title = isView ? "View Sales Transaction | SoftBook" : (isCopy ? "Copy Sales Transaction | SoftBook" : (isEdit ? "Edit Sales Transaction | SoftBook" : "Create Sales Transaction | SoftBook"));
 
     return (
         <React.Fragment>
             <div className="page-content">
                 <Container fluid>
-                    <BreadCrumb title={isView ? "View Sales Order" : (isEdit ? "Edit Sales Order" : "New Sales Order")} pageTitle="Sales Transactions" />
+                    <BreadCrumb title={isView ? "View Sales Order" : (isCopy ? "Copy Sales Order" : (isEdit ? "Edit Sales Order" : "New Sales Order"))} pageTitle="Sales Transactions" />
                     <Row>
                         <Col lg={12}>
                             <Card>
@@ -802,8 +889,8 @@ const SalesTransactionCreate = () => {
                                                             styles={{ control: base => ({ ...base, borderColor: (touchedSelects.partyId && !validation.values.partyId) ? '#f06548' : base.borderColor }) }}
                                                         />
                                                     </div>
-                                                    <Button color="primary" onClick={() => setIsAddressModalOpen(true)} disabled={!validation.values.partyId || isView}>
-                                                        <i className="ri-edit-2-line"></i>
+                                                    <Button color="info" onClick={handleCopyFromPrevious} disabled={!validation.values.partyId || isView} title="Copy from Previous Invoice">
+                                                        <i className="ri-file-copy-line"></i>
                                                     </Button>
                                                 </div>
                                                 {(touchedSelects.partyId || validation.submitCount > 0) && validation.errors.partyId && <div className="text-danger mt-1 small">{validation.errors.partyId}</div>}
@@ -1268,65 +1355,49 @@ const SalesTransactionCreate = () => {
                                         </div>
                                     </Form>
 
-                                    <Modal isOpen={isAddressModalOpen} toggle={() => setIsAddressModalOpen(!isAddressModalOpen)} size="lg">
-                                        <ModalHeader toggle={() => setIsAddressModalOpen(false)}>Edit Addresses & Details</ModalHeader>
+                                    <Modal isOpen={isCopyPreviousModalOpen} toggle={() => setIsCopyPreviousModalOpen(!isCopyPreviousModalOpen)} size="lg">
+                                        <ModalHeader toggle={() => setIsCopyPreviousModalOpen(false)}>Copy from Previous Invoice</ModalHeader>
                                         <ModalBody>
-                                            <Row>
-                                                <Col md={6}>
-                                                    <h5 className="mb-3 text-primary">Billing Address</h5>
-                                                    <div className="mb-3">
-                                                        <Label>Street Address</Label>
-                                                        <Input type="text" value={validation.values.billingAddress} onChange={(e) => validation.setFieldValue("billingAddress", e.target.value)} placeholder="Street / Road" />
-                                                    </div>
-                                                    <div className="mb-3">
-                                                        <Label>Address Line 1</Label>
-                                                        <Input type="text" value={validation.values.billingAddress1} onChange={(e) => validation.setFieldValue("billingAddress1", e.target.value)} placeholder="Area / Landmark" />
-                                                    </div>
-                                                    <div className="mb-3">
-                                                        <Label>Address Line 2 (City/State)</Label>
-                                                        <Input type="text" value={validation.values.billingAddress2} onChange={(e) => validation.setFieldValue("billingAddress2", e.target.value)} placeholder="City, State" />
-                                                    </div>
-                                                </Col>
-                                                <Col md={6}>
-                                                    <h5 className="mb-3 text-info">Shipping Address</h5>
-                                                    <div className="mb-3">
-                                                        <Label>Street Address</Label>
-                                                        <Input type="text" value={validation.values.shippingAddress} onChange={(e) => validation.setFieldValue("shippingAddress", e.target.value)} placeholder="Street / Road" />
-                                                    </div>
-                                                    <div className="mb-3">
-                                                        <Label>Address Line 1</Label>
-                                                        <Input type="text" value={validation.values.shippingAddress1} onChange={(e) => validation.setFieldValue("shippingAddress1", e.target.value)} placeholder="Area / Landmark" />
-                                                    </div>
-                                                    <div className="mb-3">
-                                                        <Label>Address Line 2 (City/State)</Label>
-                                                        <Input type="text" value={validation.values.shippingAddress2} onChange={(e) => validation.setFieldValue("shippingAddress2", e.target.value)} placeholder="City, State" />
-                                                    </div>
-                                                </Col>
-                                            </Row>
-                                            <hr />
-                                            <Row>
-                                                <Col md={4} className="mb-3">
-                                                    <Label>GST Treatment</Label>
-                                                    <Input type="select" value={validation.values.gstTreatment} onChange={(e) => validation.setFieldValue("gstTreatment", e.target.value)}>
-                                                        <option>Registered Business</option>
-                                                        <option>Unregistered Business</option>
-                                                        <option>Consumer</option>
-                                                        <option>Overseas</option>
-                                                    </Input>
-                                                </Col>
-                                                <Col md={4} className="mb-3">
-                                                    <Label>GST No</Label>
-                                                    <Input value={validation.values.gstNo} onChange={(e) => validation.setFieldValue("gstNo", e.target.value)} />
-                                                </Col>
-                                                <Col md={4} className="mb-3">
-                                                    <Label>Place of Supply</Label>
-                                                    <Input value={validation.values.placeOfSupply} onChange={(e) => validation.setFieldValue("placeOfSupply", e.target.value)} />
-                                                </Col>
-                                            </Row>
+                                            <div className="table-responsive" style={{ maxHeight: '450px', overflowY: 'auto' }}>
+                                                <Table className="align-middle table-nowrap mb-0">
+                                                    <thead className="table-light text-muted">
+                                                        <tr>
+                                                            <th scope="col">Inv No</th>
+                                                            <th scope="col">Date</th>
+                                                            <th scope="col" className="text-end">Total Qty</th>
+                                                            <th scope="col" className="text-end">Amount</th>
+                                                            <th scope="col" className="text-center">Action</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {previousInvoices.length > 0 ? (
+                                                            previousInvoices.map((inv, idx) => {
+                                                                const code = inv.spUniqueCode || inv.SpUniqueCode;
+                                                                return (
+                                                                    <tr key={idx}>
+                                                                        <td>{inv.invNo || inv.InvNo}</td>
+                                                                        <td>{new Date(inv.invDate || inv.InvDate).toLocaleDateString('en-GB')}</td>
+                                                                        <td className="text-end">{qtyByCode[code] !== undefined ? Number(qtyByCode[code]).toFixed(2) : <span className="text-muted small italic">Loading...</span>}</td>
+                                                                        <td className="text-end">{formatToTwoDecimals(inv.grandTotal || inv.GrandTotal)}</td>
+                                                                        <td className="text-center">
+                                                                            <Button color="soft-info" size="sm" onClick={() => selectPreviousInvoice(code)}>
+                                                                                Select & Copy
+                                                                            </Button>
+                                                                        </td>
+                                                                    </tr>
+                                                                );
+                                                            })
+                                                        ) : (
+                                                            <tr>
+                                                                <td colSpan="4" className="text-center">No previous invoices found for this customer</td>
+                                                            </tr>
+                                                        )}
+                                                    </tbody>
+                                                </Table>
+                                            </div>
                                         </ModalBody>
                                         <ModalFooter>
-                                            <Button color="secondary" onClick={() => setIsAddressModalOpen(false)}>Close</Button>
-                                            <Button color="primary" onClick={() => setIsAddressModalOpen(false)}>Done</Button>
+                                            <Button color="secondary" onClick={() => setIsCopyPreviousModalOpen(false)}>Close</Button>
                                         </ModalFooter>
                                     </Modal>
                                 </CardBody>
