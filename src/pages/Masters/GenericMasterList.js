@@ -177,6 +177,7 @@ const GenericMasterList = () => {
 
     // Get configuration for the current master
     const currentConfig = masterConfig[name];
+    const isProductMaster = name === "products";
 
     // Capitalize and format name for display
     useEffect(() => {
@@ -302,6 +303,12 @@ const GenericMasterList = () => {
         return String(val);
     };
 
+    const getProductNameAndShortName = (row) => {
+        const productName = getCellText(row, "name");
+        const shortName = getCellText(row, "shortName");
+        return { productName, shortName };
+    };
+
     const isNumericColumn = (col) => {
         if (col?.type === "number") return true;
         const sampleValue = data?.[0]?.[col?.accessor];
@@ -316,20 +323,30 @@ const GenericMasterList = () => {
 
         return (data || []).filter(row => {
             if (gs) {
-                const anyMatch = columnMeta.some(col =>
+                let anyMatch = columnMeta.some(col =>
                     getCellText(row, col.accessor).toLowerCase().includes(gs)
                 );
+                if (!anyMatch && isProductMaster) {
+                    const { productName, shortName } = getProductNameAndShortName(row);
+                    anyMatch = `${productName} ${shortName}`.toLowerCase().includes(gs);
+                }
                 if (!anyMatch) return false;
             }
 
             for (const [accessor, value] of activeColumnFilters) {
                 const fv = value.toString().toLowerCase();
+                if (isProductMaster && accessor.toLowerCase() === "name") {
+                    const { productName, shortName } = getProductNameAndShortName(row);
+                    const combined = `${productName} ${shortName}`.toLowerCase();
+                    if (!combined.includes(fv)) return false;
+                    continue;
+                }
                 if (!getCellText(row, accessor).toLowerCase().includes(fv)) return false;
             }
 
             return true;
         });
-    }, [data, globalSearch, columnFilters, columnMeta]);
+    }, [data, globalSearch, columnFilters, columnMeta, isProductMaster]);
 
     const exportColumns = columnMeta.map(col => ({
         label: col.label,
@@ -363,6 +380,14 @@ const GenericMasterList = () => {
             wrap: true,
             cell: row => {
                 const raw = row?.[col.accessor];
+                if (isProductMaster && col.accessor.toLowerCase() === "name") {
+                    const { productName, shortName } = getProductNameAndShortName(row);
+                    return (
+                        <div>
+                            <div>{productName}</div>
+                        </div>
+                    );
+                }
                 if (col.type === "number") {
                     return <div className="w-100 text-end">{formatToTwoDecimals(raw)}</div>;
                 }
@@ -411,7 +436,7 @@ const GenericMasterList = () => {
         };
 
         return [actionCol, ...cols];
-    }, [columnMeta, columnFilters, data]);
+    }, [columnMeta, columnFilters, data, isProductMaster]);
 
     const toggle = () => {
         setModal(!modal);

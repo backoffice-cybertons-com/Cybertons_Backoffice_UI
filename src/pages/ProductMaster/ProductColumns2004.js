@@ -55,6 +55,15 @@ export const getProductColumns = (handleEdit, handleDelete, columnFilters, setCo
             </div>
         ),
         selector: row => row.name,
+        cell: row => {
+            const shortName = row.shortName || row.ShortName || row.short_name;
+            return (
+                <div>
+                    <div>{row.name || row.Name || row.productName}</div>
+                    {shortName && <div className="text-muted small">({shortName})</div>}
+                </div>
+            );
+        },
         sortable: true,
         wrap: true,
         grow: 2
