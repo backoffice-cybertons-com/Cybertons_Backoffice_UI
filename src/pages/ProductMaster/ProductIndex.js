@@ -60,7 +60,22 @@ const ProductIndex = () => {
         setLoading(true);
         try {
             const response = await apiClient.get('/api/Product/details');
-            setData(response || []);
+            const productList = response?.data || response || [];
+            const mappedData = productList.map(p => ({
+                ...p,
+                productId: p.productId ?? p.ProductId,
+                name: p.name ?? p.Name ?? p.productName ?? p.ProductName,
+                shortName: p.shortName ?? p.ShortName ?? "",
+                type: p.type ?? p.Type,
+                productGroupName: p.productGroupName ?? p.ProductGroupName,
+                taxGroupName: p.taxGroupName ?? p.TaxGroupName,
+                hsnCode: p.hsnCode ?? p.HsnCode,
+                sacCode: p.sacCode ?? p.SacCode,
+                costPrice: p.costPrice ?? p.CostPrice,
+                sellingPrice: p.sellingPrice ?? p.SellingPrice,
+                mrp: p.mrp ?? p.MRP
+            }));
+            setData(mappedData);
         } catch (error) {
             console.error("Failed to fetch products:", error);
             toast.error("Failed to load products");
@@ -100,6 +115,11 @@ const ProductIndex = () => {
             // Global search
             const globalMatch = !filterText || [
                 item.name,
+                item.Name,
+                item.productName,
+                item.shortName,
+                item.ShortName,
+                item.short_name,
                 item.type,
                 item.productGroupName,
                 item.taxGroupName,
@@ -120,6 +140,10 @@ const ProductIndex = () => {
                     if (!item.sellingPrice?.toString().includes(searchVal)) return false;
                 } else if (key === 'productId') {
                     if (!item.productId?.toString().includes(searchVal)) return false;
+                } else if (key === 'name') {
+                    const name = (item.name || item.Name || item.productName || "").toString().toLowerCase();
+                    const shortName = (item.shortName || item.ShortName || item.short_name || "").toString().toLowerCase();
+                    if (!name.includes(searchVal) && !shortName.includes(searchVal)) return false;
                 } else {
                     const itemVal = item[key]?.toString().toLowerCase() || '';
                     if (!itemVal.includes(searchVal)) return false;

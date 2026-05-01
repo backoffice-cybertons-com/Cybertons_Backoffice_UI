@@ -114,6 +114,7 @@ const PurchaseTransactionCreate = () => {
                     setProducts(productArray.map(p => ({
                         label: p.name || p.Name,
                         value: p.productId || p.ProductId,
+                        shortName: p.shortName || p.ShortName || p.short_name || "",
                         rate: p.costPrice || p.CostPrice || 0,
                         mrp: p.mrp || p.MRP || p.Mrp || 0,
                         type: p.type || p.Type,
@@ -668,7 +669,10 @@ const PurchaseTransactionCreate = () => {
     const formatProductOption = (option) => (
         <div className="d-flex flex-column">
             <div className="d-flex justify-content-between align-items-center">
-                <span className="fw-medium">{option.label}</span>
+                <span className="fw-medium">
+                    {option.label}
+                    {option.shortName && <span className="text-muted ms-2 small">({option.shortName})</span>}
+                </span>
                 <Badge color={option.type === "Goods" ? "info" : "success"} className="ms-2">{option.type}</Badge>
             </div>
             <small className="text-muted">HSN Code: {option.hsnCode}</small>
@@ -1099,6 +1103,15 @@ const PurchaseTransactionCreate = () => {
                                                                         options={products}
                                                                         isDisabled={isView}
                                                                         formatOptionLabel={formatProductOption}
+                                                                        filterOption={(option, inputValue) => {
+                                                                            const search = inputValue.toLowerCase().trim();
+                                                                            if (!search) return true;
+                                                                            const label = (option.label || "").toLowerCase();
+                                                                            const data = option.data || {};
+                                                                            const shortName = (data.shortName || data.ShortName || data.short_name || "").toLowerCase();
+                                                                            const name = (data.name || data.Name || data.productName || "").toLowerCase();
+                                                                            return label.includes(search) || shortName.includes(search) || name.includes(search);
+                                                                        }}
                                                                         value={products.find(p => p.value === line.productId) || null}
                                                                         className="mb-1"
                                                                         classNamePrefix="select"
