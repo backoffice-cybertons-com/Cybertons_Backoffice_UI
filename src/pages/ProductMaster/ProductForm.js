@@ -41,6 +41,7 @@ const ProductForm = ({ isEdit = false, productId = null, onSuccess = null, onCan
         productId: 0,
         type: 'Goods',
         name: '',
+        shortName: '',
         unitId: '',
         productPackingUnit: '',
         productGroupId: '',
@@ -89,6 +90,9 @@ const ProductForm = ({ isEdit = false, productId = null, onSuccess = null, onCan
                 const payload = {
                     ...values,
                     productId: isEdit ? parseInt(productId) : 0,
+                    name: values.name,
+                    shortName: values.shortName || null,
+                    type: values.type,
                     unitId: values.unitId ? parseInt(values.unitId) : null,
                     productPackingUnit: values.productPackingUnit ? parseInt(values.productPackingUnit) : null,
                     productGroupId: values.productGroupId ? parseInt(values.productGroupId) : null,
@@ -194,6 +198,8 @@ const ProductForm = ({ isEdit = false, productId = null, onSuccess = null, onCan
                         const productData = {
                             ...initialValues,
                             ...response,
+                            name: response.name || response.ProductName || "",
+                            shortName: response.shortName || response.ShortName || "",
                             sellable: response.sellable ?? true,
                             purchasable: response.purchasable ?? true
                         };
@@ -305,6 +311,20 @@ const ProductForm = ({ isEdit = false, productId = null, onSuccess = null, onCan
                                 </Col>
                                 <Col md={3}>
                                     <FormGroup className="mb-3">
+                                        <Label htmlFor="shortName">Short Name</Label>
+                                        <Input
+                                            id="shortName"
+                                            name="shortName"
+                                            placeholder="Enter short name"
+                                            type="text"
+                                            onChange={formik.handleChange}
+                                            onBlur={formik.handleBlur}
+                                            value={formik.values.shortName}
+                                        />
+                                    </FormGroup>
+                                </Col>
+                                <Col md={3}>
+                                    <FormGroup className="mb-3">
                                         <Label htmlFor="productGroupId">Product Group</Label>
                                         <Input
                                             id="productGroupId"
@@ -322,6 +342,9 @@ const ProductForm = ({ isEdit = false, productId = null, onSuccess = null, onCan
                                         </Input>
                                     </FormGroup>
                                 </Col>
+                            </Row>
+
+                            <Row>
                                 <Col md={3}>
                                     <FormGroup className="mb-3">
                                         <Label htmlFor="unitId">Base Unit <span className="text-danger">*</span></Label>
@@ -344,9 +367,6 @@ const ProductForm = ({ isEdit = false, productId = null, onSuccess = null, onCan
                                         {showError('unitId') && <FormFeedback>{formik.errors.unitId}</FormFeedback>}
                                     </FormGroup>
                                 </Col>
-                            </Row>
-
-                            <Row>
                                 <Col md={3}>
                                     <FormGroup className="mb-3">
                                         <Label htmlFor="productPackingUnit">Packing Unit</Label>
