@@ -216,27 +216,26 @@ const RegisterReport = ({ type }) => {
   const fetchExportData = async () => {
     const endpoint = REPORT_ENDPOINTS[appliedReportType];
     const companyId = localStorage.getItem("companyId");
-    const rawParams = {
+    
+    const conditions = [];
+    const fromD = fromRef.current?.value;
+    const toD = toRef.current?.value;
+    
+    if (fromD && toD) conditions.push(`tsp.inv_date BETWEEN '${fromD}' AND '${toD}'`);
+    if (selectedParty?.value) conditions.push(`pm.display_name = '${selectedParty.value.replace(/'/g, "''")}'`);
+    if (selectedProduct?.value) conditions.push(`prod.product_name = '${selectedProduct.value.replace(/'/g, "''")}'`);
+    if (invoiceNo) conditions.push(`tsp.inv_no = '${invoiceNo.replace(/'/g, "''")}'`);
+
+    const where = conditions.length ? conditions.join(" AND ") : "1=1";
+
+    const params = {
       companyId: companyId || null,
-      fromDate: fromRef.current?.value || null,
-      toDate: toRef.current?.value || null,
-      customerName: selectedParty?.value || null,
-      productName: selectedProduct?.value || null,
-      invoiceNo: invoiceNo || null,
       invType: invTypeValue,
+      reportType: appliedReportType.toUpperCase(),
+      where: where
     };
 
-    console.log(rawParams);
-    const params = Object.fromEntries(
-      Object.entries(rawParams).filter(
-        ([, value]) =>
-          value !== null &&
-          value !== undefined &&
-          String(value).trim() !== "" &&
-          String(value) !== "null",
-      ),
-    );
-    const response = await api.get(endpoint, params);
+    const response = await api.get(endpoint, { params });
     const data = Array.isArray(response) ? response : response?.data || [];
     return normalizeData(data);
   };

@@ -98,7 +98,8 @@ export const DELETE_INVOICE = "/apps/invoice";
 
 // Purchase Transaction
 export const GET_PURCHASE_TRANSACTIONS = "/api/purchaseTransaction";
-export const ADD_NEW_PURCHASE_TRANSACTION = "/api/purchaseTransaction/composite";
+export const ADD_NEW_PURCHASE_TRANSACTION =
+  "/api/purchaseTransaction/composite";
 export const UPDATE_PURCHASE_TRANSACTION = "/api/purchaseTransaction/composite";
 export const DELETE_PURCHASE_TRANSACTION = "/api/purchaseTransaction";
 export const GET_PURCHASE_TRANSACTION_DETAILS = "/api/purchaseTransaction";
@@ -158,17 +159,23 @@ export const GET_VEHICLES = "/api/vehicle";
 export const GET_LEDGER_REPORT = "/api/report/ledger";
 
 export const GET_GSTR3B = "/api/report/GSTR-3B-Report";
+export const EXPORT_GSTR1_EXCEL = "/api/report/gstr1-export";
 
 export const GET_PAYRECRPT_REPORT = "/api/report/payeble-receivable";
-export const GET_SALE_PUR_COMPAR_DATEWISE = "/api/report/sale-purchase-datewise-comparison";
+export const GET_SALE_PUR_COMPAR_DATEWISE =
+  "/api/report/sale-purchase-datewise-comparison";
 
 export const GET_TRIAL_BALANCE = "/api/Report/trial-balance";
 
 export const GET_SALE_PUR_INVWISE = "/api/report/sale-pur-invwise";
-export const GET_SALE_PURCHASE_REGISTER_ITEMWISE = "/api/report/sale-purchase-register-itemwise";
-export const GET_SALE_PURCHASE_REGISTER_DATEWISE = "/api/report/sale-purchase-register-datewise";
-export const GET_SALE_PURCHASE_REGISTER_PARTYWISE = "/api/report/sale-purchase-register-partywise";
-export const GET_SALE_PURCHASE_REGISTER_MONTHWISE = "/api/report/sale-purchase-register-monthwise";
+export const GET_SALE_PURCHASE_REGISTER_ITEMWISE =
+  "/api/report/sale-purchase-register-itemwise";
+export const GET_SALE_PURCHASE_REGISTER_DATEWISE =
+  "/api/report/sale-purchase-register-datewise";
+export const GET_SALE_PURCHASE_REGISTER_PARTYWISE =
+  "/api/report/sale-purchase-register-partywise";
+export const GET_SALE_PURCHASE_REGISTER_MONTHWISE =
+  "/api/report/sale-purchase-register-monthwise";
 
 // TicketsList
 export const GET_TICKETS_LIST = "/apps/ticket";
@@ -192,7 +199,8 @@ export const GET_MONTHLY_DATA = "/monthly-data";
 // Audiences Metrics
 export const GET_ALLAUDIENCESMETRICS_DATA = "/allAudiencesMetrics-data";
 export const GET_MONTHLYAUDIENCESMETRICS_DATA = "/monthlyAudiencesMetrics-data";
-export const GET_HALFYEARLYAUDIENCESMETRICS_DATA = "/halfyearlyAudiencesMetrics-data";
+export const GET_HALFYEARLYAUDIENCESMETRICS_DATA =
+  "/halfyearlyAudiencesMetrics-data";
 export const GET_YEARLYAUDIENCESMETRICS_DATA = "/yearlyAudiencesMetrics-data";
 
 // Users by Device
