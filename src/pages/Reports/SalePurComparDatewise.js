@@ -344,6 +344,8 @@ export default function SalePurComparDatewise() {
                     purTax: r.purTax || 0,
                     purExpDisRound: r.purExpDisRound || 0,
                     purFinal: r.purFinal || 0,
+                    //purFinal: (r.purAmount || 0) + (r.purTax || 0),
+
 
                     saleQty: r.saleQty || 0,
                     saleAvgPrice: r.saleAvgPrice || 0,
@@ -351,6 +353,8 @@ export default function SalePurComparDatewise() {
                     saleTax: r.saleTax || 0,
                     saleExpDisRound: r.saleExpDisRound || 0,
                     saleFinal: r.saleFinal || 0,
+                    // saleFinal: (r.saleAmount || 0) + (r.saleTax || 0),
+
 
                     pl: r.pl || 0,
 

@@ -324,13 +324,6 @@ const GSTR3BExcelExport = (
       tn(fmt(r.cess)),
     );
   });
-  rows += tr(
-    tt("Total") +
-    ttn(fmt(sum(section4, "igstAmt"))) +
-    ttn(fmt(sum(section4, "cgstAmt"))) +
-    ttn(fmt(sum(section4, "sgstAmt"))) +
-    ttn(fmt(sum(section4, "cess"))),
-  );
   rows += tr(tspacer(6));
 
   // 5

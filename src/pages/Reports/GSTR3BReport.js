@@ -865,7 +865,12 @@ const GSTR3BReport = () => {
                             }}
                           >
                             <tr>
-                              <td className="text-start">Total</td>
+                              <td className="text-start">
+                                <div className="d-flex justify-content-between">
+                                  <span>Total</span>
+                                  <span>{section31.length}</span>
+                                </div>
+                              </td>
                               <td>{formatCurrency(totals31.taxableAmt)}</td>
                               <td>{formatCurrency(totals31.igstAmt)}</td>
                               <td>{formatCurrency(totals31.cgstAmt)}</td>
@@ -901,6 +906,12 @@ const GSTR3BReport = () => {
                         <th>Total Taxable Value</th>
                         <th>Amount Of Integrated Tax</th>
                       </tr>
+                      <tr className="text-center">
+                        <th>1</th>
+                        <th>2</th>
+                        <th>3</th>
+                        <th>4</th>
+                      </tr>
                     </thead>
                     <tbody>
                       {section32.map((r, i) => (
@@ -920,7 +931,12 @@ const GSTR3BReport = () => {
                       style={{ background: "lightgray", fontWeight: "bold" }}
                     >
                       <tr>
-                        <td className="text-start">Total</td>
+                        <td className="text-start">
+                          <div className="d-flex justify-content-between">
+                            <span>Total</span>
+                            <span>{section32.length}</span>
+                          </div>
+                        </td>
                         <td></td>
                         <td className="text-end">
                           {formatCurrency(totals32.taxableAmt)}
@@ -952,6 +968,13 @@ const GSTR3BReport = () => {
                         <th>State / UT Tax</th>
                         <th>Cess</th>
                       </tr>
+                      <tr className="text-center">
+                        <th>1</th>
+                        <th>2</th>
+                        <th>3</th>
+                        <th>4</th>
+                        <th>5</th>
+                      </tr>
                     </thead>
                     <tbody>
                       {section4.map((r, i) => (
@@ -972,11 +995,16 @@ const GSTR3BReport = () => {
                         </tr>
                       ))}
                     </tbody>
-                    <tfoot
+                    {/* <tfoot
                       style={{ background: "lightgray", fontWeight: "bold" }}
                     >
                       <tr>
-                        <td className="text-start">Total</td>
+                        <td className="text-start">
+                          <div className="d-flex justify-content-between">
+                            <span>Total</span>
+                            <span>{section4.length}</span>
+                          </div>
+                        </td>
                         <td className="text-end">
                           {formatCurrency(totals4.igstAmt)}
                         </td>
@@ -990,7 +1018,7 @@ const GSTR3BReport = () => {
                           {formatCurrency(totals4.cess)}
                         </td>
                       </tr>
-                    </tfoot>
+                    </tfoot> */}
                   </table>
                 )}
 
@@ -1014,6 +1042,11 @@ const GSTR3BReport = () => {
                         <th>Inter-State Supplies</th>
                         <th>Intra-State Supplies</th>
                       </tr>
+                      <tr className="text-center">
+                        <th>1</th>
+                        <th>2</th>
+                        <th>3</th>
+                      </tr>
                     </thead>
                     <tbody>
                       {section5.map((r, i) => (
@@ -1032,7 +1065,12 @@ const GSTR3BReport = () => {
                       style={{ background: "lightgray", fontWeight: "bold" }}
                     >
                       <tr>
-                        <td className="text-start">Total</td>
+                        <td className="text-start">
+                          <div className="d-flex justify-content-between">
+                            <span>Total</span>
+                            <span>{section5.length}</span>
+                          </div>
+                        </td>
                         <td className="text-end">
                           {formatCurrency(totals5.interStateSupplies)}
                         </td>
