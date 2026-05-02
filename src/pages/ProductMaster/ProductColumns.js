@@ -100,6 +100,7 @@ export const getProductColumns = (handleEdit, handleDelete, columnFilters, setCo
             </div>
         ),
         selector: row => row.name,
+        cell: row => <div>{row.name || row.Name || row.productName}</div>,
         sortable: true,
         wrap: true,
         grow: 3
