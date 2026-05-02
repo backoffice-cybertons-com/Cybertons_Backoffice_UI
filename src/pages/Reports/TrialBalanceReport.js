@@ -298,7 +298,9 @@ const TrialBalanceReport = () => {
               tr{ page-break-inside: avoid; page-break-after:auto; }
               .table > :not(caption) > * > *{ padding: 6px 10px; }
               .table-light{ --bs-table-bg: #f3f4f6; }
-              .tb-total-row{ background:#111827 !important; color:#fff !important; }
+              .tb-total-row{ background:#f8f9fa !important; color:#212529 !important; border-top:2px solid #dee2e6 !important; }
+              .tb-total-row td:nth-child(2){ color:#198754 !important; }
+              .tb-total-row td:nth-child(3){ color:#dc3545 !important; }
 
               /* Remove sticky behaviors for print */
               .sticky-top, .sticky-bottom { position: static !important; }
@@ -351,25 +353,26 @@ const TrialBalanceReport = () => {
                                             </div>
                                         </Col>
                                         <Col lg={4}>
-                                            <Label className="form-label text-muted text-uppercase fw-semibold mb-1">Search account</Label>
-                                            <div className="d-flex gap-2 align-items-stretch">
+                                            <Label className="form-label text-muted text-uppercase fw-semibold mb-1 tb-filter-label">Search account</Label>
+                                            <div className="d-flex gap-2 tb-toolbar-search-row">
                                                 <Input
+                                                    className="tb-toolbar-input flex-grow-1"
                                                     value={query}
                                                     onChange={(e) => setQuery(e.target.value)}
                                                     placeholder="Type account name..."
                                                 />
-                                                <div className="d-flex align-items-center gap-2 tb-actions">
-                                                    <div className="form-check form-switch m-0">
-                                                <Input
-                                                    id="tbHideZero"
-                                                    type="switch"
-                                                    className="form-check-input"
-                                                    checked={hideZero}
-                                                    onChange={(e) => setHideZero(e.target.checked)}
-                                                />
-                                                <Label className="form-check-label" htmlFor="tbHideZero">
-                                                    Hide zero
-                                                </Label>
+                                                <div className="tb-actions">
+                                                    <div className="form-check form-switch">
+                                                        <Input
+                                                            id="tbHideZero"
+                                                            type="switch"
+                                                            className="form-check-input"
+                                                            checked={hideZero}
+                                                            onChange={(e) => setHideZero(e.target.checked)}
+                                                        />
+                                                        <Label className="form-check-label" htmlFor="tbHideZero">
+                                                            Hide zero
+                                                        </Label>
                                                     </div>
                                                     <Button
                                                         color="success"
@@ -379,7 +382,7 @@ const TrialBalanceReport = () => {
                                                         disabled={!shownRows.length}
                                                         className="tb-action-btn"
                                                     >
-                                                        <i className="ri-file-excel-2-line fs-5" />
+                                                        <i className="ri-file-excel-2-line" />
                                                     </Button>
                                                     <Button
                                                         color="secondary"
@@ -389,7 +392,7 @@ const TrialBalanceReport = () => {
                                                         disabled={!accountRows.length}
                                                         className="tb-action-btn"
                                                     >
-                                                        <i className="ri-printer-line fs-5" />
+                                                        <i className="ri-printer-line" />
                                                     </Button>
                                                 </div>
                                             </div>
@@ -412,69 +415,69 @@ const TrialBalanceReport = () => {
                                             <div>
                                                 <h3 className="mb-1">Trial Balance</h3>
                                                 <div className="tb-print-sub">
-                                                    <strong>${companyName}</strong> · As of <strong>${formatDate(asOfDate)}</strong>
+                                                    <strong>{companyName}</strong> · As of <strong>{formatDate(asOfDate)}</strong>
                                                 </div>
                                             </div>
                                             <div className="tb-print-meta">
                                                 <div className="tb-print-kv">
                                                     <b>Status</b>
-                                                    <span className="tb-print-badge">${isBalanced ? 'Balanced' : 'Not balanced'}</span>
+                                                    <span className="tb-print-badge">{isBalanced ? 'Balanced' : 'Not balanced'}</span>
                                                 </div>
                                                 <div className="tb-print-kv">
                                                     <b>Difference</b>
-                                                    ${formatMoney(Math.abs(diff))} ${isBalanced ? '' : (diff > 0 ? '(Dr)' : '(Cr)')}
+                                                    {formatMoney(Math.abs(diff))} {isBalanced ? '' : (diff > 0 ? '(Dr)' : '(Cr)')}
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
-                                    <CardHeader className="border-0 d-flex align-items-start align-items-md-center flex-wrap gap-2">
+                                    <CardHeader className="border-0 d-flex align-items-start align-items-md-center flex-wrap gap-2 py-2">
                                         <div className="flex-grow-1">
                                             <div className="d-flex align-items-center flex-wrap gap-2">
-                                                <h5 className="card-title mb-0">Trial Balance</h5>
+                                                <h6 className="card-title mb-0 fs-6 fw-semibold">Trial Balance</h6>
                                                 <Badge color={isBalanced ? "success" : "warning"} className="tb-pill">
                                                     {isBalanced ? "Balanced" : "Not balanced"}
                                                 </Badge>
                                                 <span className="text-muted fs-12">As of <strong>{formatDate(asOfDate)}</strong></span>
                                             </div>
-                                            <div className="text-muted fs-12 mt-1">
+                                            <div className="text-muted fs-11 mt-1">
                                                 Showing <strong>{shownRows.length}</strong> of <strong>{accountRows.length}</strong> accounts
                                                 {query.trim() ? <> · Filter: <strong>{query.trim()}</strong></> : null}
                                             </div>
                                         </div>
                                     </CardHeader>
 
-                                    <CardBody className="pt-0">
-                                        <Row className="g-3 mb-2">
+                                    <CardBody className="pt-0 pb-2">
+                                        <Row className="g-2 mb-2">
                                             <Col md={4}>
                                                 <Card className="tb-summary-card border">
-                                                    <CardBody className="py-3">
-                                                        <div className="d-flex align-items-center justify-content-between">
-                                                            <div className="text-muted text-uppercase fs-11 fw-semibold">Total Debit</div>
-                                                            <i className="ri-arrow-right-up-line text-success" />
+                                                    <CardBody>
+                                                        <div className="d-flex align-items-start justify-content-between gap-2">
+                                                            <div className="text-muted text-uppercase fw-semibold tb-summary-label">Total Debit</div>
+                                                            <i className="ri-arrow-right-up-line text-success tb-summary-icon" aria-hidden />
                                                         </div>
-                                                        <div className="fs-18 fw-bold text-success mb-0">{formatMoney(totalDebit)}</div>
+                                                        <div className="tb-summary-value text-success mb-0">{formatMoney(totalDebit)}</div>
                                                     </CardBody>
                                                 </Card>
                                             </Col>
                                             <Col md={4}>
                                                 <Card className="tb-summary-card border">
-                                                    <CardBody className="py-3">
-                                                        <div className="d-flex align-items-center justify-content-between">
-                                                            <div className="text-muted text-uppercase fs-11 fw-semibold">Total Credit</div>
-                                                            <i className="ri-arrow-right-down-line text-danger" />
+                                                    <CardBody>
+                                                        <div className="d-flex align-items-start justify-content-between gap-2">
+                                                            <div className="text-muted text-uppercase fw-semibold tb-summary-label">Total Credit</div>
+                                                            <i className="ri-arrow-right-down-line text-danger tb-summary-icon" aria-hidden />
                                                         </div>
-                                                        <div className="fs-18 fw-bold text-danger mb-0">{formatMoney(totalCredit)}</div>
+                                                        <div className="tb-summary-value text-danger mb-0">{formatMoney(totalCredit)}</div>
                                                     </CardBody>
                                                 </Card>
                                             </Col>
                                             <Col md={4}>
                                                 <Card className="tb-summary-card border">
-                                                    <CardBody className="py-3">
-                                                        <div className="d-flex align-items-center justify-content-between">
-                                                            <div className="text-muted text-uppercase fs-11 fw-semibold">Difference</div>
-                                                            <i className={`ri-scales-3-line ${isBalanced ? "text-success" : "text-warning"}`} />
+                                                    <CardBody>
+                                                        <div className="d-flex align-items-start justify-content-between gap-2">
+                                                            <div className="text-muted text-uppercase fw-semibold tb-summary-label">Difference</div>
+                                                            <i className={`ri-scales-3-line tb-summary-icon ${isBalanced ? "text-success" : "text-warning"}`} aria-hidden />
                                                         </div>
-                                                        <div className={`fs-18 fw-bold mb-0 ${isBalanced ? "text-success" : "text-warning"}`}>
+                                                        <div className={`tb-summary-value mb-0 ${isBalanced ? "text-success" : "text-warning"}`}>
                                                             {formatMoney(Math.abs(diff))} {isBalanced ? "" : (diff > 0 ? "(Dr)" : "(Cr)")}
                                                         </div>
                                                     </CardBody>
@@ -482,11 +485,12 @@ const TrialBalanceReport = () => {
                                             </Col>
                                         </Row>
 
-                                        <div className="tb-table-wrap table-responsive">
+                                        <div className="tb-table-wrap">
+                                            <div className="table-responsive">
                                             <Table className="table-hover align-middle mb-0 tb-table">
-                                                <thead className="table-light sticky-top" style={{ zIndex: 1 }}>
-                                                    <tr className="fs-12 text-muted text-uppercase">
-                                                        <th style={{ width: '50%' }} className="ps-4">
+                                                <thead className="table-light sticky-top" style={{ zIndex: 2 }}>
+                                                    <tr className="text-muted text-uppercase">
+                                                        <th style={{ width: '50%' }} className="ps-3">
                                                             <button type="button" className="tb-th-btn" onClick={() => setSort('accountName')}>
                                                                 Account Name <i className={sortIcon('accountName')} />
                                                             </button>
@@ -496,17 +500,17 @@ const TrialBalanceReport = () => {
                                                                 Debit (₹) <i className={sortIcon('debit')} />
                                                             </button>
                                                         </th>
-                                                        <th style={{ width: '25%' }} className="text-end pe-4">
+                                                        <th style={{ width: '25%' }} className="text-end pe-3">
                                                             <button type="button" className="tb-th-btn tb-th-btn-end" onClick={() => setSort('credit')}>
                                                                 Credit (₹) <i className={sortIcon('credit')} />
                                                             </button>
                                                         </th>
                                                     </tr>
                                                 </thead>
-                                                <tbody className="fs-13">
+                                                <tbody>
                                                     {shownRows.map((row, idx) => (
                                                         <tr key={`${row.accountName}-${idx}`}>
-                                                            <td className="ps-4 fw-medium">
+                                                            <td className="ps-3 fw-medium">
                                                                 <div className="d-flex align-items-center">
                                                                     <i className="ri-file-list-3-line text-muted me-2" />
                                                                     <span className="tb-account">{row.accountName}</span>
@@ -515,20 +519,21 @@ const TrialBalanceReport = () => {
                                                             <td className="text-end text-success fw-medium">
                                                                 {row.debit > 0 ? formatMoney(row.debit) : <span className="text-muted">-</span>}
                                                             </td>
-                                                            <td className="text-end text-danger pe-4 fw-medium">
+                                                            <td className="text-end text-danger pe-3 fw-medium">
                                                                 {row.credit > 0 ? formatMoney(row.credit) : <span className="text-muted">-</span>}
                                                             </td>
                                                         </tr>
                                                     ))}
                                                 </tbody>
-                                                <tfoot className="sticky-bottom" style={{ zIndex: 1, bottom: 0, position: 'sticky' }}>
-                                                    <tr className="tb-total-row fs-14 fw-bold">
-                                                        <td className="text-end pe-4 py-3">GRAND TOTAL</td>
-                                                        <td className="text-end text-success py-3">{formatMoney(totalDebit)}</td>
-                                                        <td className="text-end text-danger pe-4 py-3">{formatMoney(totalCredit)}</td>
-                                                    </tr>
-                                                </tfoot>
                                             </Table>
+                                            </div>
+                                            
+                                            {/* Static Total Strip Under Table */}
+                                            <div className="tb-total-strip d-flex align-items-center py-2">
+                                                <div style={{ width: '50%' }} className="text-end pe-3 text-dark fw-bold">GRAND TOTAL</div>
+                                                <div style={{ width: '25%' }} className="text-end text-success fw-bold">{formatMoney(totalDebit)}</div>
+                                                <div style={{ width: '25%' }} className="text-end text-danger pe-3 fw-bold">{formatMoney(totalCredit)}</div>
+                                            </div>
                                         </div>
                                     </CardBody>
                                 </Card>

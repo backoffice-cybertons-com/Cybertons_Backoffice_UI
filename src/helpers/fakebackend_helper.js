@@ -440,3 +440,5 @@ export const deleteDirectJournal = (gCode) => api.delete(`${url.DELETE_DIRECT_JO
 
 //Report
 export const getTrialBalance = (companyId, date) => api.get(url.GET_TRIAL_BALANCE, { companyId, date });
+export const getLedgerSummaryDatewise = (accountCode, fromDate, toDate) =>
+    api.get(url.GET_LEDGER_SUMMARY_DATEWISE, { accountCode, fromDate, toDate });

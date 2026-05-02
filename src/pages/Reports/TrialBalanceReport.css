@@ -1,18 +1,56 @@
 .tb-table-wrap{
-  max-height: 640px;
-  overflow: auto;
+  /* Adjust max-height so the table doesn't force the whole page to scroll */
+  max-height: calc(100vh - 430px);
+  min-height: 250px;
+  overflow: hidden;
   border-radius: 0.75rem;
   border: 1px solid rgba(0,0,0,0.08);
   background: #fff;
+  display: flex;
+  flex-direction: column;
 }
 
+.tb-table-wrap .table-responsive{
+  flex: 1;
+  min-height: 0;
+  position: relative;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Sticky Header Cells */
 .tb-table thead th{
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background-color: #f3f4f6 !important;
   white-space: nowrap;
+  padding-top: 0.35rem !important;
+  padding-bottom: 0.35rem !important;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  vertical-align: middle;
+  box-shadow: inset 0 -1px 0 rgba(0,0,0,0.1);
 }
 
-.tb-total-row{
-  background: #111827; /* slate-900 */
-  color: #fff;
+.tb-table tbody td{
+  padding-top: 0.3rem !important;
+  padding-bottom: 0.3rem !important;
+  font-size: 0.8125rem;
+  vertical-align: middle;
+}
+
+.tb-table tbody td .ri-file-list-3-line{
+  font-size: 0.95rem;
+}
+
+/* Grand total static strip styling */
+.tb-total-strip{
+  background-color: #f8f9fa;
+  border-top: 2px solid #dee2e6;
+  font-size: 0.8125rem;
+  z-index: 10;
+  box-shadow: 0 -1px 0 rgba(0,0,0,0.06);
 }
 
 .tb-th-btn{
@@ -50,25 +88,54 @@
 }
 
 .tb-summary-card{
-  border-radius: 0.75rem;
+  border-radius: 0.5rem;
+}
+
+.tb-summary-card .card-body{
+  padding: 0.5rem 0.75rem !important;
+}
+
+.tb-summary-label{
+  font-size: 0.625rem;
+  letter-spacing: 0.04em;
+  line-height: 1.2;
+  margin-bottom: 0.15rem;
+}
+
+.tb-summary-value{
+  font-size: 0.9375rem;
+  line-height: 1.25;
+  font-weight: 700;
+}
+
+.tb-summary-icon{
+  font-size: 0.8rem;
+  line-height: 1;
+  opacity: 0.9;
+}
+
+
+.tb-filter-label{
+  font-size: 0.6875rem;
+  margin-bottom: 0.25rem !important;
+}
+
+/* Toolbar: search + hide zero + buttons one line, equal height */
+.tb-toolbar-search-row{
+  align-items: stretch;
+}
+
+.tb-toolbar-input{
+  height: 38px;
+  min-height: 38px;
+  font-size: 0.8125rem;
+  padding-top: 0.35rem;
+  padding-bottom: 0.35rem;
 }
 
 .tb-icon-btn{
-  width: 44px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.tb-actions{
-  border: 1px solid rgba(0,0,0,0.10);
-  border-radius: 0.75rem;
-  padding: 0.35rem 0.5rem;
-  background: rgba(248,250,252,0.8);
-}
-
-.tb-action-btn{
-  width: 44px;
+  width: 38px;
+  min-width: 38px;
   height: 38px;
   display: inline-flex;
   align-items: center;
@@ -76,11 +143,69 @@
   padding: 0;
 }
 
+.tb-actions{
+  border: 1px solid rgba(0,0,0,0.10);
+  border-radius: 0.5rem;
+  padding: 0 0.4rem;
+  background: rgba(248,250,252,0.95);
+  height: 38px;
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-shrink: 0;
+}
+
+.tb-actions .form-check{
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding-left: 0;
+  margin: 0;
+  white-space: nowrap;
+}
+
+.tb-actions .form-check-input{
+  margin: 0;
+  float: none;
+  width: 2rem;
+  height: 1.1rem;
+}
+
+.tb-actions .form-check-label{
+  font-size: 0.75rem;
+  margin: 0;
+  line-height: 1;
+  padding-top: 1px;
+}
+
+.tb-action-btn{
+  width: 36px;
+  min-width: 36px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.tb-action-btn i{
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
 @media print{
   .tb-table-wrap{
     max-height: none !important;
     overflow: visible !important;
     border: 0 !important;
+  }
+  .tb-table-wrap .table-responsive{
+    overflow: visible !important;
+  }
+  .tb-tfoot-sticky tr{
+    position: static !important;
+    box-shadow: none !important;
   }
   .tb-th-btn i{ display:none !important; }
   .tb-actions{ border: 0 !important; background: transparent !important; padding: 0 !important; }
