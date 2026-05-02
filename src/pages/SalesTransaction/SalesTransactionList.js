@@ -35,79 +35,6 @@ const SalesTransactionList = () => {
     const [vendors, setVendors] = useState([]);
     const [visibleRows, setVisibleRows] = useState([]);
 
-    const [qtyByCode, setQtyByCode] = useState({});
-    const inFlightRef = React.useRef(new Set());
-    const persistTimerRef = React.useRef(null);
-    const QTY_CACHE_KEY = "sb_sales_qty_cache_v1";
-
-    const computeInvoiceQtyFromDetails = useCallback((tx) => {
-        const lines = tx?.lines || tx?.Lines || [];
-        if (!Array.isArray(lines)) return 0;
-        return lines.reduce((sum, line) => sum + Number(line?.crt ?? line?.Crt ?? 0), 0);
-    }, []);
-    const getTotalQuantity = useCallback((row) => {
-        const numeric = (value) => {
-            if (value === null || value === undefined) return 0;
-            const parsed = parseFloat(String(value).replace(/,/g, ""));
-            return Number.isFinite(parsed) ? parsed : 0;
-        };
-
-        const codeKey = String(row?.spUniqueCode ?? row?.SpUniqueCode ?? "").trim();
-        if (codeKey && qtyByCode && Object.prototype.hasOwnProperty.call(qtyByCode, codeKey)) {
-            return numeric(qtyByCode[codeKey]);
-        }
-
-        // Preferred source: MapSalePurTran line rows from tab_sal_pur_tran
-        // Sum only lines that belong to the current invoice.
-        const mapLines = row?.MapSalePurTran || row?.mapSalePurTran || row?.mapSalePurTranList || row?.mapSalePurTranData;
-        if (Array.isArray(mapLines) && mapLines.length > 0) {
-            const rowInvoiceNo = String(row?.invNo ?? row?.InvNo ?? "").trim().toLowerCase();
-            const rowUniqueCode = String(row?.spUniqueCode ?? row?.SpUniqueCode ?? "").trim();
-
-            const lineBelongsToInvoice = (line) => {
-                const lineInvNo = String(line?.invNo ?? line?.InvNo ?? line?.invoiceNo ?? line?.InvoiceNo ?? "").trim().toLowerCase();
-                const lineUniqueCode = String(line?.spUniqueCode ?? line?.SpUniqueCode ?? line?.headerId ?? line?.HeaderId ?? "").trim();
-
-                if (rowUniqueCode && lineUniqueCode) return lineUniqueCode === rowUniqueCode;
-                if (rowInvoiceNo && lineInvNo) return lineInvNo === rowInvoiceNo;
-                return true;
-            };
-
-            const sumFromMap = mapLines.reduce((sum, line) => {
-                if (!lineBelongsToInvoice(line)) return sum;
-                const lineQty = line?.quantity ?? line?.Quantity ?? line?.qty ?? line?.Qty ?? line?.crt ?? line?.Crt ?? 0;
-                return sum + numeric(lineQty);
-            }, 0);
-
-            if (sumFromMap > 0) return sumFromMap;
-        }
-
-        const directKeys = [
-            "qty", "Qty",
-            "quantity", "Quantity",
-            "totalQty", "TotalQty", "totalqty", "TotalQTY",
-            "totalQuantity", "TotalQuantity",
-            "crt", "Crt", "totalCrt", "TotalCrt", "totCrt", "TotCrt",
-            "totQty", "TotQty"
-        ];
-        for (const key of directKeys) {
-            if (row?.[key] !== undefined && row?.[key] !== null && row?.[key] !== "") {
-                return numeric(row[key]);
-            }
-        }
-
-        const lineKeys = ["lines", "lineItems", "items", "details"];
-        for (const key of lineKeys) {
-            if (Array.isArray(row?.[key])) {
-                return row[key].reduce((sum, line) => {
-                    const lineQty = line?.crt ?? line?.quantity ?? line?.qty ?? line?.totalQty ?? 0;
-                    return sum + numeric(lineQty);
-                }, 0);
-            }
-        }
-        return 0;
-    }, [qtyByCode]);
-
     const selectLayoutState = (state) => state.SalesTransaction;
     const selectSalesProperties = createSelector(
         selectLayoutState,
@@ -121,84 +48,6 @@ const SalesTransactionList = () => {
     const {
         SalesTransactions, isSalesTransactionSuccess, error
     } = useSelector(selectSalesProperties);
-
-    // Hydrate cached quantities for instant display
-    useEffect(() => {
-        try {
-            const raw = localStorage.getItem(QTY_CACHE_KEY);
-            if (!raw) return;
-            const parsed = JSON.parse(raw);
-            if (parsed && typeof parsed === "object") {
-                setQtyByCode(prev => ({ ...parsed, ...prev }));
-            }
-        } catch { }
-    }, []);
-
-    // Persist quantities (debounced)
-    useEffect(() => {
-        if (!qtyByCode || typeof qtyByCode !== "object") return;
-        if (persistTimerRef.current) clearTimeout(persistTimerRef.current);
-        persistTimerRef.current = setTimeout(() => {
-            try {
-                localStorage.setItem(QTY_CACHE_KEY, JSON.stringify(qtyByCode));
-            } catch { }
-        }, 600);
-        return () => {
-            if (persistTimerRef.current) clearTimeout(persistTimerRef.current);
-        };
-    }, [qtyByCode]);
-
-    useEffect(() => {
-        const rows = (visibleRows && visibleRows.length >= 0) ? visibleRows : (SalesTransactions || []);
-        const target = (rows || []).slice(0, 200);
-
-        const toFetch = target
-            .map(r => String(r?.spUniqueCode ?? r?.SpUniqueCode ?? "").trim())
-            .filter(code => code && !Object.prototype.hasOwnProperty.call(qtyByCode, code) && !inFlightRef.current.has(code));
-
-        if (toFetch.length === 0) return;
-
-        let cancelled = false;
-        const concurrency = 10;
-        const firstWaveCount = 30; // show top rows quickly
-
-        const worker = async (codes) => {
-            const updates = {};
-            for (const code of codes) {
-                if (cancelled) break;
-                inFlightRef.current.add(code);
-                try {
-                    const raw = await getSalesTransactionDetails(code);
-                    const tx = raw?.data || raw;
-                    updates[code] = computeInvoiceQtyFromDetails(tx);
-                } catch (e) {
-                    updates[code] = 0;
-                } finally {
-                    inFlightRef.current.delete(code);
-                }
-            }
-            if (!cancelled && Object.keys(updates).length) {
-                setQtyByCode(prev => ({ ...prev, ...updates }));
-            }
-        };
-
-        const firstWave = toFetch.slice(0, firstWaveCount);
-        const restWave = toFetch.slice(firstWaveCount);
-
-        const runWithConcurrency = (codes) => {
-            const chunks = Array.from({ length: Math.min(concurrency, codes.length) }, (_, i) =>
-                codes.filter((_, idx) => idx % concurrency === i)
-            );
-            return Promise.all(chunks.map(worker));
-        };
-
-        runWithConcurrency(firstWave).then(() => {
-            if (cancelled || restWave.length === 0) return;
-            // let UI paint first, then continue in background
-            setTimeout(() => { if (!cancelled) runWithConcurrency(restWave); }, 0);
-        });
-        return () => { cancelled = true; };
-    }, [visibleRows, SalesTransactions, qtyByCode, computeInvoiceQtyFromDetails]);
 
     // Permissions
       const permissions = useSelector(state => state.auth.permissions || []);
@@ -339,8 +188,7 @@ const SalesTransactionList = () => {
             },
             {
                 header: "Total Quantity",
-                id: "totalQuantity",
-                accessorFn: (row) => getTotalQuantity(row),
+                accessorKey: "totalQuantity",
                 enableColumnFilter: true,
                 right: true,
                 filterFn: (row, columnId, filterValue) => {
@@ -361,7 +209,7 @@ const SalesTransactionList = () => {
                 cell: (cell) => (cell.getValue() || 0).toFixed(2),
             },
         ],
-        [vendors, pagePermissions, getTotalQuantity]
+        [vendors, pagePermissions]
     );
 
     const exportColumns = useMemo(() => ([
@@ -383,20 +231,20 @@ const SalesTransactionList = () => {
                 invDate: row.invDate ? handleValidDate(row.invDate) : "",
                 customerName: customer ? customer.name : String(partyId || ""),
                 invType: row.invType || "",
-                totalQuantity: Number(getTotalQuantity(row) || 0).toFixed(2),
+                totalQuantity: Number(row.totalQuantity || 0).toFixed(2),
                 grandTotal: Number(row.grandTotal || 0).toFixed(2),
             };
         });
-    }, [visibleRows, SalesTransactions, vendors, getTotalQuantity]);
+    }, [visibleRows, SalesTransactions, vendors]);
 
     const listTotals = useMemo(() => {
         const sourceRows = (visibleRows && visibleRows.length >= 0) ? visibleRows : (SalesTransactions || []);
         return sourceRows.reduce((acc, row) => {
-            acc.totalQuantity += Number(getTotalQuantity(row) || 0);
+            acc.totalQuantity += Number(row.totalQuantity || 0);
             acc.grandTotal += Number(row?.grandTotal || 0);
             return acc;
         }, { totalQuantity: 0, grandTotal: 0 });
-    }, [visibleRows, SalesTransactions, getTotalQuantity]);
+    }, [visibleRows, SalesTransactions]);
 
     document.title = "Sales Transactions | SoftBook";
 
