@@ -13,6 +13,21 @@ const MastersDashboard = () => {
     // Category-wise master definitions (for grouped dashboard)
     const masterCategories = [
         {
+            category: "Parties & Finance",
+            items: [
+                { id: "party", label: "Party Master", customRoute: "/party" },
+                { id: "bank", label: "Bank" },
+                { id: "fiscalYears", label: "Fiscal Year" },
+                { id: "currency", label: "Currency" },
+                { id: "paymentMode", label: "Payment Mode" },
+                { id: "paymentTerm", label: "Payment Term" },
+                { id: "transporters", label: "Transporter" },
+                { id: "vehicles", label: "Vehicle" },
+                { id: "vouchertype", label: "Voucher Type" },
+                { id: "ledgersettings", label: "Ledger Settings", customRoute: "/masters/ledger-settings" }
+            ]
+        },
+        {
             category: "Inventory & Stock",
             items: [
                 { id: "products", label: "Product" },
@@ -31,19 +46,6 @@ const MastersDashboard = () => {
                 { id: "configureTax", label: "Configure Tax" },
                 { id: "tcs", label: "TCS" },
                 { id: "tds", label: "TDS" }
-            ]
-        },
-        {
-            category: "Parties & Finance",
-            items: [
-                { id: "party", label: "Party Master", customRoute: "/party" },
-                { id: "bank", label: "Bank" },
-                { id: "fiscalYears", label: "Fiscal Year" },
-                { id: "currency", label: "Currency" },
-                { id: "paymentMode", label: "Payment Mode" },
-                { id: "paymentTerm", label: "Payment Term" },
-                { id: "transporters", label: "Transporter" },
-                { id: "vehicles", label: "Vehicle" }
             ]
         },
         {
@@ -66,15 +68,6 @@ const MastersDashboard = () => {
             category: "Sales",
             items: [
                 { id: "salespersons", label: "Salesperson" }
-            ]
-        },
-        {
-            category: "Accounting & Finance",
-            items: [
-                { id: "accountgroup", label: "Account Group" },
-                { id: "account", label: "Account Master" },
-                { id: "vouchertype", label: "Voucher Type" },
-                { id: "ledgersettings", label: "Ledger Settings", customRoute: "/masters/ledger-settings" }
             ]
         }
     ];

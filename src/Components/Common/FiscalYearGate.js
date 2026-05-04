@@ -43,9 +43,14 @@ const FiscalYearGate = ({ children }) => {
           : [];
 
         setOptions(mapped);
+
+        // Pre-select the first fiscal year so user doesn't have to click it,
+        // but keep the modal open so they can confirm or change it.
+        if (mapped.length > 0) {
+          setSelected(mapped[0]);
+        }
       } catch (e) {
         console.error("[FiscalYearGate] Failed to load fiscal years:", e);
-        // If loading fails, keep modal open and block UI until it succeeds or user reloads
       } finally {
         if (mounted) setLoading(false);
       }
