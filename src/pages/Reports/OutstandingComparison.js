@@ -15,6 +15,9 @@ import Flatpickr from "react-flatpickr";
 import { APIClient } from "../../helpers/api_helper";
 import * as url from "../../helpers/url_helper";
 import CommonTable from "../../Components/Common/CommonTable";
+import MergedHeaderTable from "../../Components/Common/MergedHeaderTable";
+import ExportOutstandingExcel from "../../Components/Common/ExportOutstandingExcel";
+
 import ExportButton from "../../Components/Common/ExportButton";
 import "../../Components/Common/CommonTable.css";
 
@@ -44,54 +47,84 @@ const SummaryTable = ({ data }) => {
     console.log("data", data);
 
     if (!data || data.length === 0) return null;
+    const safeDiv = (a, b) => (b ? a / b : 0);
     const d = Array.isArray(data) ? data[0] : data;
 
-    const yQty = Number(d.y_qty ?? 0);
-    const yAmount = Number(d.y_amount ?? 0);
-    const yOs = Number(d.y_os ?? 0);
-    const tQty = Number(d.t_qty ?? 0);
-    const tAmount = Number(d.t_amount ?? 0);
-    const tOs = Number(d.t_os ?? 0);
-    const plQty = tQty - yQty;
-    const plAmount = tAmount - yAmount;   // or use d.diff if backend sends it
-    const plOs = tOs - yOs;
+    const yQty = Number(d.yQty ?? 0);
+    const yAmount = Number(d.yAmount ?? 0);
+    const yOs = Number(d.yOs ?? 0);
+
+    const tQty = Number(d.tQty ?? 0);
+    const tAmount = Number(d.tAmount ?? 0);
+    const tOs = Number(d.tOs ?? 0);
 
     const base = { border: "1px solid #ccc", padding: "7px 14px", fontSize: "13px" };
     const labelCell = { ...base, fontWeight: "bold", whiteSpace: "nowrap", textAlign: "left", background: "#f8f9fa" };
     const headCell = { ...base, textAlign: "right", fontWeight: "bold", background: "#e9ecef", minWidth: "140px" };
     const numCell = { ...base, textAlign: "right" };
-    const plCell = { ...base, textAlign: "right", background: "#ffff00", fontWeight: "bold" };
-    const plLabel = { ...labelCell, background: "#ffff00" };
+    const plCell = { ...base, textAlign: "right", fontWeight: "bold" };
+    const plLabel = { ...labelCell, };
+    const profitColor = "#16a34a";  // green-600
+    const lossColor = "#dc2626";    // red-600
+    const getPLColor = (val) => (val >= 0 ? profitColor : lossColor);
 
     return (
-        <div style={{ overflowX: "auto" }}>
+        <div style={{ overflowX: "auto", display: "flex", justifyContent: "center" }}>
             <table style={{ borderCollapse: "collapse" }}>
                 <thead>
                     <tr>
                         <th style={{ ...headCell, textAlign: "left", minWidth: "140px" }}></th>
                         <th style={headCell}>Qty</th>
                         <th style={headCell}>Amount</th>
-                        <th style={headCell}>O/S</th>
+                        <th style={headCell}>Price</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr>
-                        <td style={labelCell}>Yesterday</td>
+                        <td style={labelCell}>Yesterday Purchase</td>
                         <td style={numCell}>{fmt(yQty, 2)}</td>
                         <td style={numCell}>{fmt(yAmount, 2)}</td>
-                        <td style={numCell}>{fmt(yOs, 2)}</td>
+                        <td style={numCell}>{fmt(safeDiv(yAmount, yQty), 2)}</td>
                     </tr>
                     <tr>
-                        <td style={labelCell}>Today</td>
+                        <td style={labelCell}>Today Sale</td>
                         <td style={numCell}>{fmt(tQty, 2)}</td>
                         <td style={numCell}>{fmt(tAmount, 2)}</td>
-                        <td style={numCell}>{fmt(tOs, 2)}</td>
+                        <td style={numCell}>{fmt(safeDiv(tAmount, tQty), 2)}</td>
                     </tr>
                     <tr>
-                        <td style={plLabel}>Profit &amp; Loss</td>
-                        <td style={plCell}>{fmt(plQty, 2)}</td>
-                        <td style={plCell}>{fmt(plAmount, 2)}</td>
-                        <td style={plCell}>{fmt(plOs, 2)}</td>
+                        <td style={plLabel}>Today PL</td>
+                        <td style={plCell}></td>
+                        <td
+                            style={{
+                                ...plCell,
+                                color: getPLColor(tAmount - yAmount),
+                            }}
+                        >
+                            {fmt(tAmount - yAmount, 2)}
+                        </td>
+
+                        <td
+                            style={{
+                                ...plCell,
+                                color: getPLColor(safeDiv(tAmount, tQty) - safeDiv(yAmount, yQty)),
+                            }}
+                        >
+                            {fmt(safeDiv(tAmount, tQty) - safeDiv(yAmount, yQty), 2)}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style={plLabel}>Today PL %</td>
+                        <td style={plCell}></td>
+                        <td
+                            style={{
+                                ...plCell,
+                                color: getPLColor(safeDiv(tAmount, yAmount) - 1),
+                            }}
+                        >
+                            {fmt(safeDiv(tAmount, yAmount) - 1, 2)}%
+                        </td>
+                        <td style={plCell}> </td>
                     </tr>
                 </tbody>
             </table>
@@ -102,9 +135,11 @@ const SummaryTable = ({ data }) => {
 const OutstandingComparison = () => {
     const companyId = localStorage.getItem("companyId") || 10001;
 
-    const [date1, setDate1] = useState([new Date()]);
-
+    const [date1, setDate1] = useState(
+        new Date().toISOString().split("T")[0]
+    );
     const [generated, setGenerated] = useState(false);
+    const [appliedSummary, setAppliedSummary] = useState(false);
     const [loading, setLoading] = useState(false);
     const [selectedParty, setSelectedParty] = useState(null);
     const [parties, setParties] = useState([]);
@@ -116,6 +151,14 @@ const OutstandingComparison = () => {
     const [rowsPerPage, setRowsPerPage] = useState(100);
     const [totalEntries, setTotalEntries] = useState(0);
 
+    const formatDate = (date) => {
+        const d = new Date(date);
+        const day = String(d.getDate()).padStart(2, "0");
+        const month = d.toLocaleString("en-GB", { month: "short" });
+        const year = String(d.getFullYear()).slice(-2);
+
+        return `${day}-${month}-${year}`;
+    };
     useEffect(() => {
         const fetchParties = async () => {
             try {
@@ -138,7 +181,7 @@ const OutstandingComparison = () => {
         {
             key: "srNo",
             label: "Sr No",
-            group: "\u00A0",
+            group: "Date :",
             width: "60px",
             align: "center",
             cell: (_, index) => {
@@ -150,7 +193,7 @@ const OutstandingComparison = () => {
         {
             key: "customerName",
             label: "Customer",
-            group: "\u00A0\u00A0",
+            group: formatDate(date1),
             width: "250px",
             align: "left",
             sortType: "string",
@@ -277,13 +320,16 @@ const OutstandingComparison = () => {
 
             const response = await api.get(url.GET_OUTSTANDING_COMPARISION, {
                 companyId: companyId,
-                Date: formatDateForApi(date1[0]),
+                Date: date1,
                 where: whereClause,
                 mode: isSummary ? "SUMMARY" : "DETAIL",
             });
+
+            console.log("response  ", response);
             const rows = Array.isArray(response) ? response : response?.data || [];
 
             setGenerated(true);
+            setAppliedSummary(isSummary);
             setReportData(rows);
             setTotalEntries(rows.length);
             setCurrentPage(1);
@@ -333,11 +379,16 @@ const OutstandingComparison = () => {
                             <Row className="g-3">
                                 <Col xs={12} md={6} xl={2}>
                                     <Label>Date</Label>
-                                    <Flatpickr
+                                    {/* <Flatpickr
                                         className="form-control"
                                         options={{ dateFormat: "Y-m-d" }}
                                         value={date1}
                                         onChange={setDate1}
+                                    /> */}
+                                    <Input
+                                        type="date"
+                                        value={date1}
+                                        onChange={(e) => setDate1(e.target.value)}
                                     />
                                 </Col>
                                 <Col xs={12} md={6} xl={4}>
@@ -452,13 +503,11 @@ const OutstandingComparison = () => {
                                     >
                                         {loading ? <Spinner size="sm" /> : "Generate"}
                                     </Button>
-                                    <ExportButton
-                                        data={fetchExportData}
-                                        columns={exportColumns}
-                                        fileName={`Outstanding_Comparison`}
-                                        iconOnly
-                                    />
-                                </Col>
+                                    <ExportOutstandingExcel
+                                        data={reportData}
+                                        date={date1}
+                                        isSummary={appliedSummary}   // ← add this
+                                    />                                </Col>
                             </Row>
                         </CardBody>
                     </Card>
@@ -466,7 +515,7 @@ const OutstandingComparison = () => {
                     {(reportData.length > 0 || loading || generated) && (
                         <Card>
                             <CardBody className="pt-3 pl-3 pr-3 pb-3">
-                                {isSummary ? (
+                                {appliedSummary ? (
                                     loading ? (
                                         <div className="text-center py-4">
                                             <Spinner />
@@ -475,7 +524,7 @@ const OutstandingComparison = () => {
                                         <SummaryTable data={reportData} />
                                     )
                                 ) : (
-                                    <CommonTable
+                                    <MergedHeaderTable
                                         columns={columns}
                                         data={paginatedData}
                                         loading={loading}
