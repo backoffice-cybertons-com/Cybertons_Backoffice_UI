@@ -182,7 +182,7 @@ const OutstandingComparison = () => {
             key: "srNo",
             label: "Sr No",
             group: "Date :",
-            width: "60px",
+            width: "70px",
             align: "center",
             cell: (_, index) => {
                 if (rowsPerPage === "all") return index + 1;
@@ -194,7 +194,7 @@ const OutstandingComparison = () => {
             key: "customerName",
             label: "Customer",
             group: formatDate(date1),
-            width: "250px",
+            width: "auto",
             align: "left",
             sortType: "string",
         },
@@ -360,6 +360,70 @@ const OutstandingComparison = () => {
         return reportData || [];
     };
 
+    const handlePrint = () => {
+        const content = document.getElementById('outstandingPrintArea');
+        if (!content) return;
+        const w = window.open('', '_blank');
+        w.document.write(`<html><head><title>Outstanding Comparison</title>
+            <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+            <link href="https://cdn.jsdelivr.net/npm/remixicon@2.5.0/fonts/remixicon.css" rel="stylesheet">
+            <style>
+              /* Force A4 landscape when printing / saving PDF for wide tables */
+              @page { size: A4 landscape; margin: 12mm; }
+              html, body { height: auto; }
+              body{
+                padding:0;
+                font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+              }
+
+              /* A4 page canvas */
+              .tb-a4{
+                width: 100%;
+                margin: 0 auto;
+                background: #fff;
+              }
+
+              /* Overrides for inline styles */
+              .tb-a4 * {
+                overflow: visible !important;
+                max-height: none !important;
+              }
+              
+              .tb-a4 table { 
+                page-break-inside:auto; 
+                width: 100% !important; 
+                min-width: 0 !important;
+              }
+              
+              .tb-a4 col {
+                width: auto !important; /* let browser balance columns */
+              }
+
+              .tb-a4 th, .tb-a4 td { 
+                white-space: normal !important; /* allow text wrapping instead of scrolling */
+                word-wrap: break-word;
+                font-size: 11px !important;
+                padding: 4px 6px !important;
+                position: static !important;
+              }
+              
+              /* Hide the filter row during print */
+              .tb-a4 thead tr:last-child {
+                display: none !important;
+              }
+              
+              thead{ display: table-header-group; }
+              tfoot{ display: table-row-group; }
+              tr{ page-break-inside: avoid; page-break-after:auto; }
+            </style>
+            </head><body><div class="tb-a4">${content.innerHTML}</div>
+            <script>window.onload=function(){setTimeout(()=>{window.print();window.close();},400);};</script>
+            </body></html>`);
+        w.document.close();
+    };
+
     document.title = "Outstanding Comparison | SoftBook";
 
     return (
@@ -507,13 +571,32 @@ const OutstandingComparison = () => {
                                         data={reportData}
                                         date={date1}
                                         isSummary={appliedSummary}   // ← add this
-                                    />                                </Col>
+                                    />
+                                    <Button
+                                        color="secondary"
+                                        outline
+                                        onClick={handlePrint}
+                                        title="Print"
+                                        disabled={!reportData || reportData.length === 0}
+                                        className="btn btn-soft-secondary"
+                                    >
+                                        <i className="ri-printer-line fs-5" />
+                                    </Button>
+                                </Col>
                             </Row>
                         </CardBody>
                     </Card>
 
                     {(reportData.length > 0 || loading || generated) && (
-                        <Card>
+                        <Card id="outstandingPrintArea">
+                            {/* Print-only title */}
+                            <div className="d-none d-print-block p-3 border-bottom mb-2 text-center">
+                                <h3 className="mb-1">Outstanding Comparison Report</h3>
+                                <div className="text-muted">
+                                    Date: <strong>{date1}</strong>
+                                    {appliedSummary ? " (Summary View)" : ""}
+                                </div>
+                            </div>
                             <CardBody className="pt-3 pl-3 pr-3 pb-3">
                                 {appliedSummary ? (
                                     loading ? (
