@@ -21,13 +21,13 @@ const DashboardMain = () => {
     const [topLimit, setTopLimit] = useState(5);
     const [voucherType, setVoucherType] = useState("Expense");
     const [selectedPartyTypes, setSelectedPartyTypes] = useState([]);
+    const [invStatusPartyType, setInvStatusPartyType] = useState("Customer");
     const [partyTypesList, setPartyTypesList] = useState([]);
     const [dropdownOpen, setDropdownOpen] = useState(false);
-
-    // Custom date state
     const [customFromDate, setCustomFromDate] = useState("");
     const [customToDate, setCustomToDate] = useState("");
     const [dateError, setDateError] = useState("");
+    const [invStatusChanging, setInvStatusChanging] = useState(false);
 
     const toggleDropdown = () => setDropdownOpen((prevState) => !prevState);
 
@@ -64,40 +64,55 @@ const DashboardMain = () => {
         const pTypes = selectedPartyTypes.length > 0 ? selectedPartyTypes.map(pt => pt.value) : null;
         const vTypes = voucherType ? [voucherType] : null;
 
+        const requestParams = {
+            companyId: parseInt(companyId),
+            topLimit: topLimit,
+            expenseVTypes: vTypes,
+            expensePartyTypes: pTypes,
+            invStatusPartyType: invStatusPartyType
+        };
+
         if (filter === "CUSTOM") {
-            // Validate dates before dispatching
             if (!customFromDate || !customToDate) return;
             if (new Date(customFromDate) > new Date(customToDate)) return;
 
             dispatch(getDashboardData({
-                companyId: parseInt(companyId),
+                ...requestParams,
                 filterType: null,
                 fromDate: customFromDate,
                 toDate: customToDate,
-                topLimit: topLimit,
-                expenseVTypes: vTypes,
-                expensePartyTypes: pTypes
             }));
         } else {
             dispatch(getDashboardData({
-                companyId: parseInt(companyId),
+                ...requestParams,
                 filterType: filter,
-                topLimit: topLimit,
-                expenseVTypes: vTypes,
-                expensePartyTypes: pTypes
             }));
         }
-    }, [dispatch, filter, companyId, topLimit, voucherType, selectedPartyTypes, customFromDate, customToDate]);
+    }, [dispatch, filter, companyId, topLimit, voucherType, selectedPartyTypes, customFromDate, customToDate, invStatusPartyType]);
+
+    // Reset invStatusChanging flag when loading finishes
+    useEffect(() => {
+        if (!loading) {
+            setInvStatusChanging(false);
+        }
+    }, [loading]);
 
     const handleFilterChange = (selectedFilter) => {
         setDateError("");
         setFilter(selectedFilter);
+        setInvStatusChanging(false);
+    };
+
+    const handleInvStatusPartyTypeChange = (val) => {
+        setInvStatusChanging(true);
+        setInvStatusPartyType(val);
     };
 
     const handleCustomFromDate = (e) => {
         const val = e.target.value;
         setCustomFromDate(val);
         setDateError("");
+        setInvStatusChanging(false);
         if (customToDate && val && new Date(val) > new Date(customToDate)) {
             setDateError("From date cannot be after To date.");
         }
@@ -107,6 +122,7 @@ const DashboardMain = () => {
         const val = e.target.value;
         setCustomToDate(val);
         setDateError("");
+        setInvStatusChanging(false);
         if (customFromDate && val && new Date(customFromDate) > new Date(val)) {
             setDateError("To date cannot be before From date.");
         }
@@ -201,7 +217,10 @@ const DashboardMain = () => {
                     </Row>
 
                     <Row>
-                        <Widgets kpiData={dashboardData?.kpi_cards} />
+                        <Widgets 
+                            kpiData={dashboardData?.kpi_cards} 
+                            loading={loading && !invStatusChanging}
+                        />
                     </Row>
 
                     <Row className="mt-4">
@@ -209,11 +228,13 @@ const DashboardMain = () => {
                             seriesData={dashboardData?.bar_line_graph}
                             dataColors='["--vz-primary", "--vz-info", "--vz-warning", "--vz-success"]'
                             filter={filter}
+                            loading={loading && !invStatusChanging}
                         />
                         <SalesTrendChart
                             seriesData={dashboardData?.sales_trend}
                             dataColors='["--vz-success", "--vz-warning", "--vz-danger"]'
                             filter={filter}
+                            loading={loading && !invStatusChanging}
                         />
                     </Row>
 
@@ -222,6 +243,7 @@ const DashboardMain = () => {
                             topClientsData={dashboardData?.top_clients}
                             topLimit={topLimit}
                             onLimitChange={setTopLimit}
+                            loading={loading && !invStatusChanging}
                         />
                         <ExpenseBreakdownDonut
                             expenseData={dashboardData?.expense_breakdown}
@@ -230,7 +252,7 @@ const DashboardMain = () => {
                             onPartyTypesChange={setSelectedPartyTypes}
                             selectedVoucherType={voucherType}
                             onVoucherTypeChange={setVoucherType}
-                            loading={loading}
+                            loading={loading && !invStatusChanging}
                             dataColors='["--vz-primary", "--vz-success", "--vz-warning", "--vz-danger", "--vz-info", "--vz-secondary"]'
                         />
                     </Row>
@@ -238,20 +260,16 @@ const DashboardMain = () => {
                     <Row className="mt-4">
                         <InvoiceStatusList
                             invoiceStatusData={dashboardData?.invoice_status}
+                            selectedPartyType={invStatusPartyType}
+                            onPartyTypeChange={handleInvStatusPartyTypeChange}
+                            loading={loading}
                         />
                         <ZoneWiseBarChart
                             zoneWiseData={dashboardData?.zone_wise}
                             dataColors='["--vz-primary", "--vz-info", "--vz-success", "--vz-warning", "--vz-danger"]'
+                            loading={loading && !invStatusChanging}
                         />
                     </Row>
-
-                    {loading && (
-                        <div className="text-center mt-5">
-                            <div className="spinner-border text-primary" role="status">
-                                <span className="visually-hidden">Loading...</span>
-                            </div>
-                        </div>
-                    )}
                 </Container>
             </div>
         </React.Fragment>
