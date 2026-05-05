@@ -64,6 +64,7 @@ import GSTR3BReport from "../pages/Reports/GSTR3BReport";
 
 import PayebleReceivableReport from "../pages/Reports/PayebleReceivableReport";
 import SalePurComparDatewise from "../pages/Reports/SalePurComparDatewise";
+import OutstandingComparison from "../pages/Reports/OutstandingComparison";
 
 import TrialBalanceReport from "../pages/Reports/TrialBalanceReport";
 
@@ -371,7 +372,8 @@ const authProtectedRoutes = [
 
   // Reports
   { path: "/reports/ledger", component: <LedgerReport /> },
-   { path: "/reports/GSTR-3B-Report", component: <GSTR3BReport /> },
+  { path: "/reports/outstanding-comparison", component: <OutstandingComparison /> },
+  { path: "/reports/GSTR-3B-Report", component: <GSTR3BReport /> },
 
 
   { path: "/reports/payeble-receivable", component: <PayebleReceivableReport /> },
