@@ -200,6 +200,7 @@ export const DELETE_TASKS = "/delete/tasks";
 
 // Dashboard
 export const POST_DASHBOARD_DATA = "/api/dashboard";
+export const POST_INVOICE_STATUS_ONLY = "/api/dashboard/invoice-status";
 
 // Dashboard Analytics
 

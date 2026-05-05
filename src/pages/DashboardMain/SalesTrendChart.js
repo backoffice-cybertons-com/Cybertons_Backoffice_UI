@@ -4,7 +4,7 @@ import CountUp from "react-countup";
 import { Card, CardBody, CardHeader, Col, UncontrolledTooltip } from 'reactstrap';
 import getChartColorsArray from "../../Components/Common/ChartsDynamicColor";
 
-const SalesTrendChart = ({ dataColors, seriesData, filter }) => {
+const SalesTrendChart = ({ dataColors, seriesData, filter, loading }) => {
     const chartColors = getChartColorsArray(dataColors);
 
     // Group daily data into months for THIS_YEAR to avoid duplicate labels
@@ -267,7 +267,14 @@ const SalesTrendChart = ({ dataColors, seriesData, filter }) => {
                         </li>
                     </ul>
 
-                    <div id="sales-trend-charts" dir="ltr">
+                    <div id="sales-trend-charts" dir="ltr" style={{ position: 'relative', minHeight: '350px' }}>
+                        {loading && (
+                            <div className="position-absolute top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center bg-white bg-opacity-75" style={{ zIndex: 10 }}>
+                                <div className="spinner-border text-primary" role="status">
+                                    <span className="visually-hidden">Loading...</span>
+                                </div>
+                            </div>
+                        )}
                         <ReactApexChart
                             key={`sales-trend-${filter}`}
                             options={options}

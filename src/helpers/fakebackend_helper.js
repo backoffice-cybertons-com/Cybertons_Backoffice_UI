@@ -301,6 +301,7 @@ export const deleteTicket = ticket => api.delete(url.DELETE_TICKET + '/' + ticke
 
 // Dashboard
 export const getDashboardData = (data) => api.create(url.POST_DASHBOARD_DATA, data);
+export const getInvoiceStatusOnly = (data) => api.create(url.POST_INVOICE_STATUS_ONLY, data);
 
 // Dashboard Analytics
 

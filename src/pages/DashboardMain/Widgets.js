@@ -3,7 +3,7 @@ import CountUp from "react-countup";
 import { Link } from 'react-router-dom';
 import { Card, CardBody, Col, Row, UncontrolledTooltip } from 'reactstrap';
 
-const Widgets = ({ kpiData }) => {
+const Widgets = ({ kpiData, loading }) => {
 
     const formatNumber = (num) => {
         const absNum = Math.abs(num);
@@ -114,8 +114,15 @@ const Widgets = ({ kpiData }) => {
         <React.Fragment>
             <Col xl={12}>
                 <Card className="crm-widget">
-                    <CardBody className="p-0">
-                        <Row className="row-cols-xxl-6 row-cols-md-3 row-cols-1 g-0">
+                <CardBody className="p-0" style={{ position: 'relative' }}>
+                    {loading && (
+                        <div className="position-absolute top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center bg-white bg-opacity-75" style={{ zIndex: 10 }}>
+                            <div className="spinner-border text-primary" role="status">
+                                <span className="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
+                    )}
+                    <Row className="row-cols-xxl-6 row-cols-md-3 row-cols-1 g-0">
                             {widgetsData.map((item, key) => (
                                 <Col key={key} className={key !== widgetsData.length - 1 ? "border-end-dashed" : ""}>
                                     <div className="py-4 px-3">

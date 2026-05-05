@@ -3,7 +3,7 @@ import ReactApexChart from "react-apexcharts";
 import { Card, CardHeader, Col } from 'reactstrap';
 import classNames from "classnames";
 
-const ZoneWiseBarChart = ({ zoneWiseData }) => {
+const ZoneWiseBarChart = ({ zoneWiseData, loading }) => {
     const [dataType, setDataType] = useState("sales");
 
     const { data, categories } = useMemo(() => {
@@ -118,8 +118,15 @@ const ZoneWiseBarChart = ({ zoneWiseData }) => {
                 </CardHeader>
                 <div
                     className="card-body px-3"
-                    style={{ overflowY: 'auto', overflowX: 'hidden', maxHeight: '450px' }}
+                    style={{ overflowY: 'auto', overflowX: 'hidden', maxHeight: '450px', position: 'relative', minHeight: '300px' }}
                 >
+                    {loading && (
+                        <div className="position-absolute top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center bg-white bg-opacity-75" style={{ zIndex: 10 }}>
+                            <div className="spinner-border text-primary" role="status">
+                                <span className="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
+                    )}
                     <ReactApexChart
                         dir="ltr"
                         options={options}
