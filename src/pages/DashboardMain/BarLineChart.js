@@ -4,7 +4,7 @@ import CountUp from "react-countup";
 import { Card, CardBody, CardHeader, Col, UncontrolledTooltip } from 'reactstrap';
 import getChartColorsArray from "../../Components/Common/ChartsDynamicColor";
 
-const BarLineChart = ({ dataColors, seriesData, filter }) => {
+const BarLineChart = ({ dataColors, seriesData, filter, loading }) => {
     const chartColors = getChartColorsArray(dataColors);
 
     // ─── Aggregate monthly data for THIS_YEAR (same logic as SalesTrendChart) ───
@@ -314,7 +314,14 @@ const BarLineChart = ({ dataColors, seriesData, filter }) => {
 
                 {/* ── Chart ── */}
                 <CardBody className="p-0 pb-2">
-                    <div dir="ltr" className="apex-charts">
+                    <div dir="ltr" className="apex-charts" style={{ position: 'relative', minHeight: '374px' }}>
+                        {loading && (
+                            <div className="position-absolute top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center bg-white bg-opacity-75" style={{ zIndex: 10 }}>
+                                <div className="spinner-border text-primary" role="status">
+                                    <span className="visually-hidden">Loading...</span>
+                                </div>
+                            </div>
+                        )}
                         <ReactApexChart
                             key={filter}        // force re-render on filter change
                             dir="ltr"
