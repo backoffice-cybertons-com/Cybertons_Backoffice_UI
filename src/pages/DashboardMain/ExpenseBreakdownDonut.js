@@ -38,32 +38,7 @@ const ExpenseBreakdownDonut = ({ expenseData, partyTypesList, selectedPartyTypes
                 donut: {
                     size: "70%",
                     labels: {
-                        show: true,
-                        name: {
-                            show: true,
-                            fontSize: "18px",
-                            fontFamily: "Inter, sans-serif",
-                            offsetY: -5
-                        },
-                        value: {
-                            show: true,
-                            fontSize: "20px",
-                            fontFamily: "Inter, sans-serif",
-                            fontWeight: 600,
-                            color: "#343a40",
-                            offsetY: 5,
-                            formatter: (val) => "₹" + parseFloat(val).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 })
-                        },
-                        total: {
-                            show: true,
-                            label: "Total",
-                            fontSize: "13px",
-                            color: "#878a99",
-                            formatter: (w) => {
-                                const total = w.globals.seriesTotals.reduce((a, b) => a + b, 0);
-                                return "₹" + total.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
-                            }
-                        }
+                        show: false,
                     }
                 }
             }
@@ -206,7 +181,7 @@ const ExpenseBreakdownDonut = ({ expenseData, partyTypesList, selectedPartyTypes
                                         {expenseData && expenseData.length > 0 ? (
                                             (() => {
                                                 const total = series.reduce((a, b) => a + Math.abs(b), 0);
-                                                return expenseData.map((item, index) => {
+                                                const rows = expenseData.map((item, index) => {
                                                     const amount = parseFloat(item.total_amount || item.TotalAmount || 0);
                                                     const percentage = total > 0 ? ((Math.abs(amount) / total) * 100).toFixed(1) : 0;
                                                     const label = item.category || item.Category || item.party_type || item.PartyType || 'Unknown';
@@ -226,6 +201,17 @@ const ExpenseBreakdownDonut = ({ expenseData, partyTypesList, selectedPartyTypes
                                                         </tr>
                                                     );
                                                 });
+                                                // Add Total row
+                                                rows.push(
+                                                    <tr key="total" className="table-light fw-bold border-top-dashed">
+                                                        <td className="ps-4">Total</td>
+                                                        <td className="text-end">
+                                                            ₹{total.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                        </td>
+                                                        <td className="text-end"></td>
+                                                    </tr>
+                                                );
+                                                return rows;
                                             })()
                                         ) : (
                                             <tr>

@@ -13,8 +13,7 @@ const InvoiceStatusList = ({ invoiceStatusData, selectedPartyType, onPartyTypeCh
         total_outstanding: '',
         avg_daily_sale: '',
         avg_monthly_sale: '',
-        terms: '',
-        credit_debit: ''
+        terms: ''
     });
 
     const toggleDropdown = () => setDropdownOpen(!dropdownOpen);
@@ -51,9 +50,6 @@ const InvoiceStatusList = ({ invoiceStatusData, selectedPartyType, onPartyTypeCh
         }
         if (filters.terms) {
             data = data.filter(item => (item.terms || 0).toString().includes(filters.terms));
-        }
-        if (filters.credit_debit) {
-            data = data.filter(item => (item.credit_debit || "").toLowerCase() === filters.credit_debit.toLowerCase());
         }
 
         // 2. Apply Sorting
@@ -100,8 +96,8 @@ const InvoiceStatusList = ({ invoiceStatusData, selectedPartyType, onPartyTypeCh
                         </Dropdown>
                     </div>
                 </CardHeader>
-                <CardBody className="p-0 d-flex flex-column">
-                    <div className="table-responsive flex-grow-1" style={{ position: 'relative' }}>
+                <CardBody className="p-3 d-flex flex-column">
+                    <div className="table-responsive table-card flex-grow-1" style={{ position: 'relative' }}>
                         {loading && (
                             <div className="position-absolute top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center bg-white bg-opacity-75" style={{ zIndex: 10 }}>
                                 <Spinner color="primary" size="sm" />
@@ -110,23 +106,20 @@ const InvoiceStatusList = ({ invoiceStatusData, selectedPartyType, onPartyTypeCh
                         <Table className="table-sm table-nowrap align-middle mb-0" style={{ fontSize: '12px', tableLayout: 'fixed', width: '100%' }}>
                             <thead className="table-light text-muted fs-11">
                                 <tr>
-                                    <th style={{ width: '22%', cursor: 'pointer' }} onClick={() => handleSort('party_name')}>
+                                    <th style={{ width: '30%', cursor: 'pointer' }} onClick={() => handleSort('party_name')}>
                                         Party Name {getSortIcon('party_name')}
                                     </th>
-                                    <th className="text-end" style={{ width: '16%', cursor: 'pointer' }} onClick={() => handleSort('total_outstanding')}>
-                                        Outstanding {getSortIcon('total_outstanding')}
+                                    <th className="text-end" style={{ width: '20%', cursor: 'pointer' }} onClick={() => handleSort('total_outstanding')}>
+                                        {selectedPartyType === "Customer" ? "Receipt" : "Payment"} {getSortIcon('total_outstanding')}
                                     </th>
-                                    <th className="text-end" style={{ width: '14%', cursor: 'pointer' }} onClick={() => handleSort('avg_daily_sale')}>
+                                    <th className="text-end" style={{ width: '17%', cursor: 'pointer' }} onClick={() => handleSort('avg_daily_sale')}>
                                         Daily Avg {getSortIcon('avg_daily_sale')}
                                     </th>
-                                    <th className="text-end" style={{ width: '14%', cursor: 'pointer' }} onClick={() => handleSort('avg_monthly_sale')}>
+                                    <th className="text-end" style={{ width: '18%', cursor: 'pointer' }} onClick={() => handleSort('avg_monthly_sale')}>
                                         Monthly Avg {getSortIcon('avg_monthly_sale')}
                                     </th>
-                                    <th className="text-end" style={{ width: '12%', cursor: 'pointer' }} onClick={() => handleSort('terms')}>
+                                    <th className="text-end" style={{ width: '15%', cursor: 'pointer' }} onClick={() => handleSort('terms')}>
                                         Terms {getSortIcon('terms')}
-                                    </th>
-                                    <th className="text-center" style={{ width: '10%', cursor: 'pointer' }} onClick={() => handleSort('credit_debit')}>
-                                        D/C {getSortIcon('credit_debit')}
                                     </th>
                                 </tr>
                                 <tr className="bg-soft-light border-bottom border-light">
@@ -145,44 +138,30 @@ const InvoiceStatusList = ({ invoiceStatusData, selectedPartyType, onPartyTypeCh
                                     <th className="px-1 py-1">
                                         <Input type="text" size="sm" className="form-control-sm shadow-none fs-10 p-1 text-end" placeholder="Filter..." value={filters.terms} onChange={(e) => handleFilterChange('terms', e.target.value)} />
                                     </th>
-                                    <th className="px-1 py-1">
-                                        <select className="form-select form-select-sm shadow-none fs-10 p-0" style={{ height: '22px' }} value={filters.credit_debit} onChange={(e) => handleFilterChange('credit_debit', e.target.value)}>
-                                            <option value="">All</option>
-                                            <option value="D">D</option>
-                                            <option value="C">C</option>
-                                        </select>
-                                    </th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {paginatedData.length > 0 ? paginatedData.map((item, index) => (
                                     <tr key={index}>
-                                        <td className="text-truncate" title={item.party_name}>
-                                            <span className="fw-medium">{item.party_name || 'N/A'}</span>
+                                        <td className="fw-medium text-truncate" title={item.party_name}>
+                                            {item.party_name || 'N/A'}
                                         </td>
                                         <td className="text-end">
-                                            <span className={`fw-semibold ${item.total_outstanding >= 0 ? 'text-success' : 'text-danger'}`}>
-                                                ₹{Math.abs(item.total_outstanding || 0).toLocaleString('en-IN', { minimumFractionDigits: 0 })}
-                                            </span>
+                                            {item.credit_debit === 'C' ? '-' : ''}₹{Math.abs(item.total_outstanding || 0).toLocaleString('en-IN', { minimumFractionDigits: 0 })}
                                         </td>
-                                        <td className="text-end text-muted">
+                                        <td className="text-end">
                                             ₹{(item.avg_daily_sale || 0).toLocaleString('en-IN', { minimumFractionDigits: 0 })}
                                         </td>
-                                        <td className="text-end text-muted">
+                                        <td className="text-end">
                                             ₹{(item.avg_monthly_sale || 0).toLocaleString('en-IN', { minimumFractionDigits: 0 })}
                                         </td>
                                         <td className="text-end">
-                                            <span className="text-info fw-medium">{parseFloat(item.terms || 0).toFixed(0)}</span> <small className="text-muted fs-10">d</small>
-                                        </td>
-                                        <td className="text-center">
-                                            <span className={`badge ${item.credit_debit === 'D' ? 'bg-primary' : 'bg-warning'} fs-10 px-1 py-0`}>
-                                                {item.credit_debit}
-                                            </span>
+                                            <span className="text-info">{parseFloat(item.terms || 0).toFixed(0)}</span> <small className="text-muted fs-10">d</small>
                                         </td>
                                     </tr>
                                 )) : (
                                     <tr>
-                                        <td colSpan="6" className="text-center py-5 text-muted fs-12">
+                                        <td colSpan="5" className="text-center py-5 text-muted fs-12">
                                             {loading ? 'Fetching data...' : 'No records found matching the criteria'}
                                         </td>
                                     </tr>
@@ -195,7 +174,7 @@ const InvoiceStatusList = ({ invoiceStatusData, selectedPartyType, onPartyTypeCh
                     {totalItems > 0 && (
                         <div className="d-flex align-items-center justify-content-between p-2 border-top border-top-dashed mt-auto">
                             <div className="text-muted fs-11">
-                                <span className="fw-semibold">{paginatedData.length}</span> of <span className="fw-semibold">{totalItems}</span>
+                                Showing <span className="fw-semibold">{paginatedData.length}</span> of <span className="fw-semibold">{totalItems}</span> Results
                             </div>
                             <Pagination className="pagination-separated pagination-sm mb-0">
                                 <PaginationItem disabled={currentPage === 1}>
@@ -220,7 +199,7 @@ const InvoiceStatusList = ({ invoiceStatusData, selectedPartyType, onPartyTypeCh
                                     return pages;
                                 })()}
                                 <PaginationItem disabled={currentPage === totalPages}>
-                                    <PaginationLink next onClick={() => setCurrentPage(prev => prev - 1)} style={{ padding: '0.2rem 0.4rem' }} />
+                                    <PaginationLink next onClick={() => setCurrentPage(prev => prev + 1)} style={{ padding: '0.2rem 0.4rem' }} />
                                 </PaginationItem>
                             </Pagination>
                         </div>
