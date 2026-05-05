@@ -178,6 +178,14 @@ export const GET_SALE_PURCHASE_REGISTER_PARTYWISE =
 export const GET_SALE_PURCHASE_REGISTER_MONTHWISE =
   "/api/report/sale-purchase-register-monthwise";
 
+
+
+export const GET_OUTSTANDING_COMPARISION =
+  "/api/Report/outstanding-comparison";
+
+
+
+
 // TicketsList
 export const GET_TICKETS_LIST = "/apps/ticket";
 export const ADD_NEW_TICKET = "/apps/ticket";

@@ -320,7 +320,7 @@ const CommonTable = ({
                                                     title={titleText || undefined}
                                                 >
                                                     {col.cell
-                                                        ? col.cell(row)
+                                                        ? col.cell(row, rowIdx)
                                                         : col.sortType === "number"
                                                             ? fmt(cellValue, col.decimals ?? 2)
                                                             : col.sortType === "date" && cellValue
