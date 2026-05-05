@@ -66,7 +66,7 @@ import PayebleReceivableReport from "../pages/Reports/PayebleReceivableReport";
 import SalePurComparDatewise from "../pages/Reports/SalePurComparDatewise";
 
 import TrialBalanceReport from "../pages/Reports/TrialBalanceReport";
-import LedgerSummaryDatewiseReport from "../pages/Reports/LedgerSummaryDatewiseReport";
+
 
 import SalePurInvWiseRpt from "../pages/Reports/SalePurInvWiseRpt";
 import SalePurchaseRegisterItemwise from "../pages/Reports/SalePurchaseRegisterItemwise";
@@ -378,7 +378,7 @@ const authProtectedRoutes = [
   { path: "/reports/sale-purchase-datewise-comparison", component: <SalePurComparDatewise /> },
 
   { path: "/reports/TrialBalanceReport", component: <TrialBalanceReport /> },
-  { path: "/reports/Ledger-Datewise-Summary", component: <LedgerSummaryDatewiseReport /> },
+
 
   { path: "/reports/sale-pur-invwise", component: <SalePurInvWiseRpt /> },
   { path: "/reports/sale-purchase-register-itemwise", component: <SalePurchaseRegisterItemwise /> },

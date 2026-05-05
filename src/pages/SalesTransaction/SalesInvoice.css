@@ -291,10 +291,6 @@
 }
 
 /* ─── PRINT OVERRIDES ───────────────────────── */
-@page {
-  size: A4;
-  margin: 0;
-}
 @media print {
   html, body {
     height: 100% !important;
@@ -320,16 +316,20 @@
   body * { visibility: hidden !important; }
   .si-page, .si-page * { visibility: visible !important; }
   .si-page {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 210mm;
-    height: 297mm;
-    margin: 0;
-    padding: 6mm;
+    position: static;
+    width: 198mm;
+    min-height: 287mm;
+    height: auto;
+    margin: 0 auto;
+    padding: 3mm 4mm;
     box-shadow: none;
-    page-break-after: auto;
+    page-break-after: always;
     page-break-inside: avoid;
     overflow: hidden;
+  }
+
+  .si-ledger-wrapper {
+    width: 100%;
+    max-width: 100%;
   }
 }

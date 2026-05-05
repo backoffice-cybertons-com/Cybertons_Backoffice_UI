@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { getCompanyProfile, getSalesTransactionDetails, getPartyCustomers } from "../../helpers/fakebackend_helper";
 import "./SalesInvoice.css";
@@ -95,7 +95,38 @@ const SalesInvoice = () => {
 
     useEffect(() => { fetchData(); }, [fetchData]);
 
-    const handlePrint = () => window.print();
+    const handlePrint = () => {
+        const styleId = "si-print-portrait-style";
+        const existing = document.getElementById(styleId);
+        if (existing) existing.remove();
+
+        const style = document.createElement("style");
+        style.id = styleId;
+        style.textContent = `
+            @page { size: A4 portrait !important; margin: 4mm 6mm !important; }
+            @media print {
+                .si-page {
+                    width: 198mm !important;
+                    min-height: 287mm !important;
+                    height: auto !important;
+                    margin: 0 auto !important;
+                    padding: 3mm 4mm !important;
+                    page-break-after: always !important;
+                }
+            }
+        `;
+        document.head.appendChild(style);
+
+        const cleanup = () => {
+            const printStyle = document.getElementById(styleId);
+            if (printStyle) printStyle.remove();
+            window.removeEventListener("afterprint", cleanup);
+        };
+
+        window.addEventListener("afterprint", cleanup, { once: true });
+        window.print();
+        setTimeout(cleanup, 1500);
+    };
 
     /* ─── computed totals ─────────────────────────────────────────── */
     const totCrt = lines.reduce((s, l) => s + Number(l.crt || 0), 0);
