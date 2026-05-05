@@ -113,8 +113,11 @@ const SalesTrendChart = ({ dataColors, seriesData, filter }) => {
                     const date = new Date(rawLabel);
                     if (!isNaN(date.getTime())) {
                         if (filter === "TODAY") return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-                        if (filter === "THIS_WEEK") return date.toLocaleDateString([], { weekday: 'short' });
-                        if (filter === "THIS_MONTH") return date.getDate().toString();
+                        
+                        // Show "DD MMM" for any filter that results in a daily list (This Week, This Month, Prev Month, Custom)
+                        if (filter === "THIS_WEEK" || filter === "THIS_MONTH" || filter === "PREV_MONTH" || filter === "CUSTOM") {
+                            return date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
+                        }
                     }
                 }
 
