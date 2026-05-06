@@ -49,11 +49,18 @@ const LedgerReport = () => {
     const [fromDate, setFromDate] = useState(toLocalYMD(firstOfMonth));
     const [toDate, setToDate] = useState(toLocalYMD(today));
 
-    const [reportData, setReportData] = useState(null); // { type: 'detailed' | 'summary', data: any }
+    const [reportType, setReportType] = useState({ value: 'detailed_split', label: 'Dual Ledger' });
+    const reportTypeOptions = [
+        { value: 'detailed_split', label: 'Dual Ledger' },
+        { value: 'detailed_bank', label: 'Running Balance Ledger' },
+        { value: 'summary_bank', label: 'Running Balance Ledger Date-wise' },
+        { value: 'summary_split', label: 'Dual Ledger Date-wise' },
+    ];
+
+    const [reportData, setReportData] = useState(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
 
-    // Fetch accounts (Parties / Ledgers) for the dropdown
     useEffect(() => {
         const fetchAccounts = async () => {
             try {
@@ -66,58 +73,33 @@ const LedgerReport = () => {
                     }));
                     setAccounts(options);
                 }
-            } catch (err) {
-                console.error("Error fetching accounts:", err);
-            }
+            } catch (err) { console.error("Error fetching accounts:", err); }
         };
         fetchAccounts();
     }, []);
 
-    const fetchReport = async (mode) => {
-        if (!selectedAccount) {
-            setError("Please select an account.");
-            return;
-        }
-        if (!fromDate || !toDate) {
-            setError("Please select a valid date range.");
-            return;
-        }
-
-        setLoading(true);
-        setError("");
-        setReportData(null);
-
+    const fetchReport = async (modeOverride = null) => {
+        if (!selectedAccount) { setError("Please select an account."); return; }
+        const mode = modeOverride || reportType.value;
+        setLoading(true); setError(""); setReportData(null);
         const companyId = secureStorage.getPlain('companyId') || 10001;
-
         try {
-            if (mode === 'detailed') {
-                const response = await api.get(url.GET_LEDGER_REPORT, {
-                    companyId: companyId,
-                    accountCode: selectedAccount.value,
-                    fromDate: fromDate,
-                    toDate: toDate
-                });
-                setReportData({ type: 'detailed', ...response });
-            } else if (mode === 'summary') {
+            if (mode.startsWith('detailed')) {
+                const response = await api.get(url.GET_LEDGER_REPORT, { companyId, accountCode: selectedAccount.value, fromDate, toDate });
+                setReportData({ type: mode, ...response });
+            } else {
                 const raw = await getLedgerSummaryDatewise(companyId, selectedAccount.value, fromDate, toDate);
                 const rows = Array.isArray(raw) ? raw : (raw?.data || []);
-                setReportData({ type: 'summary', rows: rows });
+                setReportData({ type: mode, rows: rows });
             }
-        } catch (err) {
-            console.error("Error fetching ledger:", err);
-            setError("Failed to fetch report.");
-        } finally {
-            setLoading(false);
-        }
+        } catch (err) { setError("Failed to fetch report."); } finally { setLoading(false); }
     };
 
-    // ------------- DETAILED VIEW HELPERS -------------
     const getVchLink = (item) => {
         if (!item || !item.vType) return "#";
         const vt = item.vType.toUpperCase();
         const vchId = item.vCode || item.id;
         if (!vchId || vchId === 0) return "#";
-
         if (vt === "SALES" || vt === "SALE") return `/sales-order/edit/${vchId}?view=true`;
         if (vt === "PURCHASE") return `/purchase-transaction/edit/${vchId}?view=true`;
         if (vt === "PAYMENT" || vt === "RECEIPT") return `/payment-receipt/edit/${vchId}?view=true`;
@@ -125,481 +107,250 @@ const LedgerReport = () => {
         return "#";
     };
 
-    const handlePrintDetailed = () => {
-        const printContent = document.getElementById('ledgerReportViewDetailed');
+    const handlePrint = (elementId, title) => {
+        const printContent = document.getElementById(elementId);
         if (!printContent) return;
         const printWindow = window.open('', '_blank');
-        printWindow.document.write(`
-            <html>
-                <head>
-                    <title>Ledger Statement - ${selectedAccount?.label}</title>
-                    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
-                    <style>
-                        body { padding: 20px; background: white !important; font-family: sans-serif; }
-                        .card { border: none !important; box-shadow: none !important; }
-                        .text-success { color: #28a745 !important; }
-                        .text-danger { color: #dc3545 !important; }
-                        @media print { .d-print-none { display: none !important; } }
-                    </style>
-                </head>
-                <body>
-                    ${printContent.innerHTML}
-                    <script>
-                        window.onload = function() { setTimeout(() => { window.print(); window.close(); }, 500); };
-                    </script>
-                </body>
-            </html>
-        `);
+        printWindow.document.write(`<html><head><title>${title}</title><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"><style>body{padding:20px;font-family:sans-serif;font-size:11px;}.text-success{color:#198754 !important;}.text-danger{color:#dc3545 !important;}.bg-light{background-color:#f8f9fa !important;}.table-sm th,.table-sm td{padding:4px 6px;}@media print{.d-print-none{display:none !important;}}</style></head><body>${printContent.innerHTML}<script>window.onload=function(){setTimeout(()=>{window.print();window.close();},500);};<\/script></body></html>`);
         printWindow.document.close();
     };
 
-    const handleExcelDetailed = () => {
-        if (!reportData || reportData.type !== 'detailed' || !reportData.entries) return;
-        const debitData = reportData.entries.filter(e => e.debit !== 0).map(e => ({
-            Date: fmtDate(e.jvDate), 'Vch Type': e.vType, 'Vch No': e.vCode, Particulars: e.description, Amount: e.debit
-        }));
-        const creditData = reportData.entries.filter(e => e.credit !== 0).map(e => ({
-            Date: fmtDate(e.jvDate), 'Vch Type': e.vType, 'Vch No': e.vCode, Particulars: e.description, Amount: e.credit
-        }));
-
-        const ws = XLSX.utils.json_to_sheet([]);
-        const heading = `Ledger Statement for ${selectedAccount?.label} from ${fmtDate(fromDate)} to ${fmtDate(toDate)}`;
-        XLSX.utils.sheet_add_aoa(ws, [[heading]], { origin: "A1" });
-        ws['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 10 } }];
-        XLSX.utils.sheet_add_aoa(ws, [["DEBIT SIDE", "", "", "", "", "CREDIT SIDE"]], { origin: "A3" });
-        XLSX.utils.sheet_add_aoa(ws, [["Date", "Type", "No", "Particulars", "Amount", "", "Date", "Type", "No", "Particulars", "Amount"]], { origin: "A4" });
-        XLSX.utils.sheet_add_json(ws, debitData, { origin: "A5", skipHeader: true });
-        XLSX.utils.sheet_add_json(ws, creditData, { origin: "G5", skipHeader: true });
-
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "Ledger");
-        const buf = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
-        saveAs(new Blob([buf]), `${selectedAccount?.label}_Ledger.xlsx`);
-    };
-
-    // ------------- SUMMARY VIEW HELPERS -------------
-    const summaryDataRows = useMemo(() => {
-        if (!reportData || reportData.type !== 'summary') return { openingRow: null, totalRow: null, dataRows: [] };
+    const summaryData = useMemo(() => {
+        if (!reportData || !reportData.type.startsWith('summary')) return { openingRow: null, totalRow: null, dataRows: [] };
         const rows = reportData.rows || [];
         const opening = rows.find(r => (r.resParticular || '').toLowerCase() === 'opening balance') || null;
         const total   = rows.find(r => (r.resParticular || '').toLowerCase() === 'total') || null;
-        const data    = rows.filter(r => {
-            const p = (r.resParticular || '').toLowerCase();
-            return p !== 'opening balance' && p !== 'total';
-        });
+        const data    = rows.filter(r => { const p = (r.resParticular || '').toLowerCase(); return p !== 'opening balance' && p !== 'total'; });
         return { openingRow: opening, totalRow: total, dataRows: data };
     }, [reportData]);
 
-    const summaryClosingBal = useMemo(() => {
-        if (!reportData || reportData.type !== 'summary') return null;
-        const last = [...summaryDataRows.dataRows].pop();
-        return last?.resBalance ?? summaryDataRows.openingRow?.resBalance ?? null;
-    }, [summaryDataRows, reportData]);
+    const totals = useMemo(() => {
+        if (!reportData) return { dr: 0, cr: 0, closing: 0 };
+        if (reportData.type.startsWith('detailed')) {
+            const dr = reportData.entries?.reduce((acc, c) => acc + (c.debit || 0), 0) || 0;
+            const cr = reportData.entries?.reduce((acc, c) => acc + (c.credit || 0), 0) || 0;
+            return { dr, cr, closing: reportData.closingBalance };
+        } else {
+            const drT = summaryData.totalRow?.resDebit || 0;
+            const crT = summaryData.totalRow?.resCredit || 0;
+            const drO = summaryData.openingRow?.resDebit || 0;
+            const crO = summaryData.openingRow?.resCredit || 0;
+            const last = [...summaryData.dataRows].pop();
+            return { dr: drT + drO, cr: crT + crO, closing: last?.resBalance ?? summaryData.openingRow?.resBalance ?? 0 };
+        }
+    }, [reportData, summaryData]);
 
-    const handleExcelSummary = () => {
-        if (!reportData || reportData.type !== 'summary' || !reportData.rows?.length) return;
-        const { openingRow, totalRow, dataRows } = summaryDataRows;
-        const rows = [
-            ['Ledger Summary – Datewise', '', '', '', ''],
-            ['Account:', selectedAccount?.label, '', '', ''],
-            ['Period:', `${fmtDate(fromDate)} to ${fmtDate(toDate)}`, '', '', ''],
-            ['', '', '', '', ''],
-            ['Date', 'Particular', 'Debit (₹)', 'Credit (₹)', 'Balance'],
-        ];
-        if (openingRow) rows.push([fmtDate(openingRow.resDate), 'Opening Balance', openingRow.resDebit || '', openingRow.resCredit || '', balanceLabel(openingRow.resBalance)]);
-        dataRows.forEach(r => rows.push([fmtDate(r.resDate), r.resParticular, r.resDebit || '', r.resCredit || '', balanceLabel(r.resBalance)]));
-        if (totalRow) rows.push(['', 'TOTAL', totalRow.resDebit || '', totalRow.resCredit || '', '']);
+    // ------------- EXCEL STYLE HELPERS -------------
+    const S = {
+        title: { font: { bold: true, sz: 14, color: { rgb: "405189" } }, alignment: { horizontal: "left" } },
+        period: { font: { italic: true, sz: 10, color: { rgb: "666666" } }, alignment: { horizontal: "left" } },
+        headerVal: { font: { bold: true, sz: 10 }, alignment: { horizontal: "left" } },
+        drSide: { font: { bold: true, color: { rgb: "198754" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "E6FFED" } }, border: { outline: true } },
+        crSide: { font: { bold: true, color: { rgb: "DC3545" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FFEEF0" } }, border: { outline: true } },
+        th: { font: { bold: true, sz: 10 }, fill: { fgColor: { rgb: "F3F3F9" } }, border: { top: { style: "thin" }, bottom: { style: "thin" }, left: { style: "thin" }, right: { style: "thin" } } },
+        cell: { font: { sz: 9 }, border: { top: { style: "hair" }, bottom: { style: "hair" }, left: { style: "hair" }, right: { style: "hair" } } },
+        num: { font: { sz: 9 }, alignment: { horizontal: "right" }, border: { top: { style: "hair" }, bottom: { style: "hair" }, left: { style: "hair" }, right: { style: "hair" } } },
+        totalLabel: { font: { bold: true, sz: 10 }, fill: { fgColor: { rgb: "F8F9FA" } }, border: { top: { style: "thin" } } },
+        totalDr: { font: { bold: true, sz: 11, color: { rgb: "198754" } }, alignment: { horizontal: "right" }, fill: { fgColor: { rgb: "F8F9FA" } }, border: { top: { style: "thin" } } },
+        totalCr: { font: { bold: true, sz: 11, color: { rgb: "DC3545" } }, alignment: { horizontal: "right" }, fill: { fgColor: { rgb: "F8F9FA" } }, border: { top: { style: "thin" } } },
+        closing: { font: { italic: true, sz: 9, color: { rgb: "555555" } }, alignment: { horizontal: "right" } }
+    };
+
+    const c = (v, s) => ({ v: v === 0 ? "0.00" : (v || ""), s: s || S.cell });
+
+    const handleExcelExport = () => {
+        if (!reportData) return;
+        const wb = XLSX.utils.book_new();
+        const rows = [];
+        const isSplit = reportData.type.endsWith('_split');
+        const isDetailed = reportData.type.startsWith('detailed');
+        const merges = [];
+
+        // Row 1: Title
+        rows.push([c(`${reportType.label} - ${selectedAccount?.label}`, S.title)]);
+        merges.push({ s: { r: 0, c: 0 }, e: { r: 0, c: isSplit ? 10 : 6 } });
+
+        // Row 2: Period
+        rows.push([c(`${fmtDate(fromDate)} to ${fmtDate(toDate)}`, S.period)]);
+        merges.push({ s: { r: 1, c: 0 }, e: { r: 1, c: isSplit ? 10 : 6 } });
+
+        // Row 3: Opening/Closing Header Info
+        const opBal = reportData.openingBalance || summaryData.openingRow?.resBalance || 0;
+        rows.push([c(`Opening Balance: ${balanceLabel(opBal)}`, S.headerVal), "", "", "", "", c(`Closing Balance: ${balanceLabel(totals.closing)}`, S.headerVal)]);
+        merges.push({ s: { r: 2, c: 0 }, e: { r: 2, c: 3 } });
+        merges.push({ s: { r: 2, c: 5 }, e: { r: 2, c: isSplit ? 10 : 6 } });
+
+        rows.push([]);
+
+        if (isSplit) {
+            const drList = isDetailed ? reportData.entries?.filter(e => e.debit !== 0) : [summaryData.openingRow, ...summaryData.dataRows].filter(e => e && e.resDebit > 0);
+            const crList = isDetailed ? reportData.entries?.filter(e => e.credit !== 0) : [summaryData.openingRow, ...summaryData.dataRows].filter(e => e && e.resCredit > 0);
+            
+            const headerRowIdx = rows.length;
+            rows.push([c("DEBIT SIDE (Dr)", S.drSide), "", "", "", "", "", c("CREDIT SIDE (Cr)", S.crSide)]);
+            merges.push({ s: { r: headerRowIdx, c: 0 }, e: { r: headerRowIdx, c: 4 } });
+            merges.push({ s: { r: headerRowIdx, c: 6 }, e: { r: headerRowIdx, c: 10 } });
+
+            rows.push([c("Date", S.th), c("Type", S.th), c("No", S.th), c("Particulars", S.th), c("Amount", S.th), "", c("Date", S.th), c("Type", S.th), c("No", S.th), c("Particulars", S.th), c("Amount", S.th)]);
+            
+            const max = Math.max(drList.length, crList.length);
+            for (let i = 0; i < max; i++) {
+                const d = drList[i]; const c_ = crList[i];
+                rows.push([
+                    c(d ? fmtDate(isDetailed ? d.jvDate : d.resDate) : ""),
+                    c(d ? (isDetailed ? d.vType : (d.resParticular || "Summary")) : ""),
+                    c(d ? (isDetailed ? d.vCode : "") : ""),
+                    c(d ? (isDetailed ? d.description : "") : ""),
+                    c(d ? fmtMoney(isDetailed ? d.debit : d.resDebit) : "", S.num),
+                    "",
+                    c(c_ ? fmtDate(isDetailed ? c_.jvDate : c_.resDate) : ""),
+                    c(c_ ? (isDetailed ? c_.vType : (c_.resParticular || "Summary")) : ""),
+                    c(c_ ? (isDetailed ? c_.vCode : "") : ""),
+                    c(c_ ? (isDetailed ? c_.description : "") : ""),
+                    c(c_ ? fmtMoney(isDetailed ? c_.credit : c_.resCredit) : "", S.num)
+                ]);
+            }
+            rows.push([]);
+            rows.push([c("TOTAL DEBIT", S.totalLabel), "", "", "", c(fmtMoney(totals.dr), S.totalDr), "", c("TOTAL CREDIT", S.totalLabel), "", "", "", c(fmtMoney(totals.cr), S.totalCr)]);
+            if (totals.closing < 0) {
+                rows.push(["", "", "", "", "", "", c("By Closing Balance", S.closing), "", "", "", c(fmtMoney(Math.abs(totals.closing)), S.num)]);
+            } else {
+                rows.push([c("To Closing Balance", S.closing), "", "", "", c(fmtMoney(Math.abs(totals.closing)), S.num)]);
+            }
+        } 
+        else {
+            const list = isDetailed ? reportData.entries : [summaryData.openingRow, ...summaryData.dataRows].filter(Boolean);
+            rows.push([c("Date", S.th), c("Type", S.th), c("No", S.th), c("Particulars", S.th), c("Debit (Dr)", S.th), c("Credit (Cr)", S.th), c("Balance", S.th)]);
+            list.forEach(e => {
+                rows.push([
+                    c(fmtDate(isDetailed ? e.jvDate : e.resDate)),
+                    c(isDetailed ? e.vType : (e.resParticular || "Summary")),
+                    c(isDetailed ? e.vCode : ""),
+                    c(isDetailed ? e.description : ""),
+                    c(fmtMoney(isDetailed ? e.debit : e.resDebit), S.num),
+                    c(fmtMoney(isDetailed ? e.credit : e.resCredit), S.num),
+                    c(balanceLabel(isDetailed ? e.balance : e.resBalance), S.num)
+                ]);
+            });
+            rows.push([]);
+            rows.push([c("TOTAL", S.totalLabel), "", "", "", c(fmtMoney(totals.dr), S.totalDr), c(fmtMoney(totals.cr), S.totalCr), c(balanceLabel(totals.closing), S.num)]);
+        }
 
         const ws = XLSX.utils.aoa_to_sheet(rows);
-        ws['!cols'] = [{ wch: 14 }, { wch: 18 }, { wch: 16 }, { wch: 16 }, { wch: 18 }];
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, 'Ledger Summary');
+        ws["!merges"] = merges;
+        ws["!cols"] = isSplit 
+            ? [{ wch: 10 }, { wch: 12 }, { wch: 8 }, { wch: 35 }, { wch: 12 }, { wch: 4 }, { wch: 10 }, { wch: 12 }, { wch: 8 }, { wch: 35 }, { wch: 12 }]
+            : [{ wch: 10 }, { wch: 15 }, { wch: 10 }, { wch: 45 }, { wch: 14 }, { wch: 14 }, { wch: 18 }];
+        
+        XLSX.utils.book_append_sheet(wb, ws, "Ledger");
         const buf = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
-        saveAs(new Blob([buf]), `LedgerSummary_${selectedAccount?.label}_${fromDate}_${toDate}.xlsx`);
+        saveAs(new Blob([buf]), `${selectedAccount?.label}_${reportType.label.replace(/ /g, '_')}.xlsx`);
     };
 
-    const handlePrintSummary = () => {
-        const el = document.getElementById('ledgerReportViewSummary');
-        if (!el) return;
-        const w = window.open('', '_blank');
-        w.document.write(`<html><head><title>Ledger Summary</title>
-            <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
-            <style>
-              @page { size: A4 portrait; margin: 12mm; }
-              body { font-family: system-ui, sans-serif; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-              .table > :not(caption) > * > * { padding: 5px 8px; }
-              .lsd-opening-row td { background: #f0f9ff !important; font-style: italic; }
-              .lsd-total-row td { background: #f8f9fa !important; font-weight: 700; border-top: 2px solid #dee2e6; }
-              .bal-dr { color: #198754 !important; }
-              .bal-cr { color: #dc3545 !important; }
-              @media print { .d-print-none { display: none !important; } }
-            </style>
-            </head><body>${el.innerHTML}
-            <script>window.onload=function(){setTimeout(()=>{window.print();window.close();},400)};<\/script>
-            </body></html>`);
-        w.document.close();
-    };
+    const FinalTotalSection = () => (
+        <Row className="g-0 border-top border-2 mt-0 bg-light bg-opacity-50">
+            <Col lg={6} className="border-end p-3">
+                <div className="d-flex justify-content-between align-items-center">
+                    <h6 className="mb-0 fw-bold text-uppercase fs-12">Total Debit</h6>
+                    <h5 className="mb-0 fw-bold text-success">{fmtMoney(totals.dr)}</h5>
+                </div>
+                {totals.closing < 0 && (<div className="d-flex justify-content-between align-items-center mt-2 text-muted fs-11"><span>By Closing Balance</span><span>{fmtMoney(Math.abs(totals.closing))}</span></div>)}
+            </Col>
+            <Col lg={6} className="p-3">
+                <div className="d-flex justify-content-between align-items-center">
+                    <h6 className="mb-0 fw-bold text-uppercase fs-12">Total Credit</h6>
+                    <h5 className="mb-0 fw-bold text-danger">{fmtMoney(totals.cr)}</h5>
+                </div>
+                {totals.closing >= 0 && (<div className="d-flex justify-content-between align-items-center mt-2 text-muted fs-11"><span>To Closing Balance</span><span>{fmtMoney(Math.abs(totals.closing))}</span></div>)}
+            </Col>
+        </Row>
+    );
 
     return (
         <React.Fragment>
             <div className="page-content">
                 <Container fluid>
                     <BreadCrumb title="Ledger Report" pageTitle="Reports" />
+                    <Card>
+                        <CardBody>
+                            <Row className="g-3 align-items-end">
+                                <Col lg={3}><Label className="fw-semibold mb-1">Account</Label><Select value={selectedAccount} onChange={setSelectedAccount} options={accounts} placeholder="Select..." isClearable /></Col>
+                                <Col lg={2}><Label className="fw-semibold mb-1">From</Label><Input type="date" value={fromDate} onChange={e => setFromDate(e.target.value)} /></Col>
+                                <Col lg={2}><Label className="fw-semibold mb-1">To</Label><Input type="date" value={toDate} onChange={e => setToDate(e.target.value)} /></Col>
+                                <Col lg={3}><Label className="fw-semibold mb-1">Report Style</Label><Select value={reportType} onChange={setReportType} options={reportTypeOptions} /></Col>
+                                <Col lg={2}><Button color="primary" className="w-100" onClick={() => fetchReport()} disabled={loading}>{loading ? <Spinner size="sm"/> : "Show Report"}</Button></Col>
+                            </Row>
+                        </CardBody>
+                    </Card>
 
-                    {/* Filter Card */}
-                    <Row>
-                        <Col lg={12}>
-                            <Card>
-                                <CardBody>
-                                    <Row className="g-3 align-items-end">
-                                        <Col lg={4}>
-                                            <Label className="form-label text-muted text-uppercase fw-semibold mb-1">Account / Ledger</Label>
-                                            <Select
-                                                inputId="account-select"
-                                                value={selectedAccount}
-                                                onChange={setSelectedAccount}
-                                                options={accounts}
-                                                classNamePrefix="select2-selection"
-                                                placeholder="Select Account..."
-                                                isClearable
-                                            />
+                    {loading && <Card><CardBody className="py-5 text-center"><Spinner className="me-2" />Loading...</CardBody></Card>}
+
+                    {!loading && reportData && (
+                        <Card id="reportViewContainer">
+                            <CardHeader className="border-0 d-flex align-items-center py-3">
+                                <div className="flex-grow-1">
+                                    <h4 className="mb-1 fw-bold">{selectedAccount?.label}</h4>
+                                    <div className="text-muted fs-12">{fmtDate(fromDate)} to {fmtDate(toDate)} | <span className="fw-medium text-info">{reportType.label}</span></div>
+                                </div>
+                                <div className="d-flex gap-3 align-items-center d-print-none">
+                                    <div className="text-end">
+                                        <div className="fs-11 text-muted text-uppercase">Opening</div>
+                                        <div className="fw-bold">{balanceLabel(reportData.openingBalance || summaryData.openingRow?.resBalance)}</div>
+                                    </div>
+                                    <div className="text-end border-start ps-3">
+                                        <div className="fs-11 text-muted text-uppercase">Closing</div>
+                                        <div className={`fw-bold ${balClass(totals.closing)}`}>{balanceLabel(totals.closing)}</div>
+                                    </div>
+                                    <Button color="success" outline size="sm" onClick={handleExcelExport} title="Download Styled Excel"><i className="ri-file-excel-2-line"/></Button>
+                                    <Button color="secondary" outline size="sm" onClick={() => handlePrint('reportViewContainer', reportType.label)} title="Print Report"><i className="ri-printer-line"/></Button>
+                                </div>
+                            </CardHeader>
+                            <CardBody className="p-0">
+                                {reportData.type === 'detailed_split' && (
+                                    <Row className="g-0">
+                                        <Col lg={6} className="border-end">
+                                            <Table className="table-sm table-nowrap mb-0"><thead className="table-light"><tr><th colSpan="5" className="text-center text-success py-2">DEBIT (Dr)</th></tr><tr className="fs-11"><th>Date</th><th>Type</th><th>No</th><th>Particulars</th><th className="text-end">Amount</th></tr></thead>
+                                            <tbody className="fs-12">{reportData.entries?.filter(e => e.debit !== 0).map((e, i) => (<tr key={i}><td>{fmtDate(e.jvDate)}</td><td><Link to={getVchLink(e)} className="badge bg-info-subtle text-info">{e.vType}</Link></td><td>{e.vCode}</td><td className="text-wrap">{e.description}</td><td className="text-end">{fmtMoney(e.debit)}</td></tr>))}</tbody></Table>
                                         </Col>
-                                        <Col lg={2}>
-                                            <Label className="form-label text-muted text-uppercase fw-semibold mb-1">From Date</Label>
-                                            <Input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} />
-                                        </Col>
-                                        <Col lg={2}>
-                                            <Label className="form-label text-muted text-uppercase fw-semibold mb-1">To Date</Label>
-                                            <Input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} />
-                                        </Col>
-                                        <Col lg={4}>
-                                            <div className="d-flex gap-2">
-                                                <Button color="primary" onClick={() => fetchReport('detailed')} disabled={loading}>
-                                                    {loading && reportData?.type === 'detailed' ? <Spinner size="sm" className="me-2"/> : <i className="ri-list-unordered me-1 align-bottom"></i>}
-                                                    Detailed Ledger
-                                                </Button>
-                                                <Button color="info" onClick={() => fetchReport('summary')} disabled={loading}>
-                                                    {loading && reportData?.type === 'summary' ? <Spinner size="sm" className="me-2"/> : <i className="ri-calendar-event-line me-1 align-bottom"></i>}
-                                                    Datewise Summary
-                                                </Button>
-                                                <Button color="light" title="Reset" onClick={() => { setSelectedAccount(null); setReportData(null); setError(''); }} disabled={loading}>
-                                                    <i className="ri-refresh-line fs-5" />
-                                                </Button>
-                                            </div>
+                                        <Col lg={6}>
+                                            <Table className="table-sm table-nowrap mb-0"><thead className="table-light"><tr><th colSpan="5" className="text-center text-danger py-2">CREDIT (Cr)</th></tr><tr className="fs-11"><th>Date</th><th>Type</th><th>No</th><th>Particulars</th><th className="text-end">Amount</th></tr></thead>
+                                            <tbody className="fs-12">{reportData.entries?.filter(e => e.credit !== 0).map((e, i) => (<tr key={i}><td>{fmtDate(e.jvDate)}</td><td><Link to={getVchLink(e)} className="badge bg-danger-subtle text-danger">{e.vType}</Link></td><td>{e.vCode}</td><td className="text-wrap">{e.description}</td><td className="text-end">{fmtMoney(e.credit)}</td></tr>))}</tbody></Table>
                                         </Col>
                                     </Row>
-                                    {error && <Row className="mt-3"><Col><div className="alert alert-danger mb-0">{error}</div></Col></Row>}
-                                </CardBody>
-                            </Card>
-                        </Col>
-                    </Row>
-
-                    {/* Loading State */}
-                    {loading && (
-                        <Row><Col lg={12}>
-                            <Card><CardBody className="py-5 text-center"><Spinner className="me-2" />Loading Report...</CardBody></Card>
-                        </Col></Row>
+                                )}
+                                {reportData.type === 'detailed_bank' && (
+                                    <Table className="table-hover align-middle mb-0"><thead className="table-light text-uppercase fs-11"><tr><th>Date</th><th>Type</th><th>No</th><th>Particulars</th><th className="text-end">Debit (Dr)</th><th className="text-end">Credit (Cr)</th><th className="text-end">Balance</th></tr></thead>
+                                    <tbody className="fs-12">{reportData.entries?.map((e, i) => (<tr key={i}><td>{fmtDate(e.jvDate)}</td><td><Link to={getVchLink(e)} className="badge bg-info-subtle text-info">{e.vType}</Link></td><td>{e.vCode}</td><td className="text-wrap">{e.description}</td><td className="text-end text-success">{e.debit > 0 ? fmtMoney(e.debit) : '-'}</td><td className="text-end text-danger">{e.credit > 0 ? fmtMoney(e.credit) : '-'}</td><td className={`text-end fw-bold ${balClass(e.balance)}`}>{balanceLabel(e.balance)}</td></tr>))}</tbody></Table>
+                                )}
+                                {reportData.type === 'summary_bank' && (
+                                    <Table className="table-hover align-middle mb-0"><thead className="table-light text-uppercase fs-11"><tr><th>Date</th><th>Particular</th><th className="text-end">Debit (₹)</th><th className="text-end">Credit (₹)</th><th className="text-end">Balance</th></tr></thead>
+                                    <tbody className="fs-12">
+                                        {summaryData.openingRow && (<tr className="bg-light bg-opacity-50"><td>{fmtDate(summaryData.openingRow.resDate)}</td><td className="fst-italic">Opening Balance</td><td className="text-end text-success">{fmtMoney(summaryData.openingRow.resDebit)}</td><td className="text-end text-danger">{fmtMoney(summaryData.openingRow.resCredit)}</td><td className={`text-end fw-bold ${balClass(summaryData.openingRow.resBalance)}`}>{balanceLabel(summaryData.openingRow.resBalance)}</td></tr>)}
+                                        {summaryData.dataRows.map((e, i) => (<tr key={i}><td>{fmtDate(e.resDate)}</td><td>{e.resParticular}</td><td className="text-end text-success">{e.resDebit > 0 ? fmtMoney(e.resDebit) : '-'}</td><td className="text-end text-danger">{e.resCredit > 0 ? fmtMoney(e.resCredit) : '-'}</td><td className={`text-end fw-bold ${balClass(e.resBalance)}`}>{balanceLabel(e.resBalance)}</td></tr>))}
+                                    </tbody></Table>
+                                )}
+                                {reportData.type === 'summary_split' && (
+                                    <Row className="g-0">
+                                        <Col lg={6} className="border-end">
+                                            <Table className="table-sm mb-0"><thead className="table-light"><tr><th colSpan="3" className="text-center text-success py-2">DEBIT SUMMARY</th></tr><tr className="fs-11"><th>Date</th><th>Particular</th><th className="text-end">Amount</th></tr></thead>
+                                            <tbody className="fs-12">
+                                                {summaryData.openingRow && summaryData.openingRow.resDebit > 0 && (<tr className="bg-light bg-opacity-50"><td>{fmtDate(summaryData.openingRow.resDate)}</td><td>Opening Balance</td><td className="text-end">{fmtMoney(summaryData.openingRow.resDebit)}</td></tr>)}
+                                                {summaryData.dataRows.filter(e => e.resDebit > 0).map((e, i) => (<tr key={i}><td>{fmtDate(e.resDate)}</td><td>{e.resParticular}</td><td className="text-end">{fmtMoney(e.resDebit)}</td></tr>))}
+                                            </tbody></Table>
+                                        </Col>
+                                        <Col lg={6}>
+                                            <Table className="table-sm mb-0"><thead className="table-light"><tr><th colSpan="3" className="text-center text-danger py-2">CREDIT SUMMARY</th></tr><tr className="fs-11"><th>Date</th><th>Particular</th><th className="text-end">Amount</th></tr></thead>
+                                            <tbody className="fs-12">
+                                                {summaryData.openingRow && summaryData.openingRow.resCredit > 0 && (<tr className="bg-light bg-opacity-50"><td>{fmtDate(summaryData.openingRow.resDate)}</td><td>Opening Balance</td><td className="text-end">{fmtMoney(summaryData.openingRow.resCredit)}</td></tr>)}
+                                                {summaryData.dataRows.filter(e => e.resCredit > 0).map((e, i) => (<tr key={i}><td>{fmtDate(e.resDate)}</td><td>{e.resParticular}</td><td className="text-end">{fmtMoney(e.resCredit)}</td></tr>))}
+                                            </tbody></Table>
+                                        </Col>
+                                    </Row>
+                                )}
+                                <FinalTotalSection />
+                            </CardBody>
+                        </Card>
                     )}
-
-                    {/* Report Data Card (Detailed) */}
-                    {!loading && reportData?.type === 'detailed' && (
-                        <Row>
-                            <Col lg={12}>
-                                <Card id="ledgerReportViewDetailed">
-                                    <CardHeader className="border-0 align-items-center d-flex d-print-none">
-                                        <h4 className="card-title mb-0 flex-grow-1">
-                                            {selectedAccount?.label}
-                                            <span className="text-muted fs-11 ms-2">({(reportData.entries || []).filter(e => e.debit !== 0 || e.credit !== 0).length} Records Found)</span>
-                                        </h4>
-                                        <div className="flex-shrink-0 d-flex align-items-center gap-2">
-                                            <h5 className="mb-0 me-3 text-secondary">
-                                                Opening: {balanceLabel(reportData.openingBalance)}
-                                            </h5>
-                                            <h5 className={`mb-0 me-3 ${balClass(reportData.closingBalance)}`}>
-                                                Closing: {balanceLabel(reportData.closingBalance)}
-                                            </h5>
-                                            <Button color="success" outline onClick={handleExcelDetailed} className="btn-sm border-0" title="Export to Excel">
-                                                <i className="ri-file-excel-2-line align-bottom fs-4"></i>
-                                            </Button>
-                                            <Button color="secondary" outline onClick={handlePrintDetailed} className="btn-sm border-0" title="Print Ledger">
-                                                <i className="ri-printer-line align-bottom fs-4"></i>
-                                            </Button>
-                                        </div>
-                                    </CardHeader>
-                                    {/* Header visible only on print */}
-                                    <div className="d-none d-print-block p-3 border-bottom text-center">
-                                        <h3 className="mb-1">{selectedAccount?.label}</h3>
-                                        <p className="text-muted mb-0">
-                                            Detailed Ledger Statement from <strong>{fmtDate(fromDate)}</strong> to <strong>{fmtDate(toDate)}</strong>
-                                        </p>
-                                    </div>
-                                    <CardBody className="p-0">
-                                        <Row className="g-0">
-                                            {/* DEBIT SIDE */}
-                                            <Col lg={6} className="border-end">
-                                                <div className="p-3 bg-light bg-opacity-50 border-bottom text-center">
-                                                    <h6 className="mb-0 text-success fw-bold">DEBIT (Dr)</h6>
-                                                </div>
-                                                <div className="table-responsive">
-                                                    <Table className="table-sm table-nowrap align-middle mb-0">
-                                                        <thead className="table-light">
-                                                            <tr className="fs-11">
-                                                                <th style={{ width: "15%" }}>Date</th>
-                                                                <th style={{ width: "15%" }}>Vch Type</th>
-                                                                <th style={{ width: "10%" }}>No.</th>
-                                                                <th style={{ width: "40%" }}>Particulars</th>
-                                                                <th style={{ width: "20%" }} className="text-end">Amount</th>
-                                                            </tr>
-                                                        </thead>
-                                                        <tbody className="fs-12">
-                                                            {reportData.entries?.filter(e => e.debit !== 0).map((item, index) => (
-                                                                <tr key={`dr-${index}`}>
-                                                                    <td>{fmtDate(item.jvDate)}</td>
-                                                                    <td>
-                                                                        {(["SALES", "SALE", "PURCHASE", "PAYMENT", "RECEIPT", "INCOME", "EXPENSE"].includes(item.vType?.toUpperCase())) ? (
-                                                                            <Link to={getVchLink(item)} className="badge bg-info-subtle text-info border-info text-decoration-none">
-                                                                                {item.vType} <i className="ri-external-link-line ms-1"></i>
-                                                                            </Link>
-                                                                        ) : (
-                                                                            <span className="badge bg-info-subtle text-info">{item.vType}</span>
-                                                                        )}
-                                                                    </td>
-                                                                    <td>{item.vCode || '-'}</td>
-                                                                    <td className="text-wrap" style={{ whiteSpace: "pre-line" }}>{item.description}</td>
-                                                                    <td className="text-end fw-medium">{fmtMoney(item.debit)}</td>
-                                                                </tr>
-                                                            ))}
-                                                        </tbody>
-                                                    </Table>
-                                                </div>
-                                            </Col>
-
-                                            {/* CREDIT SIDE */}
-                                            <Col lg={6}>
-                                                <div className="p-3 bg-light bg-opacity-50 border-bottom text-center">
-                                                    <h6 className="mb-0 text-danger fw-bold">CREDIT (Cr)</h6>
-                                                </div>
-                                                <div className="table-responsive">
-                                                    <Table className="table-sm table-nowrap align-middle mb-0">
-                                                        <thead className="table-light">
-                                                            <tr className="fs-11">
-                                                                <th style={{ width: "15%" }}>Date</th>
-                                                                <th style={{ width: "15%" }}>Vch Type</th>
-                                                                <th style={{ width: "10%" }}>No.</th>
-                                                                <th style={{ width: "40%" }}>Particulars</th>
-                                                                <th style={{ width: "20%" }} className="text-end">Amount</th>
-                                                            </tr>
-                                                        </thead>
-                                                        <tbody className="fs-12">
-                                                            {reportData.entries?.filter(e => e.credit !== 0).map((item, index) => (
-                                                                <tr key={`cr-${index}`}>
-                                                                    <td>{fmtDate(item.jvDate)}</td>
-                                                                    <td>
-                                                                        {(["SALES", "SALE", "PURCHASE", "PAYMENT", "RECEIPT", "INCOME", "EXPENSE"].includes(item.vType?.toUpperCase())) ? (
-                                                                            <Link to={getVchLink(item)} className="badge bg-danger-subtle text-danger border-danger text-decoration-none">
-                                                                                {item.vType} <i className="ri-external-link-line ms-1"></i>
-                                                                            </Link>
-                                                                        ) : (
-                                                                            <span className="badge bg-danger-subtle text-danger">{item.vType}</span>
-                                                                        )}
-                                                                    </td>
-                                                                    <td>{item.vCode || '-'}</td>
-                                                                    <td className="text-wrap" style={{ whiteSpace: "pre-line" }}>{item.description}</td>
-                                                                    <td className="text-end fw-medium">{fmtMoney(item.credit)}</td>
-                                                                </tr>
-                                                            ))}
-                                                        </tbody>
-                                                    </Table>
-                                                </div>
-                                            </Col>
-                                        </Row>
-
-                                        {/* Excel-style Balances Footer */}
-                                        <Row className="g-0 border-top mt-0">
-                                            <Col lg={6} className="border-end p-2 bg-light bg-opacity-30">
-                                                <div className="d-flex justify-content-between px-2 fw-bold">
-                                                    <span>Total Debit</span>
-                                                    <span className="text-success">{fmtMoney(reportData.entries?.reduce((acc, curr) => acc + curr.debit, 0))}</span>
-                                                </div>
-                                                {reportData.closingBalance < 0 && (
-                                                    <div className="d-flex justify-content-between px-2 text-muted fs-11 mt-1">
-                                                        <span>By Closing Balance</span>
-                                                        <span>{fmtMoney(Math.abs(reportData.closingBalance))}</span>
-                                                    </div>
-                                                )}
-                                            </Col>
-                                            <Col lg={6} className="p-2 bg-light bg-opacity-30">
-                                                <div className="d-flex justify-content-between px-2 fw-bold">
-                                                    <span>Total Credit</span>
-                                                    <span className="text-danger">{fmtMoney(reportData.entries?.reduce((acc, curr) => acc + curr.credit, 0))}</span>
-                                                </div>
-                                                {reportData.closingBalance >= 0 && (
-                                                    <div className="d-flex justify-content-between px-2 text-muted fs-11 mt-1">
-                                                        <span>To Closing Balance</span>
-                                                        <span>{fmtMoney(Math.abs(reportData.closingBalance))}</span>
-                                                    </div>
-                                                )}
-                                            </Col>
-                                        </Row>
-                                    </CardBody>
-                                </Card>
-                            </Col>
-                        </Row>
-                    )}
-
-                    {/* Report Data Card (Summary) */}
-                    {!loading && reportData?.type === 'summary' && (
-                        <Row>
-                            <Col lg={12}>
-                                <Card id="ledgerReportViewSummary">
-                                    <CardHeader className="border-0 d-flex align-items-center flex-wrap gap-2 py-2">
-                                        <div className="flex-grow-1">
-                                            <div className="d-flex align-items-center flex-wrap gap-2">
-                                                <h6 className="card-title mb-0 fw-semibold">{selectedAccount?.label} (Summary)</h6>
-                                                <span className="text-muted fs-12">
-                                                    {fmtDate(fromDate)} – {fmtDate(toDate)}
-                                                </span>
-                                                <Badge color="info" className="rounded-pill">
-                                                    {summaryDataRows.dataRows.length} transaction{summaryDataRows.dataRows.length !== 1 ? 's' : ''}
-                                                </Badge>
-                                            </div>
-                                            <div className="d-flex gap-3 mt-1 fs-12 text-muted">
-                                                <span>
-                                                    Opening: <strong className={balClass(summaryDataRows.openingRow?.resBalance)}>
-                                                        {balanceLabel(summaryDataRows.openingRow?.resBalance || 0)}
-                                                    </strong>
-                                                </span>
-                                                <span>
-                                                    Closing: <strong className={balClass(summaryClosingBal)}>
-                                                        {balanceLabel(summaryClosingBal)}
-                                                    </strong>
-                                                </span>
-                                            </div>
-                                        </div>
-                                        <div className="d-flex gap-2 d-print-none">
-                                            <Button color="success" outline size="sm" onClick={handleExcelSummary} title="Export Excel">
-                                                <i className="ri-file-excel-2-line fs-5" />
-                                            </Button>
-                                            <Button color="secondary" outline size="sm" onClick={handlePrintSummary} title="Print">
-                                                <i className="ri-printer-line fs-5" />
-                                            </Button>
-                                        </div>
-                                    </CardHeader>
-                                    
-                                    <div className="d-none d-print-block p-3 border-bottom text-center">
-                                        <h3 className="mb-1">{selectedAccount?.label}</h3>
-                                        <p className="text-muted mb-0">
-                                            Datewise Summary from <strong>{fmtDate(fromDate)}</strong> to <strong>{fmtDate(toDate)}</strong>
-                                        </p>
-                                    </div>
-
-                                    <CardBody className="pt-0 pb-0">
-                                        <Row className="g-2 mb-2 d-print-none mt-1 mx-1">
-                                            <Col md={3}>
-                                                <div className="lsd-kpi-card border rounded px-3 py-2">
-                                                    <div className="lsd-kpi-label text-muted text-uppercase">Opening Balance</div>
-                                                    <div className={`lsd-kpi-value fw-bold ${balClass(summaryDataRows.openingRow?.resBalance)}`}>
-                                                        {balanceLabel(summaryDataRows.openingRow?.resBalance || 0)}
-                                                    </div>
-                                                </div>
-                                            </Col>
-                                            <Col md={3}>
-                                                <div className="lsd-kpi-card border rounded px-3 py-2">
-                                                    <div className="lsd-kpi-label text-muted text-uppercase">Total Debit</div>
-                                                    <div className="lsd-kpi-value fw-bold text-success">
-                                                        {fmtMoney(summaryDataRows.totalRow?.resDebit || 0)}
-                                                    </div>
-                                                </div>
-                                            </Col>
-                                            <Col md={3}>
-                                                <div className="lsd-kpi-card border rounded px-3 py-2">
-                                                    <div className="lsd-kpi-label text-muted text-uppercase">Total Credit</div>
-                                                    <div className="lsd-kpi-value fw-bold text-danger">
-                                                        {fmtMoney(summaryDataRows.totalRow?.resCredit || 0)}
-                                                    </div>
-                                                </div>
-                                            </Col>
-                                            <Col md={3}>
-                                                <div className="lsd-kpi-card border rounded px-3 py-2">
-                                                    <div className="lsd-kpi-label text-muted text-uppercase">Closing Balance</div>
-                                                    <div className={`lsd-kpi-value fw-bold ${balClass(summaryClosingBal)}`}>
-                                                        {balanceLabel(summaryClosingBal)}
-                                                    </div>
-                                                </div>
-                                            </Col>
-                                        </Row>
-
-                                        <div className="lsd-table-wrap px-2 pb-2">
-                                            <div className="table-responsive lsd-scroll-area">
-                                                <Table className="table-hover align-middle mb-0 lsd-table">
-                                                    <thead className="table-light">
-                                                        <tr className="text-muted text-uppercase">
-                                                            <th style={{ width: '12%' }}>Date</th>
-                                                            <th style={{ width: '22%' }}>Particular</th>
-                                                            <th style={{ width: '20%' }} className="text-end">Debit (₹)</th>
-                                                            <th style={{ width: '20%' }} className="text-end">Credit (₹)</th>
-                                                            <th style={{ width: '26%' }} className="text-end">Balance</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        {summaryDataRows.openingRow && (
-                                                            <tr className="lsd-opening-row">
-                                                                <td className="text-muted fst-italic">{fmtDate(summaryDataRows.openingRow.resDate)}</td>
-                                                                <td className="fst-italic text-muted">Opening Balance</td>
-                                                                <td className="text-end text-success">
-                                                                    {summaryDataRows.openingRow.resDebit > 0 ? fmtMoney(summaryDataRows.openingRow.resDebit) : <span className="text-muted">–</span>}
-                                                                </td>
-                                                                <td className="text-end text-danger">
-                                                                    {summaryDataRows.openingRow.resCredit > 0 ? fmtMoney(summaryDataRows.openingRow.resCredit) : <span className="text-muted">–</span>}
-                                                                </td>
-                                                                <td className={`text-end fw-semibold ${balClass(summaryDataRows.openingRow.resBalance)}`}>
-                                                                    {balanceLabel(summaryDataRows.openingRow.resBalance)}
-                                                                </td>
-                                                            </tr>
-                                                        )}
-
-                                                        {summaryDataRows.dataRows.map((row, idx) => (
-                                                            <tr key={idx}>
-                                                                <td>{fmtDate(row.resDate)}</td>
-                                                                <td>
-                                                                    <span className="badge bg-info-subtle text-info me-1">
-                                                                        {row.resParticular}
-                                                                    </span>
-                                                                </td>
-                                                                <td className="text-end text-success fw-medium">
-                                                                    {row.resDebit > 0 ? fmtMoney(row.resDebit) : <span className="text-muted">–</span>}
-                                                                </td>
-                                                                <td className="text-end text-danger fw-medium">
-                                                                    {row.resCredit > 0 ? fmtMoney(row.resCredit) : <span className="text-muted">–</span>}
-                                                                </td>
-                                                                <td className={`text-end fw-semibold ${balClass(row.resBalance)}`}>
-                                                                    {balanceLabel(row.resBalance)}
-                                                                </td>
-                                                            </tr>
-                                                        ))}
-                                                    </tbody>
-                                                </Table>
-                                            </div>
-
-                                            {summaryDataRows.totalRow && (
-                                                <div className="lsd-total-strip d-flex align-items-center px-2 py-2 mt-2 border-top">
-                                                    <div style={{ width: '34%' }} className="fw-bold text-dark ps-2">TOTAL</div>
-                                                    <div style={{ width: '20%' }} className="text-end text-success fw-bold pe-2">
-                                                        {fmtMoney(summaryDataRows.totalRow.resDebit || 0)}
-                                                    </div>
-                                                    <div style={{ width: '20%' }} className="text-end text-danger fw-bold pe-2">
-                                                        {fmtMoney(summaryDataRows.totalRow.resCredit || 0)}
-                                                    </div>
-                                                    <div style={{ width: '26%' }} className="text-end pe-2"></div>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </CardBody>
-                                </Card>
-                            </Col>
-                        </Row>
-                    )}
-
                 </Container>
             </div>
         </React.Fragment>
