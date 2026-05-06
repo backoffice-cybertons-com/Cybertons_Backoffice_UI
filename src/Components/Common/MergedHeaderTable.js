@@ -237,6 +237,7 @@ const MergedHeaderTable = ({
     minWidth = "900px",
     showTotals = true,
     rowKey = null,
+    onDataChange = null,
 }) => {
     const [filters, setFilters] = useState({});
     const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" });
@@ -302,6 +303,13 @@ const MergedHeaderTable = ({
             return 0;
         });
     }, [filtered, sortConfig, columns]);
+
+    /* notify parent of filtered/sorted data */
+    React.useEffect(() => {
+        if (onDataChange) {
+            onDataChange(sorted);
+        }
+    }, [sorted, onDataChange]);
 
     /* totals */
     const totals = useMemo(() => {
@@ -385,13 +393,15 @@ const MergedHeaderTable = ({
                         <tr>
                             {columns.map((col) => (
                                 <th key={col.key} style={{ ...S.thFilter, top: filterTop }}>
-                                    <input
-                                        style={S.filterInput}
-                                        type="text"
-                                        placeholder="Filter…"
-                                        value={filters[col.key] || ""}
-                                        onChange={(e) => handleFilter(col.key, e.target.value)}
-                                    />
+                                    {!col.disableFilter && (
+                                        <input
+                                            style={S.filterInput}
+                                            type="text"
+                                            placeholder="Filter…"
+                                            value={filters[col.key] || ""}
+                                            onChange={(e) => handleFilter(col.key, e.target.value)}
+                                        />
+                                    )}
                                 </th>
                             ))}
                         </tr>
