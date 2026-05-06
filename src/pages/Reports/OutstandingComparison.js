@@ -149,6 +149,7 @@ const OutstandingComparison = () => {
     // Lifted Pagination State
     const [currentPage, setCurrentPage] = useState(1);
     const [rowsPerPage, setRowsPerPage] = useState(100);
+    const [filteredData, setFilteredData] = useState(null);
     const [totalEntries, setTotalEntries] = useState(0);
 
     const formatDate = (date) => {
@@ -184,6 +185,7 @@ const OutstandingComparison = () => {
             group: "Date :",
             width: "70px",
             align: "center",
+            disableFilter: true,
             cell: (_, index) => {
                 if (rowsPerPage === "all") return index + 1;
 
@@ -568,7 +570,7 @@ const OutstandingComparison = () => {
                                         {loading ? <Spinner size="sm" /> : "Generate"}
                                     </Button>
                                     <ExportOutstandingExcel
-                                        data={reportData}
+                                        data={filteredData !== null ? filteredData : paginatedData}
                                         date={date1}
                                         isSummary={appliedSummary}   // ← add this
                                     />
@@ -614,6 +616,7 @@ const OutstandingComparison = () => {
                                         maxHeight="calc(100vh - 350px)"
                                         minWidth="1000px"
                                         showTotals
+                                        onDataChange={setFilteredData}
                                     />
                                 )}
                             </CardBody>
