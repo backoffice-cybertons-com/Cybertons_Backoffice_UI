@@ -52,6 +52,7 @@ const Login = () => {
 
     // COMPONENT STATE
     const [passwordShow, setPasswordShow] = useState(false); // Toggle password visibility
+    const [sessionExpired, setSessionExpired] = useState(false);
 
     // LIFECYCLE: Redirect if already logged in
     useEffect(() => {
@@ -59,6 +60,14 @@ const Login = () => {
             navigate("/dashboard"); // Redirect to dashboard
         }
     }, [isAuthenticated, user, navigate]);
+
+    // [ADDED 2026-05-07] Check for session expiration query param
+    useEffect(() => {
+        const queryParams = new URLSearchParams(window.location.search);
+        if (queryParams.get('expired') === 'true') {
+            setSessionExpired(true);
+        }
+    }, []);
 
     // LIFECYCLE: Set document title
     useEffect(() => {
@@ -137,6 +146,13 @@ const Login = () => {
                                         {error ? (
                                             <Alert color="danger">
                                                 {typeof error === 'string' ? error : 'Login failed'}
+                                            </Alert>
+                                        ) : null}
+
+                                        {/* SESSION EXPIRED ALERT */}
+                                        {sessionExpired ? (
+                                            <Alert color="warning">
+                                                Your session has expired due to inactivity. Please sign in again.
                                             </Alert>
                                         ) : null}
                                         
