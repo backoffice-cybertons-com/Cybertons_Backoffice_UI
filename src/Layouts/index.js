@@ -141,8 +141,9 @@ const Layout = (props) => {
     }, [sidebarVisibilitytype, layoutType]);
 
 
-        /*
-    Idle Timeout Implementation (1 Hour)
+    /*
+    Idle Timeout Implementation (30 Minutes)
+    [MODIFIED 2026-05-07] Reduced from 1 hour to 30 minutes to prevent invalid session errors.
     */
     useEffect(() => {
         let timeout;
@@ -150,15 +151,17 @@ const Layout = (props) => {
         const resetTimer = () => {
             if (timeout) clearTimeout(timeout);
 
-            // 1 Hour = 3,600,000 ms
+            // 30 Minutes = 1,800,000 ms
             timeout = setTimeout(() => {
-                console.log("[Idle Timeout] User inactive for 1 hour. Logging out.");
+                console.warn("[Idle Timeout] User inactive for 30 minutes. Auto-logging out to protect session integrity.");
                 dispatch(logoutUser());
-            }, 3600000);
+                // Redirect to login with expiry flag for UI feedback
+                window.location.href = "/login?expired=true"; 
+            }, 1800000); 
         };
 
         // Events to watch for activity
-        const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'];
+        const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
 
         // Add event listeners
         events.forEach(event => {
@@ -168,7 +171,7 @@ const Layout = (props) => {
         // Initialize timer
         resetTimer();
 
-        // Cleanup
+        // Cleanup on unmount
         return () => {
             if (timeout) clearTimeout(timeout);
             events.forEach(event => {
