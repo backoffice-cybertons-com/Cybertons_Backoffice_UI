@@ -19,7 +19,6 @@ const DashboardMain = () => {
     const dispatch = useDispatch();
     const [filter, setFilter] = useState("THIS_MONTH");
     const [topLimit, setTopLimit] = useState(5);
-    const [voucherType, setVoucherType] = useState("Expense");
     const [selectedPartyTypes, setSelectedPartyTypes] = useState([]);
     const [invStatusPartyType, setInvStatusPartyType] = useState("Customer");
     const [partyTypesList, setPartyTypesList] = useState([]);
@@ -28,6 +27,7 @@ const DashboardMain = () => {
     const [customToDate, setCustomToDate] = useState("");
     const [dateError, setDateError] = useState("");
     const [invStatusChanging, setInvStatusChanging] = useState(false);
+    const [expenseChanging, setExpenseChanging] = useState(false);
 
     const toggleDropdown = () => setDropdownOpen((prevState) => !prevState);
 
@@ -62,12 +62,9 @@ const DashboardMain = () => {
         if (!companyId) return;
 
         const pTypes = selectedPartyTypes.length > 0 ? selectedPartyTypes.map(pt => pt.value) : null;
-        const vTypes = voucherType ? [voucherType] : null;
-
         const requestParams = {
             companyId: parseInt(companyId),
             topLimit: topLimit,
-            expenseVTypes: vTypes,
             expensePartyTypes: pTypes,
             invStatusPartyType: invStatusPartyType
         };
@@ -88,12 +85,15 @@ const DashboardMain = () => {
                 filterType: filter,
             }));
         }
-    }, [dispatch, filter, companyId, topLimit, voucherType, selectedPartyTypes, customFromDate, customToDate, invStatusPartyType]);
+    }, [dispatch, filter, companyId, topLimit, selectedPartyTypes, customFromDate, customToDate, invStatusPartyType]);
+
+    const isIndependentUpdate = invStatusChanging || expenseChanging;
 
     // Reset invStatusChanging flag when loading finishes
     useEffect(() => {
         if (!loading) {
             setInvStatusChanging(false);
+            setExpenseChanging(false);
         }
     }, [loading]);
 
@@ -101,6 +101,12 @@ const DashboardMain = () => {
         setDateError("");
         setFilter(selectedFilter);
         setInvStatusChanging(false);
+        setExpenseChanging(false);
+    };
+
+    const handleExpensePartyTypesChange = (val) => {
+        setExpenseChanging(true);
+        setSelectedPartyTypes(val);
     };
 
     const handleInvStatusPartyTypeChange = (val) => {
@@ -113,6 +119,7 @@ const DashboardMain = () => {
         setCustomFromDate(val);
         setDateError("");
         setInvStatusChanging(false);
+        setExpenseChanging(false);
         if (customToDate && val && new Date(val) > new Date(customToDate)) {
             setDateError("From date cannot be after To date.");
         }
@@ -123,6 +130,7 @@ const DashboardMain = () => {
         setCustomToDate(val);
         setDateError("");
         setInvStatusChanging(false);
+        setExpenseChanging(false);
         if (customFromDate && val && new Date(customFromDate) > new Date(val)) {
             setDateError("To date cannot be before From date.");
         }
@@ -219,7 +227,7 @@ const DashboardMain = () => {
                     <Row>
                         <Widgets 
                             kpiData={dashboardData?.kpi_cards} 
-                            loading={loading && !invStatusChanging}
+                            loading={loading && !isIndependentUpdate}
                         />
                     </Row>
 
@@ -228,13 +236,13 @@ const DashboardMain = () => {
                             seriesData={dashboardData?.bar_line_graph}
                             dataColors='["--vz-primary", "--vz-info", "--vz-warning", "--vz-success"]'
                             filter={filter}
-                            loading={loading && !invStatusChanging}
+                            loading={loading && !isIndependentUpdate}
                         />
                         <SalesTrendChart
                             seriesData={dashboardData?.sales_trend}
                             dataColors='["--vz-success", "--vz-warning", "--vz-danger"]'
                             filter={filter}
-                            loading={loading && !invStatusChanging}
+                            loading={loading && !isIndependentUpdate}
                         />
                     </Row>
 
@@ -243,16 +251,14 @@ const DashboardMain = () => {
                             topClientsData={dashboardData?.top_clients}
                             topLimit={topLimit}
                             onLimitChange={setTopLimit}
-                            loading={loading && !invStatusChanging}
+                            loading={loading && !isIndependentUpdate}
                         />
                         <ExpenseBreakdownDonut
                             expenseData={dashboardData?.expense_breakdown}
                             partyTypesList={partyTypesList}
                             selectedPartyTypes={selectedPartyTypes}
-                            onPartyTypesChange={setSelectedPartyTypes}
-                            selectedVoucherType={voucherType}
-                            onVoucherTypeChange={setVoucherType}
-                            loading={loading && !invStatusChanging}
+                            onPartyTypesChange={handleExpensePartyTypesChange}
+                            loading={loading}
                             dataColors='["--vz-primary", "--vz-success", "--vz-warning", "--vz-danger", "--vz-info", "--vz-secondary"]'
                         />
                     </Row>
@@ -267,7 +273,7 @@ const DashboardMain = () => {
                         <ZoneWiseBarChart
                             zoneWiseData={dashboardData?.zone_wise}
                             dataColors='["--vz-primary", "--vz-info", "--vz-success", "--vz-warning", "--vz-danger"]'
-                            loading={loading && !invStatusChanging}
+                            loading={loading && !isIndependentUpdate}
                         />
                     </Row>
                 </Container>
