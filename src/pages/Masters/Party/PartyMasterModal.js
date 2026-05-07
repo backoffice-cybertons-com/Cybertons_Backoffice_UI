@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import Select from "react-select";
-import { 
-    Modal, ModalHeader, ModalBody, ModalFooter, Button, 
-    Row, Col, Nav, NavItem, NavLink, TabContent, TabPane, 
-    Form, FormGroup, Label, Input, FormFeedback, Card, CardBody 
+import {
+    Modal, ModalHeader, ModalBody, ModalFooter, Button,
+    Row, Col, Nav, NavItem, NavLink, TabContent, TabPane,
+    Form, FormGroup, Label, Input, FormFeedback, Card, CardBody
 } from 'reactstrap';
 import classnames from 'classnames';
 import { APIClient } from '../../../helpers/api_helper';
@@ -80,7 +80,7 @@ const PartyMasterModal = ({ isOpen, toggle, partyId, isEdit, onSuccess, defaultT
 
     const [form, setForm] = useState(initialPartyState);
     const [validationErrors, setValidationErrors] = useState({});
-    
+
     // Result Modal State (Artistic Popup)
     const [resultModal, setResultModal] = useState({
         show: false,
@@ -145,7 +145,7 @@ const PartyMasterModal = ({ isOpen, toggle, partyId, isEdit, onSuccess, defaultT
                 const bnk = response.BankDetails || response.bankDetails || [];
                 const cp = response.ContactPersons || response.contactPersons || [];
                 const tags = response.ReportingTags || response.reportingTags || [];
-                
+
                 // Ensure we always have at least one Billing and one Shipping address for the form
                 const finalAddresses = ['Billing', 'Shipping'].map(type => {
                     const existing = rawAddr.find(a => (a.AddressType || a.addressType) === type);
@@ -309,11 +309,11 @@ const PartyMasterModal = ({ isOpen, toggle, partyId, isEdit, onSuccess, defaultT
             const newAddresses = [...form.Addresses];
             const shippingIndex = newAddresses.findIndex(a => a.AddressType === 'Shipping');
             if (shippingIndex !== -1) {
-                newAddresses[shippingIndex] = { 
-                    ...billing, 
-                    AddressType: 'Shipping', 
+                newAddresses[shippingIndex] = {
+                    ...billing,
+                    AddressType: 'Shipping',
                     AddressId: newAddresses[shippingIndex].AddressId, // Preserve ID if editing
-                    IsDefault: false 
+                    IsDefault: false
                 };
                 setForm(prev => ({ ...prev, Addresses: newAddresses }));
                 toast.info("Copied Billing to Shipping");
@@ -368,7 +368,7 @@ const PartyMasterModal = ({ isOpen, toggle, partyId, isEdit, onSuccess, defaultT
         if (!form.Party.PartyType) errors.PartyType = "Party Type is required";
         if (!form.Party.DisplayName) errors.DisplayName = "Display Name is required";
         if (!form.Party.GSTTreatment) errors.GSTTreatment = "GST Treatment is required";
-        
+
         setValidationErrors(errors);
         return Object.keys(errors).length === 0;
     };
@@ -422,7 +422,7 @@ const PartyMasterModal = ({ isOpen, toggle, partyId, isEdit, onSuccess, defaultT
         } catch (error) {
             const errorMsg = typeof error === 'string' ? error : (error?.message || "Error saving party");
             const isDuplicate = errorMsg.toLowerCase().includes("duplicate") || errorMsg.toLowerCase().includes("already exists");
-            
+
             setResultModal({
                 show: true,
                 title: isDuplicate ? "Duplicate Entry" : "Save Failed",
@@ -624,12 +624,12 @@ const PartyMasterModal = ({ isOpen, toggle, partyId, isEdit, onSuccess, defaultT
                                             </Input>
                                         </Col>
                                         <Col xs={8}>
-                                            <Input 
-                                                type="number" 
+                                            <Input
+                                                type="number"
                                                 step="any"
-                                                name="OpeningBalance" 
-                                                value={form.Party.OpeningBalance} 
-                                                onChange={handlePartyChange} 
+                                                name="OpeningBalance"
+                                                value={form.Party.OpeningBalance}
+                                                onChange={handlePartyChange}
                                                 onBlur={(e) => {
                                                     const val = formatToTwoDecimals(e.target.value);
                                                     handlePartyChange({ target: { name: 'OpeningBalance', value: val } });
@@ -642,12 +642,12 @@ const PartyMasterModal = ({ isOpen, toggle, partyId, isEdit, onSuccess, defaultT
                             <Col md={6}>
                                 <FormGroup>
                                     <Label>Default Rate Adjustment (±)</Label>
-                                    <Input 
-                                        type="number" 
+                                    <Input
+                                        type="number"
                                         step="any"
-                                        name="RateDiff" 
-                                        value={form.Party.RateDiff} 
-                                        onChange={handlePartyChange} 
+                                        name="RateDiff"
+                                        value={form.Party.RateDiff}
+                                        onChange={handlePartyChange}
                                         onBlur={(e) => {
                                             const val = formatToTwoDecimals(e.target.value);
                                             handlePartyChange({ target: { name: 'RateDiff', value: val } });
@@ -665,42 +665,42 @@ const PartyMasterModal = ({ isOpen, toggle, partyId, isEdit, onSuccess, defaultT
                                         <Col md={7}>
                                             <FormGroup className="mb-3">
                                                 <Label>Profile Image URL</Label>
-                                                <Input 
-                                                    name="PartyProfile" 
-                                                    value={form.Party.PartyProfile} 
-                                                    onChange={handlePartyChange} 
+                                                <Input
+                                                    name="PartyProfile"
+                                                    value={form.Party.PartyProfile}
+                                                    onChange={handlePartyChange}
                                                     placeholder="Paste public image URL, or upload below"
                                                 />
                                             </FormGroup>
-                                            
+
                                             <div className="d-flex align-items-center mb-3">
                                                 <Label className="btn btn-light border m-0" style={{ cursor: 'pointer', borderTopRightRadius: 0, borderBottomRightRadius: 0 }}>
                                                     Choose File
                                                     <Input type="file" hidden accept="image/png, image/jpeg, image/webp" onChange={handleFileChange} />
                                                 </Label>
-                                                <Input 
-                                                    type="text" 
-                                                    readOnly 
-                                                    className="form-control" 
+                                                <Input
+                                                    type="text"
+                                                    readOnly
+                                                    className="form-control"
                                                     style={{ borderTopLeftRadius: 0, borderBottomLeftRadius: 0, backgroundColor: "#fff" }}
-                                                    value={selectedFile ? selectedFile.name : ""} 
+                                                    value={selectedFile ? selectedFile.name : ""}
                                                 />
                                             </div>
 
                                             <div className="d-flex gap-2">
-                                                <Button 
-                                                    type="button" 
-                                                    color="primary" 
-                                                    outline 
+                                                <Button
+                                                    type="button"
+                                                    color="primary"
+                                                    outline
                                                     size="sm"
                                                     onClick={handleUploadProfile}
                                                     disabled={isUploading || !selectedFile}
                                                 >
                                                     {isUploading ? "Uploading..." : "Upload Profile"}
                                                 </Button>
-                                                <Button 
-                                                    type="button" 
-                                                    color="light" 
+                                                <Button
+                                                    type="button"
+                                                    color="light"
                                                     size="sm"
                                                     onClick={handleClearProfile}
                                                 >
@@ -711,24 +711,24 @@ const PartyMasterModal = ({ isOpen, toggle, partyId, isEdit, onSuccess, defaultT
                                                 Upload a profile image, or paste a public URL. PNG/JPG/WEBP supported.
                                             </p>
                                         </Col>
-                                        
+
                                         <Col md={5}>
                                             <Card className="bg-light border shadow-none mb-0 h-100 d-flex justify-content-center align-items-center p-3" style={{ minHeight: '150px' }}>
                                                 {selectedFile ? (
-                                                    <img 
-                                                        src={URL.createObjectURL(selectedFile)} 
-                                                        alt="Profile Preview" 
+                                                    <img
+                                                        src={URL.createObjectURL(selectedFile)}
+                                                        alt="Profile Preview"
                                                         style={{ maxWidth: '100%', maxHeight: '120px', objectFit: 'contain' }}
                                                     />
                                                 ) : form.Party.PartyProfile ? (
-                                                    <img 
-                                                        src={form.Party.PartyProfile.startsWith("http") 
-                                                            ? form.Party.PartyProfile 
-                                                            : `${api.API_URL || 'http://localhost:5248'}${form.Party.PartyProfile.startsWith('/') ? '' : '/'}${form.Party.PartyProfile}`} 
-                                                        alt="Profile Preview" 
+                                                    <img
+                                                        src={form.Party.PartyProfile.startsWith("http")
+                                                            ? form.Party.PartyProfile
+                                                            : `${api.API_URL || 'http://localhost:5248'}${form.Party.PartyProfile.startsWith('/') ? '' : '/'}${form.Party.PartyProfile}`}
+                                                        alt="Profile Preview"
                                                         style={{ maxWidth: '100%', maxHeight: '120px', objectFit: 'contain' }}
                                                         onError={(e) => {
-                                                            e.target.onerror = null; 
+                                                            e.target.onerror = null;
                                                             e.target.src = "https://via.placeholder.com/150/EEEEEE/999999?text=No+Image";
                                                         }}
                                                     />

@@ -1,16 +1,12 @@
 import React, { useState, useMemo } from 'react';
 import ReactApexChart from "react-apexcharts";
-import { Card, CardBody, CardHeader, Col, Dropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reactstrap';
+import { Card, CardBody, CardHeader, Col } from 'reactstrap';
 import Select from "react-select";
 import getChartColorsArray from "../../Components/Common/ChartsDynamicColor";
 
-const ExpenseBreakdownDonut = ({ expenseData, partyTypesList, selectedPartyTypes, onPartyTypesChange, selectedVoucherType, onVoucherTypeChange, dataColors, loading }) => {
-    const [isVoucherDropdownOpen, setVoucherDropdownOpen] = useState(false);
+const ExpenseBreakdownDonut = ({ expenseData, partyTypesList, selectedPartyTypes, onPartyTypesChange, dataColors, loading }) => {
     const [viewMode, setViewMode] = useState("chart"); // "chart" or "list"
-    const toggleVoucherDropdown = () => setVoucherDropdownOpen(!isVoucherDropdownOpen);
-
     const chartColors = getChartColorsArray(dataColors);
-    const voucherTypes = ["Sales", "Income", "Purchase", "Expense"];
 
     // Process data for Donut Chart
     const { series, labels } = useMemo(() => {
@@ -80,7 +76,7 @@ const ExpenseBreakdownDonut = ({ expenseData, partyTypesList, selectedPartyTypes
         <Col xl={4}>
             <Card className="card-height-100">
                 <CardHeader className="align-items-center d-flex border-bottom-dashed">
-                    <h4 className="card-title mb-0 flex-grow-1">{selectedVoucherType} Breakdown</h4>
+                    <h4 className="card-title mb-0 flex-grow-1">Expense Breakdown</h4>
                     <div className="flex-shrink-0 d-flex gap-2 align-items-center">
                         <div className="btn-group" role="group">
                             <button
@@ -130,18 +126,6 @@ const ExpenseBreakdownDonut = ({ expenseData, partyTypesList, selectedPartyTypes
                                 }}
                             />
                         </div>
-                        <Dropdown isOpen={isVoucherDropdownOpen} toggle={toggleVoucherDropdown}>
-                            <DropdownToggle tag="button" className="btn btn-soft-primary btn-sm">
-                                {selectedVoucherType} <i className="mdi mdi-chevron-down align-middle ms-1"></i>
-                            </DropdownToggle>
-                            <DropdownMenu className="dropdown-menu-end">
-                                {voucherTypes.map(type => (
-                                    <DropdownItem key={type} onClick={() => onVoucherTypeChange(type)} active={selectedVoucherType === type}>
-                                        {type}
-                                    </DropdownItem>
-                                ))}
-                            </DropdownMenu>
-                        </Dropdown>
                     </div>
                 </CardHeader>
                 <CardBody>
@@ -155,7 +139,7 @@ const ExpenseBreakdownDonut = ({ expenseData, partyTypesList, selectedPartyTypes
                         ) : viewMode === 'chart' ? (
                             series.length > 0 ? (
                                 <ReactApexChart
-                                    key={`${selectedVoucherType}-${selectedPartyTypes.length}`}
+                                    key={`expense-donut-${selectedPartyTypes.length}`}
                                     options={options}
                                     series={series}
                                     type="donut"
@@ -164,7 +148,7 @@ const ExpenseBreakdownDonut = ({ expenseData, partyTypesList, selectedPartyTypes
                                 />
                             ) : (
                                 <div className="d-flex flex-column justify-content-center align-items-center" style={{ height: '333px' }}>
-                                    <div className="text-muted">No {selectedVoucherType.toLowerCase()} data found for selected filters</div>
+                                    <div className="text-muted">No expense data found for selected filters</div>
                                 </div>
                             )
                         ) : (
