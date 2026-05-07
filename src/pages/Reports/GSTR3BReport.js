@@ -536,6 +536,8 @@ import Flatpickr from "react-flatpickr";
 import { APIClient } from "../../helpers/api_helper";
 import * as url from "../../helpers/url_helper";
 import GSTR3BExcelExport from "../../Components/Common/GSTR3BExcelExport";
+import HeaderForAllReport from "../../Components/Common/HeaderForAllRpt";
+import FooterForAllRpt from "../../Components/Common/FooterForAllRpt";
 
 const api = new APIClient();
 
@@ -781,6 +783,11 @@ const GSTR3BReport = () => {
 
           {generated && (
             <Card className="mx-auto" style={{ width: "80%" }}>
+
+              {/*COMMON HEADER */}
+              <div className="text-start">
+                <HeaderForAllReport reportName="GSTR-3B Report" />
+              </div>
               <CardBody>
                 <Row className="mb-4">
                   <Col lg={12} className="text-center">
@@ -1081,7 +1088,11 @@ const GSTR3BReport = () => {
                     </tfoot>
                   </table>
                 )}
+
               </CardBody>
+
+              {/* COMMON FOOTER */}
+              <FooterForAllRpt />
             </Card>
           )}
         </Container>

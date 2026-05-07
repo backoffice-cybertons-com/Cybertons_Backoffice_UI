@@ -11,6 +11,8 @@ import { getTrialBalance } from "../../helpers/fakebackend_helper";
 import secureStorage from "../../utils/secureStorage";
 import BreadCrumb from '../../Components/Common/BreadCrumb';
 import "./TrialBalanceReport.css";
+import HeaderForAllReport from "../../Components/Common/HeaderForAllRpt";
+import FooterForAllRpt from "../../Components/Common/FooterForAllRpt";
 
 const TrialBalanceReport = () => {
     const [asOfDate, setAsOfDate] = useState(new Date());
@@ -52,8 +54,8 @@ const TrialBalanceReport = () => {
         try {
             const dateStr = formatLocalYMD(asOfDate);
             const companyId = secureStorage.getPlain('companyId') || 10001; // fallback if missing
-            const response = await getTrialBalance(companyId, dateStr); 
-            
+            const response = await getTrialBalance(companyId, dateStr);
+
             const data = Array.isArray(response) ? response : (response?.data || []);
             setReportData(data);
         } catch (err) {
@@ -74,7 +76,7 @@ const TrialBalanceReport = () => {
 
     // Filter out the 'TOTAL' row sent by the backend so we can calculate it ourselves cleanly
     const accountRows = rows.filter(r => !r.isTotal);
-    
+
     // Calculate Grand Totals
     const totalDebit = accountRows.reduce((s, r) => s + r.debit, 0);
     const totalCredit = accountRows.reduce((s, r) => s + r.credit, 0);
@@ -337,9 +339,9 @@ const TrialBalanceReport = () => {
                                         <Col lg={3}>
                                             <div className="d-flex gap-2">
                                                 <Button color="primary" className="flex-grow-1" onClick={fetchReport} disabled={loading}>
-                                                {loading
-                                                    ? <><Spinner size="sm" className="me-1" />Loading...</>
-                                                    : <><i className="ri-filter-2-line me-1" />Generate</>}
+                                                    {loading
+                                                        ? <><Spinner size="sm" className="me-1" />Loading...</>
+                                                        : <><i className="ri-filter-2-line me-1" />Generate</>}
                                                 </Button>
                                                 <Button
                                                     color="light"
@@ -406,9 +408,16 @@ const TrialBalanceReport = () => {
 
                     {/* Report */}
                     {reportData && accountRows.length > 0 && (
+
                         <Row>
                             <Col lg={12}>
                                 <Card id="trialBalancePrintArea">
+
+                                    {/*COMMON HEADER */}
+                                    <div className="text-start">
+                                        <HeaderForAllReport reportName="Trial Balance" />
+                                    </div>
+
                                     {/* Print-only header */}
                                     <div className="d-none d-print-block p-3 border-bottom">
                                         <div className="tb-print-title">
@@ -487,47 +496,47 @@ const TrialBalanceReport = () => {
 
                                         <div className="tb-table-wrap">
                                             <div className="table-responsive">
-                                            <Table className="table-hover align-middle mb-0 tb-table">
-                                                <thead className="table-light sticky-top" style={{ zIndex: 2 }}>
-                                                    <tr className="text-muted text-uppercase">
-                                                        <th style={{ width: '50%' }} className="ps-3">
-                                                            <button type="button" className="tb-th-btn" onClick={() => setSort('accountName')}>
-                                                                Account Name <i className={sortIcon('accountName')} />
-                                                            </button>
-                                                        </th>
-                                                        <th style={{ width: '25%' }} className="text-end">
-                                                            <button type="button" className="tb-th-btn tb-th-btn-end" onClick={() => setSort('debit')}>
-                                                                Debit (₹) <i className={sortIcon('debit')} />
-                                                            </button>
-                                                        </th>
-                                                        <th style={{ width: '25%' }} className="text-end pe-3">
-                                                            <button type="button" className="tb-th-btn tb-th-btn-end" onClick={() => setSort('credit')}>
-                                                                Credit (₹) <i className={sortIcon('credit')} />
-                                                            </button>
-                                                        </th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    {shownRows.map((row, idx) => (
-                                                        <tr key={`${row.accountName}-${idx}`}>
-                                                            <td className="ps-3 fw-medium">
-                                                                <div className="d-flex align-items-center">
-                                                                    <i className="ri-file-list-3-line text-muted me-2" />
-                                                                    <span className="tb-account">{row.accountName}</span>
-                                                                </div>
-                                                            </td>
-                                                            <td className="text-end text-success fw-medium">
-                                                                {row.debit > 0 ? formatMoney(row.debit) : <span className="text-muted">-</span>}
-                                                            </td>
-                                                            <td className="text-end text-danger pe-3 fw-medium">
-                                                                {row.credit > 0 ? formatMoney(row.credit) : <span className="text-muted">-</span>}
-                                                            </td>
+                                                <Table className="table-hover align-middle mb-0 tb-table">
+                                                    <thead className="table-light sticky-top" style={{ zIndex: 2 }}>
+                                                        <tr className="text-muted text-uppercase">
+                                                            <th style={{ width: '50%' }} className="ps-3">
+                                                                <button type="button" className="tb-th-btn" onClick={() => setSort('accountName')}>
+                                                                    Account Name <i className={sortIcon('accountName')} />
+                                                                </button>
+                                                            </th>
+                                                            <th style={{ width: '25%' }} className="text-end">
+                                                                <button type="button" className="tb-th-btn tb-th-btn-end" onClick={() => setSort('debit')}>
+                                                                    Debit (₹) <i className={sortIcon('debit')} />
+                                                                </button>
+                                                            </th>
+                                                            <th style={{ width: '25%' }} className="text-end pe-3">
+                                                                <button type="button" className="tb-th-btn tb-th-btn-end" onClick={() => setSort('credit')}>
+                                                                    Credit (₹) <i className={sortIcon('credit')} />
+                                                                </button>
+                                                            </th>
                                                         </tr>
-                                                    ))}
-                                                </tbody>
-                                            </Table>
+                                                    </thead>
+                                                    <tbody>
+                                                        {shownRows.map((row, idx) => (
+                                                            <tr key={`${row.accountName}-${idx}`}>
+                                                                <td className="ps-3 fw-medium">
+                                                                    <div className="d-flex align-items-center">
+                                                                        <i className="ri-file-list-3-line text-muted me-2" />
+                                                                        <span className="tb-account">{row.accountName}</span>
+                                                                    </div>
+                                                                </td>
+                                                                <td className="text-end text-success fw-medium">
+                                                                    {row.debit > 0 ? formatMoney(row.debit) : <span className="text-muted">-</span>}
+                                                                </td>
+                                                                <td className="text-end text-danger pe-3 fw-medium">
+                                                                    {row.credit > 0 ? formatMoney(row.credit) : <span className="text-muted">-</span>}
+                                                                </td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </Table>
                                             </div>
-                                            
+
                                             {/* Static Total Strip Under Table */}
                                             <div className="tb-total-strip d-flex align-items-center py-2">
                                                 <div style={{ width: '50%' }} className="text-end pe-3 text-dark fw-bold">GRAND TOTAL</div>
@@ -536,6 +545,9 @@ const TrialBalanceReport = () => {
                                             </div>
                                         </div>
                                     </CardBody>
+
+                                    <FooterForAllRpt />
+
                                 </Card>
                             </Col>
                         </Row>

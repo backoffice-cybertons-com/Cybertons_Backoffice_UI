@@ -10,6 +10,8 @@ import CommonTable from "../../Components/Common/CommonTable";
 import ExportButton from "../../Components/Common/ExportButton";
 import { APIClient } from "../../helpers/api_helper";
 import * as url from "../../helpers/url_helper";
+import HeaderForAllReport from "../../Components/Common/HeaderForAllRpt";
+import FooterForAllRpt from "../../Components/Common/FooterForAllRpt";
 
 const api = new APIClient();
 
@@ -576,7 +578,12 @@ export default function SalePurComparDatewise() {
                     {(data.length > 0 || loading || generated) && (
                         <Row>
                             <Col lg={12}>
+
                                 <Card>
+                                    {/*COMMON HEADER */}
+                                    <div className="text-start">
+                                        <HeaderForAllReport reportName="Datewise Comparative Report" />
+                                    </div>
                                     <CardBody>
 
                                         <CommonTable
@@ -587,6 +594,9 @@ export default function SalePurComparDatewise() {
                                         />
 
                                     </CardBody>
+
+                                    {/* COMMON FOOTER */}
+                                    <FooterForAllRpt />
                                 </Card>
                             </Col>
                         </Row>

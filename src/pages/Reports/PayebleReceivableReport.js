@@ -10,6 +10,8 @@ import * as url from "../../helpers/url_helper";
 import CommonTable from "../../Components/Common/CommonTable";
 import ExportButton from "../../Components/Common/ExportButton";
 import "../../Components/Common/CommonTable.css";
+import HeaderForAllReport from "../../Components/Common/HeaderForAllRpt";
+import FooterForAllRpt from "../../Components/Common/FooterForAllRpt";
 
 const formatDateForApi = (date) => {
   if (!date) return null;
@@ -364,6 +366,13 @@ const PayebleReceivableReport = () => {
           </Card>
           {(reportData.length > 0 || loading || generated) && (
             <Card>
+
+              {/*COMMON HEADER */}
+              <div className="text-start">
+                <HeaderForAllReport reportName="Payable Receivable Report" />
+              </div>
+
+
               <CardBody className="pt-3 pl-3 pr-3 pb-3">
                 <CommonTable
                   columns={columns}
@@ -375,6 +384,11 @@ const PayebleReceivableReport = () => {
                   paginatedData={paginatedData}
                 />
               </CardBody>
+
+              {/* COMMON FOOTER */}
+              <FooterForAllRpt />
+
+
             </Card>
           )}
         </Container>

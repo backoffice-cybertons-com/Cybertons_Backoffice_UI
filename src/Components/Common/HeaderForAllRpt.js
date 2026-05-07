@@ -103,17 +103,17 @@ const HeaderForAllRpt = ({ reportName = "Outstanding Comparison Report" }) => {
             textAlign: "center",
           }}
         >
-          <div
-            style={{
-              fontSize: "11px",
-              color: "#64748b",
-              letterSpacing: "1px",
-              textTransform: "uppercase",
-              marginBottom: "4px",
-            }}
-          >
-            Report
-          </div>
+          {/* <div
+              style={{
+                fontSize: "11px",
+                color: "#64748b",
+                letterSpacing: "1px",
+                textTransform: "uppercase",
+                marginBottom: "4px",
+              }}
+            >
+              Report
+            </div> */}
 
           <h4
             style={{
@@ -127,7 +127,7 @@ const HeaderForAllRpt = ({ reportName = "Outstanding Comparison Report" }) => {
           </h4>
         </div>
       </div>
-    </div>
+    </div >
   );
 };
 

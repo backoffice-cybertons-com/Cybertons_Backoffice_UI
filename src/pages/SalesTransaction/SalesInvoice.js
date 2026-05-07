@@ -2,6 +2,8 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { getCompanyProfile, getSalesTransactionDetails, getPartyCustomers } from "../../helpers/fakebackend_helper";
 import "./SalesInvoice.css";
+import HeaderForAllReport from "../../Components/Common/HeaderForAllRpt";
+import FooterForAllRpt from "../../Components/Common/FooterForAllRpt";
 
 /* ─── helpers ─────────────────────────────────────────────────────── */
 const fmt = (n) => Number(n || 0).toFixed(2);
@@ -179,7 +181,12 @@ const SalesInvoice = () => {
             </div>
 
             <div className="si-page" style={{ overflow: "hidden" }}>
-                 <div className="si-ledger-wrapper">
+                <div className="si-ledger-wrapper">
+
+                    {/* <div className="text-start">
+                        <HeaderForAllReport reportName="Sale Invoice" />
+                    </div> */}
+
                     {/* Header Row 1 */}
                     <div className="si-top-header">
                         <div className="si-header-left"></div>
@@ -318,8 +325,8 @@ const SalesInvoice = () => {
                             <table className="si-bank-table">
                                 <tbody>
                                     <tr>
-                                        <td style={{width: '70px'}}>Bank Name</td><td>: {bankName}</td>
-                                        <td style={{width: '60px'}}>A/c. No.</td><td>: {bankAccount}</td>
+                                        <td style={{ width: '70px' }}>Bank Name</td><td>: {bankName}</td>
+                                        <td style={{ width: '60px' }}>A/c. No.</td><td>: {bankAccount}</td>
                                     </tr>
                                     <tr>
                                         <td>Branch</td><td>: {bankBranch}</td>
@@ -351,12 +358,12 @@ const SalesInvoice = () => {
                             <table className="si-outstanding-gst-table">
                                 <thead>
                                     <tr>
-                                        <th style={{textAlign: 'left'}}>Outstanding Details:-</th>
+                                        <th style={{ textAlign: 'left' }}>Outstanding Details:-</th>
                                         <th className="gst-hdr text-center">GST %</th>
                                         <th className="gst-hdr text-right">Taxable Amt</th>
                                         <th className="gst-hdr text-right">CGST Amt.</th>
                                         <th className="gst-hdr text-right">SGST Amt.</th>
-                                        <th className="gst-hdr text-right" style={{paddingRight: '6px'}}>Total Amt.</th>
+                                        <th className="gst-hdr text-right" style={{ paddingRight: '6px' }}>Total Amt.</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -366,7 +373,7 @@ const SalesInvoice = () => {
                                         <td className="gst-cell text-right">{fmt(prevOutstanding)}</td>
                                         <td className="gst-cell text-right"></td>
                                         <td className="gst-cell text-right"></td>
-                                        <td className="gst-cell text-right" style={{paddingRight: '6px'}}>{fmt(prevOutstanding)}</td>
+                                        <td className="gst-cell text-right" style={{ paddingRight: '6px' }}>{fmt(prevOutstanding)}</td>
                                     </tr>
                                     <tr>
                                         <td className="os-cell">This Bill &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: <span className="os-val">{fmt(grandTotal)}</span></td>
@@ -374,7 +381,7 @@ const SalesInvoice = () => {
                                         <td className="gst-cell text-right">{fmt(totTaxable)}</td>
                                         <td className="gst-cell text-right">{fmt(totCgst)}</td>
                                         <td className="gst-cell text-right">{fmt(totSgst)}</td>
-                                        <td className="gst-cell text-right" style={{paddingRight: '6px'}}>{fmt(grandTotal)}</td>
+                                        <td className="gst-cell text-right" style={{ paddingRight: '6px' }}>{fmt(grandTotal)}</td>
                                     </tr>
                                     <tr>
                                         <td className="os-cell">Today's Receipt : <span className="os-val">{fmt(header?.todaysReceipt || header?.TodaysReceipt || 0)}</span></td>
@@ -393,7 +400,7 @@ const SalesInvoice = () => {
                                         <td className="gst-cell text-right"></td>
                                     </tr>
                                     <tr>
-                                        <td className="os-cell" style={{borderTop: '1px solid #000'}}>Final O/S &nbsp;&nbsp;&nbsp;&nbsp;: <span className="os-val bold">{fmt(prevOutstanding + grandTotal - (header?.todaysReceipt || header?.TodaysReceipt || 0))}</span></td>
+                                        <td className="os-cell" style={{ borderTop: '1px solid #000' }}>Final O/S &nbsp;&nbsp;&nbsp;&nbsp;: <span className="os-val bold">{fmt(prevOutstanding + grandTotal - (header?.todaysReceipt || header?.TodaysReceipt || 0))}</span></td>
                                         <td className="gst-cell text-center"></td>
                                         <td className="gst-cell text-right"></td>
                                         <td className="gst-cell text-right"></td>
@@ -412,14 +419,18 @@ const SalesInvoice = () => {
                             </table>
                         </div>
                         <div className="si-signature-col">
-                            <div className="si-for-trade" style={{paddingRight: '6px'}}>For, {companyName}</div>
-                            <div className="si-sign-labels" style={{padding: '0 6px'}}>
+                            <div className="si-for-trade" style={{ paddingRight: '6px' }}>For, {companyName}</div>
+                            <div className="si-sign-labels" style={{ padding: '0 6px' }}>
                                 <span>Receiver's Signature</span>
                                 <span>Authorised Signatory</span>
                             </div>
                         </div>
                     </div>
-                 </div>
+
+                </div>
+                <div className="text-start">
+                    <FooterForAllRpt />
+                </div>
             </div>
         </div>
     );
