@@ -67,7 +67,11 @@ const ExpenseBreakdownDonut = ({ expenseData, partyTypesList, selectedPartyTypes
         tooltip: {
             enabled: true,
             y: {
-                formatter: (val) => "₹" + (parseFloat(val) || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })
+                formatter: (val) => {
+                    const total = series.reduce((a, b) => a + b, 0);
+                    const percentage = total > 0 ? ((val / total) * 100).toFixed(1) : 0;
+                    return "₹" + (parseFloat(val) || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 }) + " (" + percentage + "%)";
+                }
             }
         }
     };

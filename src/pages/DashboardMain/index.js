@@ -19,7 +19,7 @@ const DashboardMain = () => {
     const dispatch = useDispatch();
     const [filter, setFilter] = useState("THIS_MONTH");
     const [topLimit, setTopLimit] = useState(5);
-    const [selectedPartyTypes, setSelectedPartyTypes] = useState([]);
+    const [selectedPartyTypes, setSelectedPartyTypes] = useState([{ label: "Expense", value: "Expense" }]);
     const [invStatusPartyType, setInvStatusPartyType] = useState("Customer");
     const [partyTypesList, setPartyTypesList] = useState([]);
     const [dropdownOpen, setDropdownOpen] = useState(false);
