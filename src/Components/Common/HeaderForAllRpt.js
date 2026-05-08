@@ -40,7 +40,11 @@ const HeaderForAllRpt = ({ reportName = "Outstanding Comparison Report" }) => {
 
           {/* Logo */}
           <img
-            src={companyLogo}
+            src={
+              companyInfo?.logoPath
+                ? `${process.env.REACT_APP_API_URL}${companyInfo.logoPath}`
+                : companyLogo
+            }
             alt="Company Logo"
             style={{
               width: "95px",

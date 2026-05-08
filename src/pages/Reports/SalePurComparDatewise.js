@@ -193,6 +193,7 @@ export default function SalePurComparDatewise() {
     const [rowsPerPage, setRowsPerPage] = useState(100);
     const [totalEntries, setTotalEntries] = useState(0);
     const [compareMode, setCompareMode] = useState("sameDate");
+    const [companyInfo, setCompanyInfo] = useState(null);
 
 
 
@@ -205,7 +206,17 @@ export default function SalePurComparDatewise() {
     React.useEffect(() => {
         loadParties();
         loadProducts();
+        loadCompanyInfo();
     }, []);
+
+    const loadCompanyInfo = async () => {
+        try {
+            const res = await api.get(url.GET_COMPANY_PROFILE);
+            setCompanyInfo(res?.data || res);
+        } catch (err) {
+            console.error("Failed to load company info", err);
+        }
+    };
 
     const loadParties = async () => {
         let res = await api.get(url.GET_PARTIES);
@@ -256,7 +267,11 @@ export default function SalePurComparDatewise() {
         { accessor: "purAmount", label: "Purchase Amount" },
         { accessor: "purTax", label: "Purchase Tax Amount" },
         { accessor: "purExpDisRound", label: "Purchase Exp/Dis/Round Off" },
-        { accessor: "purFinal", label: "Purchase Final Amount" },
+        {
+            accessor: "purFinal",
+            label: "Purchase Final Amount",
+            style: { fill: { fgColor: { rgb: "FEF4E4" } }, font: { bold: true } }
+        },
 
         // Sale
         { accessor: (r) => formatDateExcel(r.sInvDate), label: "Sale Date" },
@@ -265,12 +280,22 @@ export default function SalePurComparDatewise() {
         { accessor: "saleAmount", label: "Sale Amount" },
         { accessor: "saleTax", label: "Sale Tax Amount" },
         { accessor: "saleExpDisRound", label: "Sale Exp/Dis/Round Off" },
-        { accessor: "saleFinal", label: "Sale Final Amount" },
+        {
+            accessor: "saleFinal",
+            label: "Sale Final Amount",
+            style: { fill: { fgColor: { rgb: "FEF4E4" } }, font: { bold: true } }
+        },
 
         // Profit
         { accessor: "pl", label: "Profit / Loss" }
 
     ], []);
+
+    const headerRows = useMemo(() => [
+        [{ v: "DateWise Comparative Report", s: { font: { bold: true, sz: 14 }, alignment: { horizontal: "center" } } }],
+        [{ v: companyInfo?.companyName || "SoftBook", s: { font: { bold: true }, alignment: { horizontal: "center" } } }],
+        [""] // spacing
+    ], [companyInfo]);
 
     const fetchExportData = async () => {
         return data || [];
@@ -562,9 +587,9 @@ export default function SalePurComparDatewise() {
                                             <ExportButton
                                                 data={fetchExportData}
                                                 columns={exportColumns}
+                                                headerRows={headerRows}
                                                 fileName={"DateWise Comparison"}
                                                 iconOnly
-
                                             />
 
                                         </Col>
@@ -584,7 +609,9 @@ export default function SalePurComparDatewise() {
                                     <div className="text-start">
                                         <HeaderForAllReport reportName="Datewise Comparative Report" />
                                     </div>
+
                                     <CardBody>
+
 
                                         <CommonTable
                                             columns={columns}

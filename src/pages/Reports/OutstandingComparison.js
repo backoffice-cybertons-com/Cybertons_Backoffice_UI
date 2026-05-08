@@ -145,7 +145,7 @@ const SummaryTable = ({ data }) => {
                 color: getPLColor(safeDiv(tAmount, yAmount) - 1),
               }}
             >
-              {fmt(safeDiv(tAmount, yAmount) - 1, 2)}%
+              {fmt((safeDiv(tAmount, yAmount) - 1) * 100, 2)}%
             </td>
             <td style={plCell}> </td>
           </tr>
@@ -166,6 +166,7 @@ const OutstandingComparison = () => {
   const [parties, setParties] = useState([]);
   const [reportData, setReportData] = useState([]);
   const [isSummary, setIsSummary] = useState(false);
+  const [companyInfo, setCompanyInfo] = useState(null);
 
   // Lifted Pagination State
   const [currentPage, setCurrentPage] = useState(1);
@@ -197,7 +198,17 @@ const OutstandingComparison = () => {
       }
     };
 
+    const fetchCompanyProfile = async () => {
+      try {
+        const res = await api.get(url.GET_COMPANY_PROFILE);
+        setCompanyInfo(res?.data || res);
+      } catch (e) {
+        console.error("Company profile error", e);
+      }
+    };
+
     fetchInitialData();
+    fetchCompanyProfile();
   }, []);
   const columns = [
     {
@@ -629,6 +640,7 @@ const OutstandingComparison = () => {
                     }
                     date={date1}
                     isSummary={appliedSummary}
+                    companyInfo={companyInfo}
                   />
                   <Button
                     color="secondary"

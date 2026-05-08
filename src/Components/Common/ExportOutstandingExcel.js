@@ -165,7 +165,7 @@ const border = () => ({
 });
 
 /* ── main export function ── */
-const buildWorkbook = (data, dateStr) => {
+const buildWorkbook = (data, dateStr, companyInfo) => {
   const ExcelJS = window.ExcelJS; // loaded below
 
   const wb = new ExcelJS.Workbook();
@@ -173,11 +173,30 @@ const buildWorkbook = (data, dateStr) => {
   wb.created = new Date();
 
   const ws = wb.addWorksheet("Outstanding Comparison", {
-    views: [{ state: "frozen", xSplit: 0, ySplit: 2 }], // freeze first 3 rows
+    views: [{ state: "frozen", xSplit: 0, ySplit: 5 }], // freeze first 4 rows (2 headers + 2 table headers)
   });
 
   /* ── column widths ── */
   ws.columns = COLS.map((c) => ({ width: c.width }));
+
+  /* ════════════════════════════════════════════
+       TOP HEADER — Title & Company
+    ════════════════════════════════════════════ */
+  const titleRow = ws.addRow([`Outstanding Comparison Report - ${dateStr || ""}`]);
+  titleRow.height = 24;
+  const titleCell = titleRow.getCell(1);
+  titleCell.font = font({ bold: true, size: 14 });
+  titleCell.alignment = align("center");
+  ws.mergeCells(titleRow.number, 1, titleRow.number, COLS.length);
+
+  const compRow = ws.addRow([companyInfo?.companyName || "SoftBook"]);
+  compRow.height = 20;
+  const compCell = compRow.getCell(1);
+  compCell.font = font({ bold: true, size: 11 });
+  compCell.alignment = align("center");
+  ws.mergeCells(compRow.number, 1, compRow.number, COLS.length);
+
+  ws.addRow([]); // Spacer
 
   /* ════════════════════════════════════════════
        ROW 1 — Group headers (merged cells)
@@ -220,7 +239,7 @@ const buildWorkbook = (data, dateStr) => {
       sc.border = border();
     }
     if (g.span > 1) {
-      ws.mergeCells(1, g.start, 1, endCol);
+      ws.mergeCells(row1.number, g.start, row1.number, endCol);
     }
   });
 
@@ -325,7 +344,7 @@ const buildWorkbook = (data, dateStr) => {
    4 rows: Yesterday Purchase / Today Sale / Today PL / Today PL %
    4 cols: (label) / Qty / Amount / Price
 ════════════════════════════════════════════ */
-const buildSummaryWorkbook = (data, dateStr) => {
+const buildSummaryWorkbook = (data, dateStr, companyInfo) => {
   const ExcelJS = window.ExcelJS;
   const wb = new ExcelJS.Workbook();
   wb.creator = "SoftBook";
@@ -374,27 +393,23 @@ const buildSummaryWorkbook = (data, dateStr) => {
   const pctFmt = '0.00"%"';
 
   /* ── Row 1: title header (merged A1:D1) ── */
-  const titleRow = ws.addRow(["Outstanding Comparison — Summary"]);
+  const titleRow = ws.addRow([`Outstanding Comparison Summary - ${dateStr || ""}`]);
   titleRow.height = 24;
   const titleCell = titleRow.getCell(1);
-  titleCell.value = `Outstanding Comparison — Summary${dateStr ? "  |  " + dateStr : ""}`;
-  titleCell.fill = hFill(COLOR.group);
-  titleCell.font = hFont({
-    bold: true,
-    color: { argb: COLOR.headerText },
-    size: 12,
-  });
+  titleCell.font = hFont({ bold: true, size: 14 });
   titleCell.alignment = hAlign("center");
-  ws.mergeCells(1, 1, 1, 4);
-  titleCell.border = hBorder();
-  // fill merged cells
-  for (let c = 2; c <= 4; c++) {
-    const sc = titleRow.getCell(c);
-    sc.fill = hFill(COLOR.group);
-    sc.border = hBorder();
-  }
+  ws.mergeCells(titleRow.number, 1, titleRow.number, 4);
 
-  /* ── Row 2: column headers ── */
+  const compRow = ws.addRow([companyInfo?.companyName || "SoftBook"]);
+  compRow.height = 20;
+  const compCell = compRow.getCell(1);
+  compCell.font = hFont({ bold: true, size: 11 });
+  compCell.alignment = hAlign("center");
+  ws.mergeCells(compRow.number, 1, compRow.number, 4);
+
+  ws.addRow([]); // Spacer
+
+  /* ── Row 4: table headers ── */
   const hdrRow = ws.addRow(["", "Qty", "Amount", "Price"]);
   hdrRow.height = 18;
   hdrRow.eachCell((cell, ci) => {
@@ -516,6 +531,7 @@ const ExportOutstandingExcel = ({
   data = [],
   date = "",
   isSummary = false,
+  companyInfo = null,
 }) => {
   const [loading, setLoading] = useState(false);
 
@@ -526,8 +542,8 @@ const ExportOutstandingExcel = ({
       await loadExcelJS();
 
       const wb = isSummary
-        ? buildSummaryWorkbook(data, date)
-        : buildWorkbook(data, date);
+        ? buildSummaryWorkbook(data, date, companyInfo)
+        : buildWorkbook(data, date, companyInfo);
 
       const buffer = await wb.xlsx.writeBuffer();
       const blob = new Blob([buffer], {

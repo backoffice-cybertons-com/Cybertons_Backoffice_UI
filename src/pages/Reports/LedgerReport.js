@@ -10,6 +10,8 @@ import { getLedgerSummaryDatewise } from "../../helpers/fakebackend_helper";
 import secureStorage from "../../utils/secureStorage";
 import BreadCrumb from '../../Components/Common/BreadCrumb';
 import './LedgerSummaryDatewiseReport.css';
+import FooterForAllRpt from '../../Components/Common/FooterForAllRpt';
+import HeaderForAllReport from '../../Components/Common/HeaderForAllRpt';
 
 /* ────────── helpers ────────── */
 const fmtMoney = (n) =>
@@ -119,8 +121,8 @@ const LedgerReport = () => {
         if (!reportData || !reportData.type.startsWith('summary')) return { openingRow: null, totalRow: null, dataRows: [] };
         const rows = reportData.rows || [];
         const opening = rows.find(r => (r.resParticular || '').toLowerCase() === 'opening balance') || null;
-        const total   = rows.find(r => (r.resParticular || '').toLowerCase() === 'total') || null;
-        const data    = rows.filter(r => { const p = (r.resParticular || '').toLowerCase(); return p !== 'opening balance' && p !== 'total'; });
+        const total = rows.find(r => (r.resParticular || '').toLowerCase() === 'total') || null;
+        const data = rows.filter(r => { const p = (r.resParticular || '').toLowerCase(); return p !== 'opening balance' && p !== 'total'; });
         return { openingRow: opening, totalRow: total, dataRows: data };
     }, [reportData]);
 
@@ -185,14 +187,14 @@ const LedgerReport = () => {
         if (isSplit) {
             const drList = isDetailed ? reportData.entries?.filter(e => e.debit !== 0) : [summaryData.openingRow, ...summaryData.dataRows].filter(e => e && e.resDebit > 0);
             const crList = isDetailed ? reportData.entries?.filter(e => e.credit !== 0) : [summaryData.openingRow, ...summaryData.dataRows].filter(e => e && e.resCredit > 0);
-            
+
             const headerRowIdx = rows.length;
             rows.push([c("DEBIT SIDE (Dr)", S.drSide), "", "", "", "", "", c("CREDIT SIDE (Cr)", S.crSide)]);
             merges.push({ s: { r: headerRowIdx, c: 0 }, e: { r: headerRowIdx, c: 4 } });
             merges.push({ s: { r: headerRowIdx, c: 6 }, e: { r: headerRowIdx, c: 10 } });
 
             rows.push([c("Date", S.th), c("Type", S.th), c("No", S.th), c("Particulars", S.th), c("Amount", S.th), "", c("Date", S.th), c("Type", S.th), c("No", S.th), c("Particulars", S.th), c("Amount", S.th)]);
-            
+
             const max = Math.max(drList.length, crList.length);
             for (let i = 0; i < max; i++) {
                 const d = drList[i]; const c_ = crList[i];
@@ -217,7 +219,7 @@ const LedgerReport = () => {
             } else {
                 rows.push([c("To Closing Balance", S.closing), "", "", "", c(fmtMoney(Math.abs(totals.closing)), S.num)]);
             }
-        } 
+        }
         else {
             const list = isDetailed ? reportData.entries : [summaryData.openingRow, ...summaryData.dataRows].filter(Boolean);
             rows.push([c("Date", S.th), c("Type", S.th), c("No", S.th), c("Particulars", S.th), c("Debit (Dr)", S.th), c("Credit (Cr)", S.th), c("Balance", S.th)]);
@@ -238,10 +240,10 @@ const LedgerReport = () => {
 
         const ws = XLSX.utils.aoa_to_sheet(rows);
         ws["!merges"] = merges;
-        ws["!cols"] = isSplit 
+        ws["!cols"] = isSplit
             ? [{ wch: 10 }, { wch: 12 }, { wch: 8 }, { wch: 35 }, { wch: 12 }, { wch: 4 }, { wch: 10 }, { wch: 12 }, { wch: 8 }, { wch: 35 }, { wch: 12 }]
             : [{ wch: 10 }, { wch: 15 }, { wch: 10 }, { wch: 45 }, { wch: 14 }, { wch: 14 }, { wch: 18 }];
-        
+
         XLSX.utils.book_append_sheet(wb, ws, "Ledger");
         const buf = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
         saveAs(new Blob([buf]), `${selectedAccount?.label}_${reportType.label.replace(/ /g, '_')}.xlsx`);
@@ -278,7 +280,7 @@ const LedgerReport = () => {
                                 <Col lg={2}><Label className="fw-semibold mb-1">From</Label><Input type="date" value={fromDate} onChange={e => setFromDate(e.target.value)} /></Col>
                                 <Col lg={2}><Label className="fw-semibold mb-1">To</Label><Input type="date" value={toDate} onChange={e => setToDate(e.target.value)} /></Col>
                                 <Col lg={3}><Label className="fw-semibold mb-1">Report Style</Label><Select value={reportType} onChange={setReportType} options={reportTypeOptions} /></Col>
-                                <Col lg={2}><Button color="primary" className="w-100" onClick={() => fetchReport()} disabled={loading}>{loading ? <Spinner size="sm"/> : "Show Report"}</Button></Col>
+                                <Col lg={2}><Button color="primary" className="w-100" onClick={() => fetchReport()} disabled={loading}>{loading ? <Spinner size="sm" /> : "Show Report"}</Button></Col>
                             </Row>
                         </CardBody>
                     </Card>
@@ -287,6 +289,11 @@ const LedgerReport = () => {
 
                     {!loading && reportData && (
                         <Card id="reportViewContainer">
+
+
+                            <HeaderForAllReport reportName={"Ledger Report"} />
+
+
                             <CardHeader className="border-0 d-flex align-items-center py-3">
                                 <div className="flex-grow-1">
                                     <h4 className="mb-1 fw-bold">{selectedAccount?.label}</h4>
@@ -301,8 +308,8 @@ const LedgerReport = () => {
                                         <div className="fs-11 text-muted text-uppercase">Closing</div>
                                         <div className={`fw-bold ${balClass(totals.closing)}`}>{balanceLabel(totals.closing)}</div>
                                     </div>
-                                    <Button color="success" outline size="sm" onClick={handleExcelExport} title="Download Styled Excel"><i className="ri-file-excel-2-line"/></Button>
-                                    <Button color="secondary" outline size="sm" onClick={() => handlePrint('reportViewContainer', reportType.label)} title="Print Report"><i className="ri-printer-line"/></Button>
+                                    <Button color="success" outline size="sm" onClick={handleExcelExport} title="Download Styled Excel"><i className="ri-file-excel-2-line" /></Button>
+                                    <Button color="secondary" outline size="sm" onClick={() => handlePrint('reportViewContainer', reportType.label)} title="Print Report"><i className="ri-printer-line" /></Button>
                                 </div>
                             </CardHeader>
                             <CardBody className="p-0">
@@ -310,45 +317,47 @@ const LedgerReport = () => {
                                     <Row className="g-0">
                                         <Col lg={6} className="border-end">
                                             <Table className="table-sm table-nowrap mb-0"><thead className="table-light"><tr><th colSpan="5" className="text-center text-success py-2">DEBIT (Dr)</th></tr><tr className="fs-11"><th>Date</th><th>Type</th><th>No</th><th>Particulars</th><th className="text-end">Amount</th></tr></thead>
-                                            <tbody className="fs-12">{reportData.entries?.filter(e => e.debit !== 0).map((e, i) => (<tr key={i}><td>{fmtDate(e.jvDate)}</td><td><Link to={getVchLink(e)} className="badge bg-info-subtle text-info">{e.vType}</Link></td><td>{e.vCode}</td><td className="text-wrap">{e.description}</td><td className="text-end">{fmtMoney(e.debit)}</td></tr>))}</tbody></Table>
+                                                <tbody className="fs-12">{reportData.entries?.filter(e => e.debit !== 0).map((e, i) => (<tr key={i}><td>{fmtDate(e.jvDate)}</td><td><Link to={getVchLink(e)} className="badge bg-info-subtle text-info">{e.vType}</Link></td><td>{e.vCode}</td><td className="text-wrap">{e.description}</td><td className="text-end">{fmtMoney(e.debit)}</td></tr>))}</tbody></Table>
                                         </Col>
                                         <Col lg={6}>
                                             <Table className="table-sm table-nowrap mb-0"><thead className="table-light"><tr><th colSpan="5" className="text-center text-danger py-2">CREDIT (Cr)</th></tr><tr className="fs-11"><th>Date</th><th>Type</th><th>No</th><th>Particulars</th><th className="text-end">Amount</th></tr></thead>
-                                            <tbody className="fs-12">{reportData.entries?.filter(e => e.credit !== 0).map((e, i) => (<tr key={i}><td>{fmtDate(e.jvDate)}</td><td><Link to={getVchLink(e)} className="badge bg-danger-subtle text-danger">{e.vType}</Link></td><td>{e.vCode}</td><td className="text-wrap">{e.description}</td><td className="text-end">{fmtMoney(e.credit)}</td></tr>))}</tbody></Table>
+                                                <tbody className="fs-12">{reportData.entries?.filter(e => e.credit !== 0).map((e, i) => (<tr key={i}><td>{fmtDate(e.jvDate)}</td><td><Link to={getVchLink(e)} className="badge bg-danger-subtle text-danger">{e.vType}</Link></td><td>{e.vCode}</td><td className="text-wrap">{e.description}</td><td className="text-end">{fmtMoney(e.credit)}</td></tr>))}</tbody></Table>
                                         </Col>
                                     </Row>
                                 )}
                                 {reportData.type === 'detailed_bank' && (
                                     <Table className="table-hover align-middle mb-0"><thead className="table-light text-uppercase fs-11"><tr><th>Date</th><th>Type</th><th>No</th><th>Particulars</th><th className="text-end">Debit (Dr)</th><th className="text-end">Credit (Cr)</th><th className="text-end">Balance</th></tr></thead>
-                                    <tbody className="fs-12">{reportData.entries?.map((e, i) => (<tr key={i}><td>{fmtDate(e.jvDate)}</td><td><Link to={getVchLink(e)} className="badge bg-info-subtle text-info">{e.vType}</Link></td><td>{e.vCode}</td><td className="text-wrap">{e.description}</td><td className="text-end text-success">{e.debit > 0 ? fmtMoney(e.debit) : '-'}</td><td className="text-end text-danger">{e.credit > 0 ? fmtMoney(e.credit) : '-'}</td><td className={`text-end fw-bold ${balClass(e.balance)}`}>{balanceLabel(e.balance)}</td></tr>))}</tbody></Table>
+                                        <tbody className="fs-12">{reportData.entries?.map((e, i) => (<tr key={i}><td>{fmtDate(e.jvDate)}</td><td><Link to={getVchLink(e)} className="badge bg-info-subtle text-info">{e.vType}</Link></td><td>{e.vCode}</td><td className="text-wrap">{e.description}</td><td className="text-end text-success">{e.debit > 0 ? fmtMoney(e.debit) : '-'}</td><td className="text-end text-danger">{e.credit > 0 ? fmtMoney(e.credit) : '-'}</td><td className={`text-end fw-bold ${balClass(e.balance)}`}>{balanceLabel(e.balance)}</td></tr>))}</tbody></Table>
                                 )}
                                 {reportData.type === 'summary_bank' && (
                                     <Table className="table-hover align-middle mb-0"><thead className="table-light text-uppercase fs-11"><tr><th>Date</th><th>Particular</th><th className="text-end">Debit (₹)</th><th className="text-end">Credit (₹)</th><th className="text-end">Balance</th></tr></thead>
-                                    <tbody className="fs-12">
-                                        {summaryData.openingRow && (<tr className="bg-light bg-opacity-50"><td>{fmtDate(summaryData.openingRow.resDate)}</td><td className="fst-italic">Opening Balance</td><td className="text-end text-success">{fmtMoney(summaryData.openingRow.resDebit)}</td><td className="text-end text-danger">{fmtMoney(summaryData.openingRow.resCredit)}</td><td className={`text-end fw-bold ${balClass(summaryData.openingRow.resBalance)}`}>{balanceLabel(summaryData.openingRow.resBalance)}</td></tr>)}
-                                        {summaryData.dataRows.map((e, i) => (<tr key={i}><td>{fmtDate(e.resDate)}</td><td>{e.resParticular}</td><td className="text-end text-success">{e.resDebit > 0 ? fmtMoney(e.resDebit) : '-'}</td><td className="text-end text-danger">{e.resCredit > 0 ? fmtMoney(e.resCredit) : '-'}</td><td className={`text-end fw-bold ${balClass(e.resBalance)}`}>{balanceLabel(e.resBalance)}</td></tr>))}
-                                    </tbody></Table>
+                                        <tbody className="fs-12">
+                                            {summaryData.openingRow && (<tr className="bg-light bg-opacity-50"><td>{fmtDate(summaryData.openingRow.resDate)}</td><td className="fst-italic">Opening Balance</td><td className="text-end text-success">{fmtMoney(summaryData.openingRow.resDebit)}</td><td className="text-end text-danger">{fmtMoney(summaryData.openingRow.resCredit)}</td><td className={`text-end fw-bold ${balClass(summaryData.openingRow.resBalance)}`}>{balanceLabel(summaryData.openingRow.resBalance)}</td></tr>)}
+                                            {summaryData.dataRows.map((e, i) => (<tr key={i}><td>{fmtDate(e.resDate)}</td><td>{e.resParticular}</td><td className="text-end text-success">{e.resDebit > 0 ? fmtMoney(e.resDebit) : '-'}</td><td className="text-end text-danger">{e.resCredit > 0 ? fmtMoney(e.resCredit) : '-'}</td><td className={`text-end fw-bold ${balClass(e.resBalance)}`}>{balanceLabel(e.resBalance)}</td></tr>))}
+                                        </tbody></Table>
                                 )}
                                 {reportData.type === 'summary_split' && (
                                     <Row className="g-0">
                                         <Col lg={6} className="border-end">
                                             <Table className="table-sm mb-0"><thead className="table-light"><tr><th colSpan="3" className="text-center text-success py-2">DEBIT SUMMARY</th></tr><tr className="fs-11"><th>Date</th><th>Particular</th><th className="text-end">Amount</th></tr></thead>
-                                            <tbody className="fs-12">
-                                                {summaryData.openingRow && summaryData.openingRow.resDebit > 0 && (<tr className="bg-light bg-opacity-50"><td>{fmtDate(summaryData.openingRow.resDate)}</td><td>Opening Balance</td><td className="text-end">{fmtMoney(summaryData.openingRow.resDebit)}</td></tr>)}
-                                                {summaryData.dataRows.filter(e => e.resDebit > 0).map((e, i) => (<tr key={i}><td>{fmtDate(e.resDate)}</td><td>{e.resParticular}</td><td className="text-end">{fmtMoney(e.resDebit)}</td></tr>))}
-                                            </tbody></Table>
+                                                <tbody className="fs-12">
+                                                    {summaryData.openingRow && summaryData.openingRow.resDebit > 0 && (<tr className="bg-light bg-opacity-50"><td>{fmtDate(summaryData.openingRow.resDate)}</td><td>Opening Balance</td><td className="text-end">{fmtMoney(summaryData.openingRow.resDebit)}</td></tr>)}
+                                                    {summaryData.dataRows.filter(e => e.resDebit > 0).map((e, i) => (<tr key={i}><td>{fmtDate(e.resDate)}</td><td>{e.resParticular}</td><td className="text-end">{fmtMoney(e.resDebit)}</td></tr>))}
+                                                </tbody></Table>
                                         </Col>
                                         <Col lg={6}>
                                             <Table className="table-sm mb-0"><thead className="table-light"><tr><th colSpan="3" className="text-center text-danger py-2">CREDIT SUMMARY</th></tr><tr className="fs-11"><th>Date</th><th>Particular</th><th className="text-end">Amount</th></tr></thead>
-                                            <tbody className="fs-12">
-                                                {summaryData.openingRow && summaryData.openingRow.resCredit > 0 && (<tr className="bg-light bg-opacity-50"><td>{fmtDate(summaryData.openingRow.resDate)}</td><td>Opening Balance</td><td className="text-end">{fmtMoney(summaryData.openingRow.resCredit)}</td></tr>)}
-                                                {summaryData.dataRows.filter(e => e.resCredit > 0).map((e, i) => (<tr key={i}><td>{fmtDate(e.resDate)}</td><td>{e.resParticular}</td><td className="text-end">{fmtMoney(e.resCredit)}</td></tr>))}
-                                            </tbody></Table>
+                                                <tbody className="fs-12">
+                                                    {summaryData.openingRow && summaryData.openingRow.resCredit > 0 && (<tr className="bg-light bg-opacity-50"><td>{fmtDate(summaryData.openingRow.resDate)}</td><td>Opening Balance</td><td className="text-end">{fmtMoney(summaryData.openingRow.resCredit)}</td></tr>)}
+                                                    {summaryData.dataRows.filter(e => e.resCredit > 0).map((e, i) => (<tr key={i}><td>{fmtDate(e.resDate)}</td><td>{e.resParticular}</td><td className="text-end">{fmtMoney(e.resCredit)}</td></tr>))}
+                                                </tbody></Table>
                                         </Col>
                                     </Row>
                                 )}
                                 <FinalTotalSection />
                             </CardBody>
+
+                            <FooterForAllRpt />
                         </Card>
                     )}
                 </Container>

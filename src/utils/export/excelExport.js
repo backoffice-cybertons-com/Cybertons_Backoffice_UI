@@ -1,55 +1,57 @@
-import * as XLSX from 'xlsx';
+import * as XLSX from 'xlsx-js-style';
 import { saveAs } from 'file-saver';
 
 /**
- * Normalize columns to a simple [{ header, accessor }] shape.
+ * Normalize columns to a simple [{ header, accessor, style }] shape.
  */
 const normalizeColumns = (columns, sampleRow) => {
     if (Array.isArray(columns) && columns.length > 0) {
         return columns.map(col => ({
             header: col.label || col.name || col.header || col.accessor || 'Column',
-            accessor: col.accessor || col.field || col.key || col.name
+            accessor: col.accessor || col.field || col.key || col.name,
+            style: col.style || null
         })).filter(c => !!c.accessor);
     }
 
     if (sampleRow && typeof sampleRow === 'object') {
         return Object.keys(sampleRow).map(key => ({
             header: key,
-            accessor: key
+            accessor: key,
+            style: null
         }));
     }
 
     return [];
-};
+}
 
 /**
- * Convert raw row value to a Cell Object { v, t, z } for SheetJS.
+ * Convert raw row value to a Cell Object { v, t, z, s } for SheetJS.
  * - Numbers -> type 'n'
  * - Booleans -> "Yes"/"No" (type 's')
  * - Dates -> type 'd' (if valid) or type 's'
  * - null/undefined -> ""
+ * - style -> optional style object
  */
-const prepareCell = (value) => {
-    if (value === null || value === undefined) return { v: "", t: "s" };
-    
-    if (typeof value === "number") {
-        return { v: value, t: "n" };
-    }
-    
-    if (typeof value === "boolean") {
-        return { v: value ? "Yes" : "No", t: "s" };
+const prepareCell = (value, style = null) => {
+    let cell = { v: "", t: "s" };
+
+    if (value !== null && value !== undefined) {
+        if (typeof value === "number") {
+            cell = { v: value, t: "n" };
+        } else if (typeof value === "boolean") {
+            cell = { v: value ? "Yes" : "No", t: "s" };
+        } else if (value instanceof Date) {
+            cell = { v: value, t: "d" };
+        } else {
+            cell = { v: String(value), t: "s" };
+        }
     }
 
-    // Check if it's a date or a valid date string
-    if (value instanceof Date) {
-        return { v: value, t: "d" };
+    if (style) {
+        cell.s = style;
     }
 
-    // If it looks like a number in a string, try to parse it
-    // But be careful with invoice numbers/codes!
-    // We only auto-convert if it's clearly a decimal/integer or passed as number
-    
-    return { v: String(value), t: "s" };
+    return cell;
 };
 
 /**
@@ -79,16 +81,16 @@ const buildColumnWidths = (rowsAOA) => {
  *
  * @param {Object} params
  * @param {Array} params.data - Array of row objects.
- * @param {Array} params.columns - Array of { label, accessor } or compatible.
+ * @param {Array} params.columns - Array of { label, accessor, style } or compatible.
  * @param {string} params.fileName - File name.
  * @param {string} [params.sheetName] - Sheet name.
  * @param {Array} [params.headerRows] - Optional 2D array of rows to prepended.
  * @param {Array} [params.footerRows] - Optional 2D array of rows to appended.
  */
-export const exportToExcel = ({ 
-    data, 
-    columns, 
-    fileName, 
+export const exportToExcel = ({
+    data,
+    columns,
+    fileName,
     sheetName = 'Sheet1',
     headerRows = [],
     footerRows = []
@@ -109,10 +111,25 @@ export const exportToExcel = ({
     const aoa = [];
 
     // 1. Add Custom Headers (e.g. Company Name, Address)
-    headerRows.forEach(row => aoa.push(row));
+    headerRows.forEach(row => {
+        // Headers usually centered/bold if they are just strings, but let's keep it simple
+        const styledHeaderRow = row.map(val => (typeof val === 'object' ? val : prepareCell(val)));
+        aoa.push(styledHeaderRow);
+    });
 
     // 2. Add Table Headers
-    const tableHeader = normalizedColumns.map(col => col.header);
+    const tableHeader = normalizedColumns.map(col => {
+        return prepareCell(col.header, {
+            font: { bold: true },
+            fill: { fgColor: { rgb: "EEEEEE" } },
+            border: {
+                top: { style: "thin" },
+                bottom: { style: "thin" },
+                left: { style: "thin" },
+                right: { style: "thin" }
+            }
+        });
+    });
     aoa.push(tableHeader);
 
     // 3. Add Data Rows
@@ -124,7 +141,7 @@ export const exportToExcel = ({
             } else {
                 rawValue = row ? row[col.accessor] : undefined;
             }
-            return prepareCell(rawValue);
+            return prepareCell(rawValue, col.style);
         });
         aoa.push(rowArr);
     });
@@ -132,14 +149,13 @@ export const exportToExcel = ({
     // 4. Add Footer Rows (e.g. Totals)
     footerRows.forEach(row => {
         // Convert footer values to cells too
-        const footerRowCells = row.map(val => prepareCell(val));
+        const footerRowCells = row.map(val => prepareCell(val, { font: { bold: true } }));
         aoa.push(footerRowCells);
     });
 
     const worksheet = XLSX.utils.aoa_to_sheet(aoa);
 
     // Handle Merges if they were specified in headerRows or if we want automatic ones
-    // For now, let's just do widths
     worksheet['!cols'] = buildColumnWidths(aoa);
 
     // If there were header rows, we might want to merge them across the table width
@@ -166,6 +182,7 @@ export const exportToExcel = ({
 export const exportToExcelFrontend = (params) => {
     return exportToExcel(params);
 };
+
 
 
 

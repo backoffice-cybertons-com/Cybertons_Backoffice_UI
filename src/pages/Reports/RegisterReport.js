@@ -111,6 +111,8 @@ const RegisterReport = ({ type }) => {
   const [partyOptions, setPartyOptions] = useState([]);
   const [productOptions, setProductOptions] = useState([]);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [companyInfo, setCompanyInfo] = useState(null);
+  const [fromDate, setFromDate] = useState("2026-04-01");
 
   // Lifted Pagination State
   const [currentPage, setCurrentPage] = useState(1);
@@ -121,18 +123,19 @@ const RegisterReport = ({ type }) => {
   const fromRef = useRef(null);
   const toRef = useRef(null);
 
-  const [fromDate, setFromDate] = useState("2026-01-01");
   const [toDate, setToDate] = useState("2026-12-31");
 
   useEffect(() => {
-    const loadOptions = async () => {
+    const loadData = async () => {
       try {
-        const [partiesRes, productsRes] = await Promise.all([
+        const [partiesRes, productsRes, compRes] = await Promise.all([
           api.get(url.GET_PARTIES),
           api.get(url.GET_PRODUCTS_DETAILS),
+          api.get(url.GET_COMPANY_PROFILE),
         ]);
         const parties = Array.isArray(partiesRes) ? partiesRes : partiesRes?.data || [];
         const products = Array.isArray(productsRes) ? productsRes : productsRes?.data || [];
+        setCompanyInfo(compRes?.data || compRes);
         setPartyOptions(
           parties.map((p) => {
             const name =
@@ -155,7 +158,7 @@ const RegisterReport = ({ type }) => {
         console.error("Failed loading register filter options", error);
       }
     };
-    loadOptions();
+    loadData();
   }, [api]);
 
   const globalFilters = {
@@ -213,14 +216,24 @@ const RegisterReport = ({ type }) => {
     [appliedReportType],
   );
 
+  const headerRows = useMemo(() => {
+    const reportLabel = REPORT_TYPE_OPTIONS.find(opt => opt.value === appliedReportType)?.label || appliedReportType;
+    const excelHeader = `${titlePrefix} Register Report - ${reportLabel}`;
+    return [
+      [{ v: excelHeader, s: { font: { bold: true, sz: 14 }, alignment: { horizontal: "center" } } }],
+      [{ v: companyInfo?.companyName || "SoftBook", s: { font: { bold: true }, alignment: { horizontal: "center" } } }],
+      [""] // Spacing
+    ];
+  }, [titlePrefix, appliedReportType, companyInfo]);
+
   const fetchExportData = async () => {
     const endpoint = REPORT_ENDPOINTS[appliedReportType];
     const companyId = localStorage.getItem("companyId");
-    
+
     const conditions = [];
     const fromD = fromRef.current?.value;
     const toD = toRef.current?.value;
-    
+
     if (fromD && toD) conditions.push(`tsp.inv_date BETWEEN '${fromD}' AND '${toD}'`);
     if (selectedParty?.value) conditions.push(`pm.display_name = '${selectedParty.value.replace(/'/g, "''")}'`);
     if (selectedProduct?.value) conditions.push(`prod.product_name = '${selectedProduct.value.replace(/'/g, "''")}'`);
@@ -400,6 +413,7 @@ const RegisterReport = ({ type }) => {
                     <ExportButton
                       data={fetchExportData}
                       columns={exportColumns}
+                      headerRows={headerRows}
                       fileName={`${titlePrefix}_Register_${appliedReportType}`}
                       iconOnly
                     />

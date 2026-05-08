@@ -6,6 +6,8 @@ import { saveAs } from 'file-saver';
 import * as url from "../../helpers/url_helper";
 import CommonTable from "../../Components/Common/CommonTable";
 import "../../Components/Common/CommonTable.css";
+import HeaderForAllRpt from "../../Components/Common/HeaderForAllRpt";
+import FooterForAllRpt from "../../Components/Common/FooterForAllRpt";
 
 /* ── helpers ──────────────────────────────────────────────── */
 const formatDate = (d) => d ? new Date(d).toISOString().split('T')[0] : null;
@@ -227,9 +229,8 @@ const SalePurchaseRegisterItemwise = ({
         const dateStr = `Period: ${fromRef.current?.value} to ${toRef.current?.value}`;
 
         const header = [
+            [`${invType || 'Sales Purchase'} Register Report - Itemwise`],
             [companyInfo?.companyName || "SoftBook"],
-            [companyInfo?.companyAddress || ""],
-            ["Sales Purchase Register Itemwise Report"],
             [dateStr],
             [],
         ];
@@ -333,6 +334,7 @@ const SalePurchaseRegisterItemwise = ({
                     )}
 
                     <Card>
+                        <HeaderForAllRpt reportName="Itemwise Report" />
                         <CardBody className="pt-3 pl-3 pr-3 pb-3">
                             <CommonTable
                                 columns={columns}
@@ -344,6 +346,7 @@ const SalePurchaseRegisterItemwise = ({
                                 paginatedData={paginatedData}
                             />
                         </CardBody>
+                        <FooterForAllRpt />
                     </Card>
                 </Container>
             </div>

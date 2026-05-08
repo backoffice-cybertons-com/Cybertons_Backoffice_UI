@@ -188,7 +188,84 @@ const SalesInvoice = () => {
                     </div> */}
 
                     {/* Header Row 1 */}
+                    {/* Top Header Row */}
                     <div className="si-top-header">
+                        <div className="si-header-left"></div>
+
+                        <div className="si-header-center">
+                            Tax Invoice
+                        </div>
+
+                        <div className="si-header-right">
+                            <span>DEBIT MEMO</span>
+                            <span>ORIGINAL</span>
+                        </div>
+                    </div>
+
+                    {/* Company Row */}
+                    <div
+                        style={{
+                            position: "relative",
+                            textAlign: "center",
+                            padding: "10px 0 6px",
+                        }}
+                    >
+                        {/* Logo Container */}
+                        <div
+                            style={{
+                                position: "absolute",
+                                left: "14px",
+                                top: "46%",
+                                transform: "translateY(-50%)",
+                                width: "100px",
+                                height: "80px",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                overflow: "hidden"
+                            }}
+                        >
+                            <img
+                                src={
+                                    company?.logoPath
+                                        ? `${process.env.REACT_APP_API_URL}${company.logoPath}`
+                                        : ""
+                                }
+                                alt="logo"
+                                style={{
+                                    maxWidth: "100%",
+                                    maxHeight: "100%",
+                                    objectFit: "contain",
+                                }}
+                            />
+                        </div>
+
+                        {/* Company Details */}
+                        <div className="si-company-block">
+                            <div className="si-company-name">
+                                {companyName}
+                            </div>
+
+                            <div className="si-company-info">
+                                {[companyAddress, companyCity, companyState, companyPin]
+                                    .filter(Boolean)
+                                    .join(", ")}
+
+                                <br />
+
+                                Mobile No. : {companyMobile}
+                                &nbsp;/&nbsp;
+                                E-mail : {companyEmail}
+
+                                <br />
+
+                                GSTIN No. : {companyGstin}
+                                &nbsp;/&nbsp;
+                                State : {companyState}
+                            </div>
+                        </div>
+                    </div>
+                    {/* <div className="si-top-header">
                         <div className="si-header-left"></div>
                         <div className="si-header-center">Tax Invoice</div>
                         <div className="si-header-right">
@@ -203,7 +280,7 @@ const SalesInvoice = () => {
                             Mobile No. : {companyMobile} &nbsp;/&nbsp; E-mail : {companyEmail}<br />
                             GSTIN No. : {companyGstin} &nbsp;/&nbsp; State : {companyState}
                         </div>
-                    </div>
+                    </div> */}
 
                     {/* Buyer + Meta Row 2 */}
                     <div className="si-buyer-meta-row">
