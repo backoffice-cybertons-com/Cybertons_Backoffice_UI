@@ -17,6 +17,8 @@ import * as url from "../../helpers/url_helper";
 import ExportButton from "../../Components/Common/ExportButton";
 import CommonTable from "../../Components/Common/CommonTable";    // ← new
 import "../../Components/Common/CommonTable.css";                 // ← new
+import HeaderForAllRpt from "../../Components/Common/HeaderForAllRpt";
+import FooterForAllRpt from "../../Components/Common/FooterForAllRpt";
 
 /* ── helpers ───────────────────────────────────────────────── */
 const getCurrentMonthRange = () => {
@@ -141,6 +143,7 @@ const SalePurInvWiseRpt = ({
   const [customerName, setCustomerName] = useState("");
   const [invoiceNo, setInvoiceNo] = useState("");
   const [invType, setInvType] = useState(forcedInvType || "");
+  const [companyInfo, setCompanyInfo] = useState(null);
   useEffect(() => { if (forcedInvType) setInvType(forcedInvType); }, [forcedInvType]);
 
   /* ── dropdown options ── */
@@ -167,7 +170,17 @@ const SalePurInvWiseRpt = ({
       }
     };
     fetchDropdownOptions();
+    fetchCompanyInfo();
   }, []);
+
+  const fetchCompanyInfo = async () => {
+    try {
+      const compRes = await api.get(url.GET_COMPANY_PROFILE);
+      setCompanyInfo(compRes?.data || compRes);
+    } catch (err) {
+      console.error("Failed to fetch company info", err);
+    }
+  };
 
   /* ── report data ── */
   const [reportData, setReportData] = useState([]);
@@ -301,6 +314,14 @@ const SalePurInvWiseRpt = ({
     { label: "Add Amount", accessor: "addAmount" },
   ];
 
+  const headerRows = useMemo(() => {
+    return [
+      [{ v: `${invType || 'Sales Purchase'} Register Report - Invoice Wise`, s: { font: { bold: true, sz: 14 }, alignment: { horizontal: "center" } } }],
+      [{ v: companyInfo?.companyName || "SoftBook", s: { font: { bold: true }, alignment: { horizontal: "center" } } }],
+      [""] // Spacing
+    ];
+  }, [invType, companyInfo]);
+
   /* ── render ── */
   return (
     <div className={showFilters ? "page-content" : "page-content p-0"}>
@@ -409,6 +430,7 @@ const SalePurInvWiseRpt = ({
                         color="success"
                         data={reportData}
                         columns={exportColumns}
+                        headerRows={headerRows}
                         fileName="Sale_Purchase_Register_InvoiceWise"
                       >
                         Export Excel
@@ -435,6 +457,7 @@ const SalePurInvWiseRpt = ({
           <Row>
             <Col lg={12}>
               <Card>
+                <HeaderForAllRpt reportName="Invoice Wise Report" />
                 <CardBody className="pt-3 pl-3 pr-3 pb-3">
                   {/* ── CommonTable ── */}
                   <CommonTable
@@ -448,6 +471,7 @@ const SalePurInvWiseRpt = ({
                     paginatedData={paginatedData}
                   />
                 </CardBody>
+                <FooterForAllRpt />
               </Card>
             </Col>
           </Row>

@@ -4,28 +4,23 @@ import {
   Input, Button, Label, Spinner
 } from 'reactstrap';
 import Select from 'react-select';
-import Flatpickr from "react-flatpickr";
 import { APIClient } from "../../helpers/api_helper";
 import * as url from "../../helpers/url_helper";
 import CommonTable from "../../Components/Common/CommonTable";
 import ExportButton from "../../Components/Common/ExportButton";
 import "../../Components/Common/CommonTable.css";
+import HeaderForAllReport from "../../Components/Common/HeaderForAllRpt";
+import FooterForAllRpt from "../../Components/Common/FooterForAllRpt";
 
-const formatDateForApi = (date) => {
-  if (!date) return null;
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, "0");
-  const d = String(date.getDate()).padStart(2, "0");
-  return `${y}-${m}-${d}`;
-};
 const api = new APIClient();
 
 const PayebleReceivableReport = () => {
   const companyId = localStorage.getItem("companyId") || 10001;
+  const [companyInfo, setCompanyInfo] = useState(null);
 
   const [partys, setPartys] = useState([]);
   const [selectedParty, setSelectedParty] = useState(null);
-  const [asOfDate, setAsOfDate] = useState([new Date()]);
+  const [asOfDate, setAsOfDate] = useState(new Date().toISOString().split("T")[0]);
 
   const [generated, setGenerated] = useState(false);
 
@@ -70,7 +65,17 @@ const PayebleReceivableReport = () => {
       }
     };
 
+    const loadCompanyInfo = async () => {
+      try {
+        const res = await api.get(url.GET_COMPANY_PROFILE);
+        setCompanyInfo(res?.data || res);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
     loadParties();
+    loadCompanyInfo();
   }, [selectedPartyType]);
 
 
@@ -79,7 +84,6 @@ const PayebleReceivableReport = () => {
   const exportColumns = useMemo(() => [
     { accessor: "displayName", label: "Party" },
     { accessor: "contact", label: "Contact" },
-
     { accessor: "outstanding", label: "Outstanding Amount" },
     { accessor: "creditDebit", label: "D/C" },
     { accessor: "terms", label: "Terms" },
@@ -87,12 +91,18 @@ const PayebleReceivableReport = () => {
     { accessor: "monthly", label: "Monthly Avg" }
   ], []);
 
+  const headerRows = useMemo(() => [
+    [{ v: "Payable Receivable Report", s: { font: { bold: true, sz: 14 }, alignment: { horizontal: "center" } } }],
+    [{ v: companyInfo?.companyName || "SoftBook", s: { font: { bold: true }, alignment: { horizontal: "center" } } }],
+    [""] // spacing
+  ], [companyInfo]);
+
   const fetchExportData = async () => {
     return reportData || [];
   };
   const handleClear = () => {
     setSelectedParty(null);
-    setAsOfDate([]);
+    setAsOfDate(new Date().toISOString().split("T")[0]);
     setReportData([]);
     setGenerated(false);
     setTotalEntries(0);
@@ -177,7 +187,7 @@ const PayebleReceivableReport = () => {
             selectedParty && selectedParty.value > 0
               ? selectedParty.value
               : null,
-          pAsOfDate: asOfDate?.[0] ? formatDateForApi(asOfDate[0]) : null,
+          pAsOfDate: asOfDate || null,
           partyType: selectedPartyType ? selectedPartyType.value : null,
         },
       });
@@ -210,6 +220,9 @@ const PayebleReceivableReport = () => {
     );
 
   }, [reportData, currentPage, rowsPerPage]);
+
+  document.title = "Payable Receivable Report | SoftBook";
+
   return (
     <React.Fragment>
       <div className="page-content">
@@ -274,14 +287,10 @@ const PayebleReceivableReport = () => {
 
                 <Col xs={12} md={6} xl={4}>
                   <Label>As Of Date</Label>
-                  <Flatpickr
-                    className="form-control"
-                    placeholder="Today"
-                    options={{
-                      dateFormat: "Y-m-d",
-                    }}
+                  <Input
+                    type="date"
                     value={asOfDate}
-                    onChange={setAsOfDate}
+                    onChange={(e) => setAsOfDate(e.target.value)}
                   />
                 </Col>
               </Row>
@@ -355,6 +364,7 @@ const PayebleReceivableReport = () => {
                   <ExportButton
                     data={fetchExportData}
                     columns={exportColumns}
+                    headerRows={headerRows}
                     fileName={`Payable_Receivable_Report`}
                     iconOnly
                   />
@@ -364,6 +374,13 @@ const PayebleReceivableReport = () => {
           </Card>
           {(reportData.length > 0 || loading || generated) && (
             <Card>
+
+              {/*COMMON HEADER */}
+              <div className="text-start">
+                <HeaderForAllReport reportName="Payable Receivable Report" />
+              </div>
+
+
               <CardBody className="pt-3 pl-3 pr-3 pb-3">
                 <CommonTable
                   columns={columns}
@@ -375,6 +392,11 @@ const PayebleReceivableReport = () => {
                   paginatedData={paginatedData}
                 />
               </CardBody>
+
+              {/* COMMON FOOTER */}
+              <FooterForAllRpt />
+
+
             </Card>
           )}
         </Container>

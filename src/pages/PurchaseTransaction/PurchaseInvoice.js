@@ -131,6 +131,8 @@ const PurchaseInvoice = () => {
                     const partyId = hdr.partyId || hdr.PartyId;
                     if (partyId) {
                         const partyResRaw = await getPartyDetails(partyId);
+                        console.log("partyResRaw", partyResRaw);
+
                         const partyRes = partyResRaw?.data || partyResRaw;
                         setParty(partyRes?.party || partyRes?.Party || partyRes || null);
                     }

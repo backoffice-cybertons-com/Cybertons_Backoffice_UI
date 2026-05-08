@@ -10,6 +10,8 @@ import { APIClient } from "../../helpers/api_helper";
 import * as url from "../../helpers/url_helper";
 import CommonTable from "../../Components/Common/CommonTable";
 import "../../Components/Common/CommonTable.css";
+import HeaderForAllRpt from "../../Components/Common/HeaderForAllRpt";
+import FooterForAllRpt from "../../Components/Common/FooterForAllRpt";
 
 /* ── helpers ──────────────────────────────────────────────── */
 const formatDateForApi = (date) => {
@@ -256,9 +258,8 @@ const SalePurchaseRegisterMonthwise = ({
         const dateStr = `Period: ${fromDate} to ${toDate}`;
 
         const header = [
+            [`${invType || 'Sales Purchase'} Register Report - Monthwise`],
             [companyInfo?.companyName || "SoftBook"],
-            [companyInfo?.companyAddress || ""],
-            ["Sales Purchase Register Monthwise Report"],
             [dateStr],
             [],
         ];
@@ -431,6 +432,7 @@ const SalePurchaseRegisterMonthwise = ({
                         <Row>
                             <Col lg={12}>
                                 <Card>
+                                    <HeaderForAllRpt reportName="Monthwise Report" />
                                     <CardBody className="pt-3 pl-3 pr-3 pb-3">
                                         <CommonTable
                                             columns={columns}
@@ -442,6 +444,7 @@ const SalePurchaseRegisterMonthwise = ({
                                             paginatedData={paginatedData}
                                         />
                                     </CardBody>
+                                    <FooterForAllRpt />
                                 </Card>
                             </Col>
                         </Row>
