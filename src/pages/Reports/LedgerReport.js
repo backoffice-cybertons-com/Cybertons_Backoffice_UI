@@ -214,19 +214,10 @@ const LedgerReport = () => {
             }
             rows.push([]);
             rows.push([c("TOTAL DEBIT", S.totalLabel), "", "", "", c(fmtMoney(totals.dr), S.totalDr), "", c("TOTAL CREDIT", S.totalLabel), "", "", "", c(fmtMoney(totals.cr), S.totalCr)]);
-// <<<<<<< HEAD
-//             if (totals.closing < 0) {
-//                 rows.push(["", "", "", "", "", "", c("By Closing Balance", S.closing), "", "", "", c(fmtMoney(Math.abs(totals.closing)), S.num)]);
-//             } else {
-//                 rows.push([c("To Closing Balance", S.closing), "", "", "", c(fmtMoney(Math.abs(totals.closing)), S.num)]);
-//             }
-//         }
-// =======
             
             // [MODIFIED 2026-05-07] Move Closing Balance to appear under Total Credit side in Excel export
             rows.push(["", "", "", "", "", "", c("Closing Balance", S.closing), "", "", "", c(balanceLabel(totals.closing), S.num)]);
         } 
-//>>>>>>> login_logout_cogs_ratediff_stockreport
         else {
             const list = isDetailed ? reportData.entries : [summaryData.openingRow, ...summaryData.dataRows].filter(Boolean);
             rows.push([c("Date", S.th), c("Type", S.th), c("No", S.th), c("Particulars", S.th), c("Debit (Dr)", S.th), c("Credit (Cr)", S.th), c("Balance", S.th)]);
@@ -247,17 +238,10 @@ const LedgerReport = () => {
 
         const ws = XLSX.utils.aoa_to_sheet(rows);
         ws["!merges"] = merges;
-<<<<<<< HEAD
-        ws["!cols"] = isSplit
-            ? [{ wch: 10 }, { wch: 12 }, { wch: 8 }, { wch: 35 }, { wch: 12 }, { wch: 4 }, { wch: 10 }, { wch: 12 }, { wch: 8 }, { wch: 35 }, { wch: 12 }]
-            : [{ wch: 10 }, { wch: 15 }, { wch: 10 }, { wch: 45 }, { wch: 14 }, { wch: 14 }, { wch: 18 }];
-
-=======
         ws["!cols"] = isSplit 
             ? [{ wch: 11.82 }, { wch: 12 }, { wch: 8 }, { wch: 45 }, { wch: 12 }, { wch: 4 }, { wch: 11.82 }, { wch: 12 }, { wch: 8 }, { wch: 45 }, { wch: 12 }]
             : [{ wch: 11.82 }, { wch: 15 }, { wch: 10 }, { wch: 45 }, { wch: 14 }, { wch: 14 }, { wch: 18 }];
         
->>>>>>> login_logout_cogs_ratediff_stockreport
         XLSX.utils.book_append_sheet(wb, ws, "Ledger");
         const buf = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
         saveAs(new Blob([buf]), `${selectedAccount?.label}_${reportType.label.replace(/ /g, '_')}.xlsx`);
