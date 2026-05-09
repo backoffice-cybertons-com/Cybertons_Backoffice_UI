@@ -229,6 +229,10 @@ const useNavData = () => {
         finalLink = "/reports/sale-purchase-register-datewise";
       } else if (tabName === "Sale Purchase Register Partywise") {
         finalLink = "/reports/sale-purchase-register-partywise";
+      } else if (tabName === "Stock Summary") {
+        finalLink = "/reports/stock-summary";
+      } else if (tabName === "Trial Balance") {
+        finalLink = "/reports/TrialBalanceReport";
       } else if (tabName === "Expense" || tabName === "Expenses") {
         // The new independent Expense component
         finalLink = "/purchases/expense";

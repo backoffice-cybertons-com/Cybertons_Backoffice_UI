@@ -443,3 +443,6 @@ export const deleteDirectJournal = (gCode) => api.delete(`${url.DELETE_DIRECT_JO
 export const getTrialBalance = (companyId, date) => api.get(url.GET_TRIAL_BALANCE, { companyId, date });
 export const getLedgerSummaryDatewise = (companyId, accountCode, fromDate, toDate) =>
     api.get(url.GET_LEDGER_SUMMARY_DATEWISE, { companyId, accountCode, fromDate, toDate });
+
+export const getStockSummaryReport = (companyId, fromDate, toDate) =>
+    api.get(url.GET_STOCK_SUMMARY_REPORT, { companyId, fromDate, toDate });

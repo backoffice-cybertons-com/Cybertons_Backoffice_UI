@@ -320,7 +320,8 @@ const SalesTransactionCreate = () => {
                 sgstAmount: "0.00",
                 totalAmount: "0.00",
                 originalRate: "0.00",
-                rateDiff: "0.00"
+                rateDiff: "0.00",
+                cogs: "0.00"
             }
         ]
     }), [today]);
@@ -413,7 +414,9 @@ const SalesTransactionCreate = () => {
                     packing: line.packing ? line.packing.toString() : null,
                     rate: line.rate ? parseFloat(line.rate) : 0,
                     amount: line.amount ? parseFloat(line.amount) : 0,
-                    totalAmount: line.totalAmount ? parseFloat(line.totalAmount) : 0
+                    totalAmount: line.totalAmount ? parseFloat(line.totalAmount) : 0,
+                    rateDiff: line.rateDiff ? parseFloat(line.rateDiff) : 0,
+                    cogs: line.cogs ? parseFloat(line.cogs) : 0
                 }))
             };
 
