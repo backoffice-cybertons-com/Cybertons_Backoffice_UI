@@ -154,11 +154,8 @@ const SummaryTable = ({ data }) => {
             <td
               style={{
                 ...plCell,
-                color: getPLColor(plPctPrice),
               }}
-            >
-              {fmt(plPctPrice, 2)}%
-            </td>
+            ></td>
           </tr>
         </tbody>
       </table>

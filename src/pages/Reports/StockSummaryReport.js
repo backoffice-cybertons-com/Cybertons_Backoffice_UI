@@ -10,6 +10,8 @@ import { getStockSummaryReport } from "../../helpers/fakebackend_helper";
 import secureStorage from "../../utils/secureStorage";
 import BreadCrumb from '../../Components/Common/BreadCrumb';
 import "./StockSummaryReport.css";
+import HeaderForAllRpt from '../../Components/Common/HeaderForAllRpt';
+import FooterForAllRpt from '../../Components/Common/FooterForAllRpt';
 
 const StockSummaryReport = () => {
     const today = new Date();
@@ -81,10 +83,10 @@ const StockSummaryReport = () => {
         const q = query.trim().toLowerCase();
         let data = rows;
         if (hideZero) {
-            data = data.filter(r => 
-                Math.abs(r.openingQty) > 0.001 || 
-                Math.abs(r.inwardQty) > 0.001 || 
-                Math.abs(r.outwardQty) > 0.001 || 
+            data = data.filter(r =>
+                Math.abs(r.openingQty) > 0.001 ||
+                Math.abs(r.inwardQty) > 0.001 ||
+                Math.abs(r.outwardQty) > 0.001 ||
                 Math.abs(r.closingQty) > 0.001
             );
         }
@@ -295,6 +297,8 @@ const StockSummaryReport = () => {
                         <Row>
                             <Col lg={12}>
                                 <Card id="stockSummaryPrintArea">
+                                    <HeaderForAllRpt reportName='Stock Summary Report' />
+
                                     <CardHeader className="d-flex justify-content-between align-items-center">
                                         <h6 className="card-title mb-0">Stock Summary Result</h6>
                                         <div className="text-muted fs-12">
@@ -393,6 +397,8 @@ const StockSummaryReport = () => {
                                             </div>
                                         </div>
                                     </CardBody>
+
+                                    <FooterForAllRpt />
                                 </Card>
                             </Col>
                         </Row>

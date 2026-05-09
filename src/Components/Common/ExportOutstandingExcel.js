@@ -467,7 +467,7 @@ const buildSummaryWorkbook = (data, dateStr, companyInfo) => {
       label: "Today PL %",
       qty: null,
       amount: plPctAmount,
-      price: plPctPrice,
+      price: null,
       isPlRow: true,
       isPct: true,
       fillArgb: COLOR.totalRow,
