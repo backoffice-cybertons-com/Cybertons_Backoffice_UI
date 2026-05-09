@@ -120,6 +120,7 @@ export const UPDATE_SALES_TRANSACTION = "/api/salesTransaction/composite";
 export const DELETE_SALES_TRANSACTION = "/api/salesTransaction";
 export const GET_SALES_TRANSACTION_DETAILS = "/api/salesTransaction";
 export const GET_PARTY_OUTSTANDING = "/api/salesTransaction/outstanding";
+export const GET_STOCK_SUMMARY_REPORT = "/api/Report/stock-summary";
 
 // Payment & Receipt
 export const GET_PAYMENT_RECEIPTS = "/api/paymentReceipt/list";

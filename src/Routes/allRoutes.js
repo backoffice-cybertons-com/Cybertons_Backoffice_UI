@@ -67,6 +67,7 @@ import SalePurComparDatewise from "../pages/Reports/SalePurComparDatewise";
 import OutstandingComparison from "../pages/Reports/OutstandingComparison";
 
 import TrialBalanceReport from "../pages/Reports/TrialBalanceReport";
+import StockSummaryReport from "../pages/Reports/StockSummaryReport";
 
 
 import SalePurInvWiseRpt from "../pages/Reports/SalePurInvWiseRpt";
@@ -381,6 +382,7 @@ const authProtectedRoutes = [
   { path: "/reports/sale-purchase-datewise-comparison", component: <SalePurComparDatewise /> },
 
   { path: "/reports/TrialBalanceReport", component: <TrialBalanceReport /> },
+  { path: "/reports/stock-summary", component: <StockSummaryReport /> },
 
 
   { path: "/reports/sale-pur-invwise", component: <SalePurInvWiseRpt /> },

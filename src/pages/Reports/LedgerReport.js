@@ -214,12 +214,19 @@ const LedgerReport = () => {
             }
             rows.push([]);
             rows.push([c("TOTAL DEBIT", S.totalLabel), "", "", "", c(fmtMoney(totals.dr), S.totalDr), "", c("TOTAL CREDIT", S.totalLabel), "", "", "", c(fmtMoney(totals.cr), S.totalCr)]);
-            if (totals.closing < 0) {
-                rows.push(["", "", "", "", "", "", c("By Closing Balance", S.closing), "", "", "", c(fmtMoney(Math.abs(totals.closing)), S.num)]);
-            } else {
-                rows.push([c("To Closing Balance", S.closing), "", "", "", c(fmtMoney(Math.abs(totals.closing)), S.num)]);
-            }
-        }
+// <<<<<<< HEAD
+//             if (totals.closing < 0) {
+//                 rows.push(["", "", "", "", "", "", c("By Closing Balance", S.closing), "", "", "", c(fmtMoney(Math.abs(totals.closing)), S.num)]);
+//             } else {
+//                 rows.push([c("To Closing Balance", S.closing), "", "", "", c(fmtMoney(Math.abs(totals.closing)), S.num)]);
+//             }
+//         }
+// =======
+            
+            // [MODIFIED 2026-05-07] Move Closing Balance to appear under Total Credit side in Excel export
+            rows.push(["", "", "", "", "", "", c("Closing Balance", S.closing), "", "", "", c(balanceLabel(totals.closing), S.num)]);
+        } 
+//>>>>>>> login_logout_cogs_ratediff_stockreport
         else {
             const list = isDetailed ? reportData.entries : [summaryData.openingRow, ...summaryData.dataRows].filter(Boolean);
             rows.push([c("Date", S.th), c("Type", S.th), c("No", S.th), c("Particulars", S.th), c("Debit (Dr)", S.th), c("Credit (Cr)", S.th), c("Balance", S.th)]);
@@ -240,33 +247,81 @@ const LedgerReport = () => {
 
         const ws = XLSX.utils.aoa_to_sheet(rows);
         ws["!merges"] = merges;
+<<<<<<< HEAD
         ws["!cols"] = isSplit
             ? [{ wch: 10 }, { wch: 12 }, { wch: 8 }, { wch: 35 }, { wch: 12 }, { wch: 4 }, { wch: 10 }, { wch: 12 }, { wch: 8 }, { wch: 35 }, { wch: 12 }]
             : [{ wch: 10 }, { wch: 15 }, { wch: 10 }, { wch: 45 }, { wch: 14 }, { wch: 14 }, { wch: 18 }];
 
+=======
+        ws["!cols"] = isSplit 
+            ? [{ wch: 11.82 }, { wch: 12 }, { wch: 8 }, { wch: 45 }, { wch: 12 }, { wch: 4 }, { wch: 11.82 }, { wch: 12 }, { wch: 8 }, { wch: 45 }, { wch: 12 }]
+            : [{ wch: 11.82 }, { wch: 15 }, { wch: 10 }, { wch: 45 }, { wch: 14 }, { wch: 14 }, { wch: 18 }];
+        
+>>>>>>> login_logout_cogs_ratediff_stockreport
         XLSX.utils.book_append_sheet(wb, ws, "Ledger");
         const buf = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
         saveAs(new Blob([buf]), `${selectedAccount?.label}_${reportType.label.replace(/ /g, '_')}.xlsx`);
     };
 
-    const FinalTotalSection = () => (
-        <Row className="g-0 border-top border-2 mt-0 bg-light bg-opacity-50">
-            <Col lg={6} className="border-end p-3">
-                <div className="d-flex justify-content-between align-items-center">
-                    <h6 className="mb-0 fw-bold text-uppercase fs-12">Total Debit</h6>
-                    <h5 className="mb-0 fw-bold text-success">{fmtMoney(totals.dr)}</h5>
+    const FinalTotalSection = () => {
+        const isBank = reportData?.type?.includes('bank');
+
+        if (isBank) {
+            return (
+                <div className="bg-light bg-opacity-50 border-top border-2 p-3">
+                    {/* Row 1: Totals */}
+                    <Row className="g-0 align-items-center">
+                        <Col lg={7} md={6} sm={5}>
+                             <h6 className="mb-0 fw-bold text-uppercase fs-12">Total Debit</h6>
+                        </Col>
+                        <Col lg={2} md={2} sm={3} className="text-end">
+                            <h5 className="mb-0 fw-bold text-success fs-14">{fmtMoney(totals.dr)}</h5>
+                        </Col>
+                        <Col lg={1} md={2} sm={1} className="ps-4">
+                             <h6 className="mb-0 fw-bold text-uppercase fs-12">Total Credit</h6>
+                        </Col>
+                        <Col lg={2} md={2} sm={3} className="text-end">
+                             <h5 className="mb-0 fw-bold text-danger fs-14">{fmtMoney(totals.cr)}</h5>
+                        </Col>
+                    </Row>
+
+                    {/* Row 2: Closing Balance [MODIFIED 2026-05-07] */}
+                    <Row className="g-0 mt-2 align-items-center">
+                        <Col lg={7} md={6} sm={5} className="text-end pe-4">
+                            {/* Word under Debit column area */}
+                            <span className="text-muted fs-11 fw-medium">To Closing Balance</span>
+                        </Col>
+                        <Col lg={2} md={2} sm={3}></Col>
+                        <Col lg={1} md={2} sm={1}></Col>
+                        <Col lg={2} md={2} sm={3} className="text-end">
+                             {/* Amount under Credit column area */}
+                             <span className={`fw-bold fs-13 ${balClass(totals.closing)}`}>{balanceLabel(totals.closing)}</span>
+                        </Col>
+                    </Row>
                 </div>
-                {totals.closing < 0 && (<div className="d-flex justify-content-between align-items-center mt-2 text-muted fs-11"><span>By Closing Balance</span><span>{fmtMoney(Math.abs(totals.closing))}</span></div>)}
-            </Col>
-            <Col lg={6} className="p-3">
-                <div className="d-flex justify-content-between align-items-center">
-                    <h6 className="mb-0 fw-bold text-uppercase fs-12">Total Credit</h6>
-                    <h5 className="mb-0 fw-bold text-danger">{fmtMoney(totals.cr)}</h5>
-                </div>
-                {totals.closing >= 0 && (<div className="d-flex justify-content-between align-items-center mt-2 text-muted fs-11"><span>To Closing Balance</span><span>{fmtMoney(Math.abs(totals.closing))}</span></div>)}
-            </Col>
-        </Row>
-    );
+            );
+        }
+
+        // Original Split Layout (Dual Ledger)
+        return (
+            <Row className="g-0 border-top border-2 mt-0 bg-light bg-opacity-50">
+                <Col lg={6} className="border-end p-3">
+                    <div className="d-flex justify-content-between align-items-center">
+                        <h6 className="mb-0 fw-bold text-uppercase fs-12">Total Debit</h6>
+                        <h5 className="mb-0 fw-bold text-success">{fmtMoney(totals.dr)}</h5>
+                    </div>
+                    {totals.closing < 0 && (<div className="d-flex justify-content-between align-items-center mt-2 text-muted fs-11"><span>By Closing Balance</span><span>{fmtMoney(Math.abs(totals.closing))}</span></div>)}
+                </Col>
+                <Col lg={6} className="p-3">
+                    <div className="d-flex justify-content-between align-items-center">
+                        <h6 className="mb-0 fw-bold text-uppercase fs-12">Total Credit</h6>
+                        <h5 className="mb-0 fw-bold text-danger">{fmtMoney(totals.cr)}</h5>
+                    </div>
+                    {totals.closing >= 0 && (<div className="d-flex justify-content-between align-items-center mt-2 text-muted fs-11"><span>To Closing Balance</span><span>{fmtMoney(Math.abs(totals.closing))}</span></div>)}
+                </Col>
+            </Row>
+        );
+    };
 
     return (
         <React.Fragment>
