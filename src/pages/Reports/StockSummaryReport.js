@@ -299,14 +299,10 @@ const StockSummaryReport = () => {
                                 <Card id="stockSummaryPrintArea">
                                     <HeaderForAllRpt reportName='Stock Summary Report' />
 
-                                    <CardHeader className="d-flex justify-content-between align-items-center">
-                                        <h6 className="card-title mb-0">Stock Summary Result</h6>
-                                        <div className="text-muted fs-12">
-                                            Found <b>{shownRows.length}</b> products
-                                        </div>
-                                    </CardHeader>
                                     <CardBody>
+
                                         <Row className="g-2 mb-3 d-print-none">
+
                                             <Col md={3}>
                                                 <Card className="ssr-summary-card opening">
                                                     <CardBody className="p-3 text-center">
@@ -338,9 +334,14 @@ const StockSummaryReport = () => {
                                                         <h4 className="ssr-summary-value mb-0 text-dark">{formatQty(totals.closing)}</h4>
                                                     </CardBody>
                                                 </Card>
+                                                {/* <div className="text-muted fs-12 text-end" style={{ paddingRight: '50px' }}>
+                                                    Found <b>{shownRows.length}</b> products
+                                                </div> */}
+                                                <div className="text-muted fs-12 text-end pe-5">
+                                                    Found <b>{shownRows.length}</b> products
+                                                </div>
                                             </Col>
                                         </Row>
-
                                         <div className="ssr-table-wrap">
                                             <div className="ssr-table-container">
                                                 <Table className="align-middle ssr-table table-hover">
@@ -405,7 +406,7 @@ const StockSummaryReport = () => {
                     )}
                 </Container>
             </div>
-        </React.Fragment>
+        </React.Fragment >
     );
 };
 
