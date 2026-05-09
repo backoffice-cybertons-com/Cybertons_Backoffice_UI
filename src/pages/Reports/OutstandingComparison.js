@@ -59,6 +59,12 @@ const SummaryTable = ({ data }) => {
   const tAmount = Number(d.tAmount ?? 0);
   const tOs = Number(d.tOs ?? 0);
 
+  const yPrice = safeDiv(yAmount, yQty);
+  const tPrice = safeDiv(tAmount, tQty);
+
+  const plPctAmount = yAmount > 0 ? (tAmount / yAmount - 1) * 100 : (tAmount > 0 ? 100 : 0);
+  const plPctPrice = yPrice > 0 ? (tPrice / yPrice - 1) * 100 : (tPrice > 0 ? 100 : 0);
+
   const base = {
     border: "1px solid #ccc",
     padding: "7px 14px",
@@ -105,13 +111,13 @@ const SummaryTable = ({ data }) => {
             <td style={labelCell}>Yesterday Purchase</td>
             <td style={numCell}>{fmt(yQty, 2)}</td>
             <td style={numCell}>{fmt(yAmount, 2)}</td>
-            <td style={numCell}>{fmt(safeDiv(yAmount, yQty), 2)}</td>
+            <td style={numCell}>{fmt(yPrice, 2)}</td>
           </tr>
           <tr>
             <td style={labelCell}>Today Sale</td>
             <td style={numCell}>{fmt(tQty, 2)}</td>
             <td style={numCell}>{fmt(tAmount, 2)}</td>
-            <td style={numCell}>{fmt(safeDiv(tAmount, tQty), 2)}</td>
+            <td style={numCell}>{fmt(tPrice, 2)}</td>
           </tr>
           <tr>
             <td style={plLabel}>Today PL</td>
@@ -128,12 +134,10 @@ const SummaryTable = ({ data }) => {
             <td
               style={{
                 ...plCell,
-                color: getPLColor(
-                  safeDiv(tAmount, tQty) - safeDiv(yAmount, yQty),
-                ),
+                color: getPLColor(tPrice - yPrice),
               }}
             >
-              {fmt(safeDiv(tAmount, tQty) - safeDiv(yAmount, yQty), 2)}
+              {fmt(tPrice - yPrice, 2)}
             </td>
           </tr>
           <tr>
@@ -142,12 +146,19 @@ const SummaryTable = ({ data }) => {
             <td
               style={{
                 ...plCell,
-                color: getPLColor(safeDiv(tAmount, yAmount) - 1),
+                color: getPLColor(plPctAmount),
               }}
             >
-              {fmt((safeDiv(tAmount, yAmount) - 1) * 100, 2)}%
+              {fmt(plPctAmount, 2)}%
             </td>
-            <td style={plCell}> </td>
+            <td
+              style={{
+                ...plCell,
+                color: getPLColor(plPctPrice),
+              }}
+            >
+              {fmt(plPctPrice, 2)}%
+            </td>
           </tr>
         </tbody>
       </table>

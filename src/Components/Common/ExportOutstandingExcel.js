@@ -289,7 +289,7 @@ const buildWorkbook = (data, dateStr, companyInfo) => {
         cell.font = font({
           color: {
             argb:
-              v > 0 ? COLOR.diffPos : v < 0 ? COLOR.diffNeg : COLOR.bodyText,
+              v > 0 ? COLOR.diffNeg : v < 0 ? COLOR.diffPos : COLOR.bodyText,
           },
           bold: true,
         });
@@ -326,6 +326,17 @@ const buildWorkbook = (data, dateStr, companyInfo) => {
     cell.alignment = align(colNum <= 2 ? "left" : col.align);
     cell.border = border();
     if (col.isNum) cell.numFmt = "#,##0.00";
+
+    // Diff column in totals — colour by sign (negative is good/green)
+    if (col.key === "diff") {
+      const v = totals[col.key];
+      cell.font = font({
+        bold: true,
+        color: {
+          argb: v > 0 ? COLOR.diffNeg : v < 0 ? COLOR.diffPos : COLOR.totalText,
+        },
+      });
+    }
   });
 
   /* ── top border on totals row (thicker) ── */
@@ -364,8 +375,12 @@ const buildSummaryWorkbook = (data, dateStr, companyInfo) => {
   const tAmount = Number(d.tAmount ?? 0);
 
   const plAmount = tAmount - yAmount;
-  const plPrice = safeDiv(tAmount, tQty) - safeDiv(yAmount, yQty);
-  const plPct = safeDiv(tAmount, yAmount) - 1;
+  const yPrice = safeDiv(yAmount, yQty);
+  const tPrice = safeDiv(tAmount, tQty);
+  const plPrice = tPrice - yPrice;
+
+  const plPctAmount = yAmount > 0 ? (tAmount / yAmount - 1) * 100 : (tAmount > 0 ? 100 : 0);
+  const plPctPrice = yPrice > 0 ? (tPrice / yPrice - 1) * 100 : (tPrice > 0 ? 100 : 0);
 
   /* ── column widths ── */
   ws.columns = [
@@ -451,8 +466,8 @@ const buildSummaryWorkbook = (data, dateStr, companyInfo) => {
     {
       label: "Today PL %",
       qty: null,
-      amount: plPct,
-      price: null,
+      amount: plPctAmount,
+      price: plPctPrice,
       isPlRow: true,
       isPct: true,
       fillArgb: COLOR.totalRow,
@@ -493,8 +508,8 @@ const buildSummaryWorkbook = (data, dateStr, companyInfo) => {
         cell.font = hFont({ bold: r.isPlRow, color: { argb: textArgb } });
         cell.alignment = hAlign("right");
 
-        if (r.isPct && ci === 3) {
-          // PL % Amount column — show as percentage string
+        if (r.isPct && (ci === 3 || ci === 4)) {
+          // PL % column — show as percentage string
           cell.numFmt = pctFmt;
         } else {
           cell.numFmt = numFmt;
