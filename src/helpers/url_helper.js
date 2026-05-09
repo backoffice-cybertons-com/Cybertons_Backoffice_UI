@@ -177,6 +177,8 @@ export const GET_SALE_PURCHASE_REGISTER_PARTYWISE =
   "/api/report/sale-purchase-register-partywise";
 export const GET_SALE_PURCHASE_REGISTER_MONTHWISE =
   "/api/report/sale-purchase-register-monthwise";
+export const GET_SALE_PURCHASE_REGISTER_TRANSACTIONWISE =
+  "/api/report/sale-purchase-register-transactionWise";
 
 
 

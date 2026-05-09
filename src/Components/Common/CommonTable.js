@@ -74,6 +74,7 @@ const CommonTable = ({
     minWidth = "100%",
     showTotals = true,
     paginatedData,
+    customRowRender,
 }) => {
     /* ── state ── */
     const [columnFilters, setColumnFilters] = useState({});
@@ -290,51 +291,55 @@ const CommonTable = ({
                                     </td>
                                 </tr>
                             ) : (
-                                sortedData.map((row, rowIdx) => (
-                                    <tr key={row.id ?? row.spUniqueCode ?? rowIdx}>
-                                        {columns.map((col) => {
-                                            const cellValue = row[col.key] ?? "";
-                                            const isSimple = !col.cell;
-                                            let titleText = "";
+                                customRowRender
+                                    ? customRowRender(sortedData, columns)
+                                    : sortedData.map((row, rowIdx) => (
+                                        <tr key={row.id ?? row.spUniqueCode ?? rowIdx}>
+                                            {columns.map((col) => {
+                                                const cellValue = row[col.key] ?? "";
+                                                const isSimple = !col.cell;
+                                                let titleText = "";
 
-                                            if (isSimple) {
-                                                if (col.sortType === "number") {
-                                                    titleText = fmt(cellValue, col.decimals ?? 2);
-                                                } else if (col.sortType === "date" && cellValue) {
-                                                    titleText = new Date(cellValue).toLocaleDateString("en-GB", {
-                                                        day: "2-digit",
-                                                        month: "short",
-                                                        year: "numeric",
-                                                    });
-                                                } else {
-                                                    titleText = cellValue.toString();
+                                                if (isSimple) {
+                                                    if (col.sortType === "number") {
+                                                        titleText = fmt(cellValue, col.decimals ?? 2);
+                                                    } else if (col.sortType === "date" && cellValue) {
+                                                        titleText = new Date(cellValue).toLocaleDateString("en-GB", {
+                                                            day: "2-digit",
+                                                            month: "short",
+                                                            year: "numeric",
+                                                        });
+                                                    } else {
+                                                        titleText = cellValue.toString();
+                                                    }
                                                 }
-                                            }
 
-                                            const cellClassName = col.cellClassName || "";
+                                                const cellClassName = typeof col.cellClassName === 'function' 
+                                                    ? col.cellClassName(row) 
+                                                    : (col.cellClassName || "");
 
-                                            return (
-                                                <td
-                                                    key={col.key}
-                                                    className={`${col.align === "right" ? "ct-num" : "ct-text-start"} ${cellClassName}`}
-                                                    title={titleText || undefined}
-                                                >
-                                                    {col.cell
-                                                        ? col.cell(row, rowIdx)
-                                                        : col.sortType === "number"
-                                                            ? fmt(cellValue, col.decimals ?? 2)
-                                                            : col.sortType === "date" && cellValue
-                                                                ? new Date(cellValue).toLocaleDateString("en-GB", {
-                                                                    day: "2-digit",
-                                                                    month: "short",
-                                                                    year: "2-digit",
-                                                                })
-                                                                : cellValue}
-                                                </td>
-                                            );
-                                        })}
-                                    </tr>
-                                ))
+                                                return (
+                                                    <td
+                                                        key={col.key}
+                                                        className={`${col.align === "right" ? "ct-num" : "ct-text-start"} ${cellClassName}`}
+                                                        title={titleText || undefined}
+                                                    >
+                                                        {col.cell
+                                                            ? col.cell(row, rowIdx)
+                                                            : col.sortType === "number"
+                                                                ? fmt(cellValue, col.decimals ?? 2)
+                                                                : col.sortType === "date" && cellValue
+                                                                    ? new Date(cellValue).toLocaleDateString("en-GB", {
+                                                                        day: "2-digit",
+                                                                        month: "short",
+                                                                        year: "2-digit",
+                                                                    })
+                                                                    : cellValue}
+                                                    </td>
+                                                );
+                                            })}
+                                        </tr>
+                                    ))
                             )}
                         </tbody>
 

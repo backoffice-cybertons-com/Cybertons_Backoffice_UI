@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { Card, CardBody, Col, Container, Row, Button } from 'reactstrap';
+import { Card, CardBody, Col, Container, Row, Button, Input, Label } from 'reactstrap';
+import Select from "react-select";
 import { APIClient } from "../../helpers/api_helper";
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
@@ -13,47 +14,50 @@ import FooterForAllRpt from "../../Components/Common/FooterForAllRpt";
 const formatDate = (d) => d ? new Date(d).toISOString().split('T')[0] : null;
 
 /* ── column definitions ────────────────────────────────────── */
-const buildColumns = () => [
-    {
-        key: "productName", label: "Item", width: "180px", align: "left", sortType: "string",
-        totalType: "none",
-    },
-    {
-        key: "qty", label: "Total Qty", width: "100px", align: "right", sortType: "number",
-        decimals: 2,
-    },
-    {
+const buildColumns = (isSale) => {
+    const cols = [
+        {
+            key: "productName", label: "Item", width: "180px", align: "left", sortType: "string",
+            totalType: "none",
+        },
+        {
+            key: "qty", label: "Total Qty", width: "100px", align: "right", sortType: "number",
+            decimals: 2,
+        }
+    ];
+
+    if (isSale) {
+        cols.push({
+            key: "totalCogs", label: "COGS", width: "110px", align: "right", sortType: "number",
+            cell: (row) => row.unitCogs,
+            totalFn: (t) => t.qty > 0 ? t.totalCogs / t.qty : 0,
+        });
+    }
+
+    cols.push({
         key: "avgPrice", label: "Avg Price", width: "110px", align: "right", sortType: "number",
         totalType: "none",
         totalFn: (t) => t.qty > 0 ? t.taxableAmount / t.qty : 0,
-    },
-    {
-        key: "taxableAmount", label: "Taxable Amt", width: "130px", align: "right", sortType: "number",
-    },
-    {
-        key: "igstAmount", label: "IGST", width: "100px", align: "right", sortType: "number",
-    },
-    {
-        key: "cgstAmount", label: "CGST", width: "100px", align: "right", sortType: "number",
-    },
-    {
-        key: "sgstAmount", label: "SGST", width: "100px", align: "right", sortType: "number",
-    },
-    {
-        key: "taxAmount", label: "Tax Amount", width: "110px", align: "right", sortType: "number",
-    },
-    {
-        key: "totalAmount", label: "Total Amount", width: "120px", align: "right", sortType: "number",
-    },
-    {
-        key: "addPrice", label: "Add Price", width: "100px", align: "right", sortType: "number",
-        totalType: "none",
-        totalFn: (t) => t.qty > 0 ? t.addAmount / t.qty : 0,
-    },
-    {
-        key: "addAmount", label: "Add Amount", width: "110px", align: "right", sortType: "number",
-    },
-];
+        cellClassName: (row) => (isSale && row.unitCogs > row.avgPrice) ? "text-danger fw-bold bg-danger-subtle" : "",
+    });
+
+    cols.push(
+        { key: "taxableAmount", label: "Taxable Amt", width: "130px", align: "right", sortType: "number" },
+        { key: "igstAmount", label: "IGST", width: "100px", align: "right", sortType: "number" },
+        { key: "cgstAmount", label: "CGST", width: "100px", align: "right", sortType: "number" },
+        { key: "sgstAmount", label: "SGST", width: "100px", align: "right", sortType: "number" },
+        { key: "taxAmount", label: "Tax Amount", width: "110px", align: "right", sortType: "number" },
+        { key: "totalAmount", label: "Total Amount", width: "120px", align: "right", sortType: "number" },
+        {
+            key: "addPrice", label: "Add Price", width: "100px", align: "right", sortType: "number",
+            totalType: "none",
+            totalFn: (t) => t.qty > 0 ? t.addAmount / t.qty : 0,
+        },
+        { key: "addAmount", label: "Add Amount", width: "110px", align: "right", sortType: "number" }
+    );
+
+    return cols;
+};
 
 /* ── component ─────────────────────────────────────────────── */
 const SalePurchaseRegisterItemwise = ({
@@ -85,7 +89,8 @@ const SalePurchaseRegisterItemwise = ({
     const [generated, setGenerated] = useState(false);
     const [companyInfo, setCompanyInfo] = useState(null);
 
-    const columns = useMemo(() => buildColumns(), []);
+    const isSale = forcedInvType === "Sales";
+    const columns = useMemo(() => buildColumns(isSale), [isSale]);
 
     /* ── dropdown options ── */
     const [partyOptions, setPartyOptions] = useState([]);
@@ -154,6 +159,8 @@ const SalePurchaseRegisterItemwise = ({
             const data = raw.map(x => ({
                 productName: x.productName || x.ProductName || x.product_name || "",
                 qty: Number(x.qty || x.Qty || 0),
+                unitCogs: Number(x.cogs || x.Cogs || x.COGS || x.costPrice || 0),
+                totalCogs: Number(x.cogs || x.Cogs || x.COGS || x.costPrice || 0) * Number(x.qty || 0),
                 avgPrice: Number(x.avgPrice || x.AvgPrice || 0),
                 taxableAmount: Number(x.taxableAmount || x.TaxableAmount || x.Taxable_Amount || x.taxable_amount || 0),
                 sgstAmount: Number(x.sgstAmount || x.SgstAmount || x.Sgst_Amount || x.sgst_amount || 0),
@@ -207,6 +214,7 @@ const SalePurchaseRegisterItemwise = ({
     const totals = useMemo(() => {
         const sums = reportData.reduce((a, b) => ({
             qty: a.qty + b.qty,
+            cogsSum: a.cogsSum + b.totalCogs,
             taxableAmount: a.taxableAmount + b.taxableAmount,
             sgstAmount: a.sgstAmount + b.sgstAmount,
             cgstAmount: a.cgstAmount + b.cgstAmount,
@@ -215,10 +223,11 @@ const SalePurchaseRegisterItemwise = ({
             totalAmount: a.totalAmount + b.totalAmount,
             finalAmount: a.finalAmount + b.finalAmount,
             addAmount: a.addAmount + b.addAmount,
-        }), { qty: 0, taxableAmount: 0, sgstAmount: 0, cgstAmount: 0, igstAmount: 0, taxAmount: 0, totalAmount: 0, finalAmount: 0, addAmount: 0 });
-
-        sums.avgPrice = sums.qty > 0 ? sums.taxableAmount / sums.qty : 0;
-        sums.addPrice = sums.qty > 0 ? sums.addAmount / sums.qty : 0;
+        }), { qty: 0, cogsSum: 0, taxableAmount: 0, sgstAmount: 0, cgstAmount: 0, igstAmount: 0, taxAmount: 0, totalAmount: 0, finalAmount: 0, addAmount: 0 });
+ 
+        sums.avgCogs = Number((sums.qty > 0 ? sums.cogsSum / sums.qty : 0).toFixed(2));
+        sums.avgPrice = Number((sums.qty > 0 ? sums.taxableAmount / sums.qty : 0).toFixed(2));
+        sums.addPrice = Number((sums.qty > 0 ? sums.addAmount / sums.qty : 0).toFixed(2));
         return sums;
     }, [reportData]);
 
@@ -236,19 +245,19 @@ const SalePurchaseRegisterItemwise = ({
         ];
 
         const tableHeader = [
-            "Item", "Total Qty", "Avg Price", "Taxable Amount",
+            "Item", "Total Qty", ...(isSale ? ["COGS"] : []), "Avg Price", "Taxable Amount",
             "IGST", "CGST", "SGST", "Tax Amount", "Total Amount",
             "Add Price", "Add Amount",
         ];
-
+ 
         const rows = reportData.map(item => [
-            item.productName, item.qty, item.avgPrice, item.taxableAmount,
+            item.productName, item.qty, ...(isSale ? [item.unitCogs] : []), item.avgPrice, item.taxableAmount,
             item.igstAmount, item.cgstAmount, item.sgstAmount,
             item.taxAmount, item.totalAmount, item.addPrice, item.addAmount,
         ]);
-
+ 
         const totalRow = [
-            "TOTAL", totals.qty, totals.avgPrice, totals.taxableAmount,
+            "TOTAL", totals.qty, ...(isSale ? [totals.avgCogs] : []), totals.avgPrice, totals.taxableAmount,
             totals.igstAmount, totals.cgstAmount, totals.sgstAmount,
             totals.taxAmount, totals.totalAmount, totals.addPrice, totals.addAmount,
         ];

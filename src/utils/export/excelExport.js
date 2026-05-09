@@ -141,7 +141,12 @@ export const exportToExcel = ({
             } else {
                 rawValue = row ? row[col.accessor] : undefined;
             }
-            return prepareCell(rawValue, col.style);
+            // Cell-specific style > Row style > Column style
+            const cellStyle = (row?._cellStyles && row._cellStyles[col.accessor]) 
+                ? { ...(row?._style || col.style || {}), ...row._cellStyles[col.accessor] }
+                : (row?._style || col.style);
+                
+            return prepareCell(rawValue, cellStyle);
         });
         aoa.push(rowArr);
     });
@@ -166,6 +171,18 @@ export const exportToExcel = ({
         }));
         worksheet['!merges'] = (worksheet['!merges'] || []).concat(merges);
     }
+
+    // Freeze panes (Header rows + Table header)
+    const splitRow = headerRows.length + 1;
+    worksheet['!views'] = [
+        {
+            state: 'frozen',
+            xSplit: 0,
+            ySplit: splitRow,
+            topLeftCell: XLSX.utils.encode_cell({ r: splitRow, c: 0 }),
+            activePane: 'bottomLeft'
+        }
+    ];
 
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);

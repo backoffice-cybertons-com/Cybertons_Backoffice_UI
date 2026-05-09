@@ -75,6 +75,7 @@ import SalePurchaseRegisterDatewise from "../pages/Reports/SalePurchaseRegisterD
 import SalePurchaseRegisterPartywise from "../pages/Reports/SalePurchaseRegisterPartywise";
 import SaleRegisterReport from "../pages/Reports/SaleRegisterReport";
 import PurchaseRegisterReport from "../pages/Reports/PurchaseRegisterReport";
+import SalePurTransactionWiseRpt from "../pages/Reports/SalePurTransactionWiseRpt";
 
 // Support Tickets
 import ListView from '../pages/SupportTickets/ListView';
@@ -388,6 +389,7 @@ const authProtectedRoutes = [
   { path: "/reports/sale-purchase-register-partywise", component: <SalePurchaseRegisterPartywise /> },
   { path: "/Sale/Sale-Register-Report", component: <SaleRegisterReport /> },
   { path: "/purchase/Purchase-Register-Report", component: <PurchaseRegisterReport /> },
+  { path: "/reports/sale-purchase-register-transactionwise", component: <SalePurTransactionWiseRpt /> },
 
   //Supports Tickets
   { path: "/apps-tickets-list", component: <ListView /> },

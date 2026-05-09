@@ -9,13 +9,15 @@ import SalePurchaseRegisterItemwise from "./SalePurchaseRegisterItemwise";
 import SalePurchaseRegisterPartywise from "./SalePurchaseRegisterPartywise";
 import SalePurchaseRegisterDatewise from "./SalePurchaseRegisterDatewise";
 import SalePurchaseRegisterMonthwise from "./SalePurchaseRegisterMonthWise";
+import SalePurTransactionWiseRpt from "./SalePurTransactionWiseRpt";
 
 const REPORT_TYPE_OPTIONS = [
   { value: "date", label: "Date Wise" },
   { value: "inv", label: "Invoice Wise" },
   { value: "item", label: "Item Wise" },
   { value: "party", label: "Party Wise" },
-  { value: "month", label: "Month Wise" }
+  { value: "month", label: "Month Wise" },
+  { value: "transaction", label: "Transaction Wise" }
 ];
 
 const REPORT_ENDPOINTS = {
@@ -24,6 +26,7 @@ const REPORT_ENDPOINTS = {
   party: url.GET_SALE_PURCHASE_REGISTER_PARTYWISE,
   date: url.GET_SALE_PURCHASE_REGISTER_DATEWISE,
   month: url.GET_SALE_PURCHASE_REGISTER_MONTHWISE,
+  transaction: url.GET_SALE_PURCHASE_REGISTER_TRANSACTIONWISE,
 };
 
 const EXPORT_COLUMNS = {
@@ -33,7 +36,7 @@ const EXPORT_COLUMNS = {
     "finalAmount", "addPrice", "addAmount",
   ],
   item: [
-    "itemName", "qty", "avgPrice", "taxableAmount",
+    "itemName", "qty", "cogs", "avgPrice", "taxableAmount",
     "sgst", "cgst", "igst", "taxAmount", "totalAmount",
     "addPrice", "addAmount",
   ],
@@ -49,6 +52,9 @@ const EXPORT_COLUMNS = {
     "invNo", "invType", "totalQty", "avgPrice", "taxableAmount", "igst",
     "cgst", "sgst", "taxAmount", "totalAmount", "expDiscount", "roundOff", "finalAmount", "addPrice", "addAmount",
   ],
+  transaction: [
+    "invDate", "invNo", "invType", "customerName", "itemName", "qty", "cogs", "rate", "taxableAmount", "taxAmount", "totalAmount", "finalAmount"
+  ],
 };
 
 const normalizeData = (data) => {
@@ -60,9 +66,11 @@ const normalizeData = (data) => {
     customerName: item.customerName || item.customer_name || item.partyName || item.PartyName || item.display_name || item.Party_Name || item.Party_name || "",
     itemName: item.itemName || item.item_name || item.productName || item.product_name || item.ProductName || "",
     qty: Number(item.qty || item.Qty || item.quantity || 0),
+    cogs: Number(item.cogs || item.Cogs || item.COGS || item.costPrice || item.CostPrice || item.itemCogs || item.item_cogs || 0),
+    rate: Number(item.avgPrice || item.AvgPrice || item.avg_price || item.rate || item.Rate || 0),
     totalQty: Number(item.totalQty || item.total_qty || item.qty || 0),
     avgPrice: Number(item.avgPrice || item.AvgPrice || item.avg_price || 0),
-    taxableAmount: Number(item.taxableAmount || item.TaxableAmount || item.Taxable_Amount || item.taxable_amount || 0),
+    taxableAmount: Number(item.taxableAmount || item.TaxableAmount || item.Taxable_Amount || item.taxable_amount || item.itemTaxableAmount || item.item_taxable_amount || 0),
     igst: Number(item.igst || item.igst_amount || item.igstAmount || item.IgstAmount || item.Igst_Amount || 0),
     cgst: Number(item.cgst || item.cgst_amount || item.cgstAmount || item.CgstAmount || item.Cgst_Amount || 0),
     sgst: Number(item.sgst || item.sgst_amount || item.sgstAmount || item.SgstAmount || item.Sgst_Amount || 0),
@@ -198,13 +206,18 @@ const RegisterReport = ({ type }) => {
     if (appliedReportType === "party") return <SalePurchaseRegisterPartywise {...commonProps} />;
     if (appliedReportType === "date") return <SalePurchaseRegisterDatewise {...commonProps} />;
     if (appliedReportType === "month") return <SalePurchaseRegisterMonthwise {...commonProps} />;
+    if (appliedReportType === "transaction") return <SalePurTransactionWiseRpt {...commonProps} />;
     return <SalePurInvWiseRpt {...commonProps} />;
   }, [appliedReportType, invTypeValue, globalFilters, refreshKey, currentPage, rowsPerPage]);
 
   const titlePrefix = type === "SALE" ? "Sale" : "Purchase";
   const exportColumns = useMemo(
-    () =>
-      (EXPORT_COLUMNS[appliedReportType] || []).map((key) => ({
+    () => {
+      let baseCols = EXPORT_COLUMNS[appliedReportType] || [];
+      if ((appliedReportType === "transaction" || appliedReportType === "item") && invTypeValue !== "Sales") {
+        baseCols = baseCols.filter(c => c !== "cogs");
+      }
+      return baseCols.map((key) => ({
         accessor: key,
         label: key
           .replace(/([A-Z])/g, " $1")
@@ -212,8 +225,9 @@ const RegisterReport = ({ type }) => {
           .replace(/\s+/g, " ")
           .trim()
           .replace(/^./, (c) => c.toUpperCase()),
-      })),
-    [appliedReportType],
+      }));
+    },
+    [appliedReportType, invTypeValue],
   );
 
   const headerRows = useMemo(() => {
@@ -227,6 +241,8 @@ const RegisterReport = ({ type }) => {
   }, [titlePrefix, appliedReportType, companyInfo]);
 
   const fetchExportData = async () => {
+    console.log("✅ fetchExportData called, type:", appliedReportType);
+
     const endpoint = REPORT_ENDPOINTS[appliedReportType];
     const companyId = localStorage.getItem("companyId");
 
@@ -249,8 +265,179 @@ const RegisterReport = ({ type }) => {
     };
 
     const response = await api.get(endpoint, { params });
-    const data = Array.isArray(response) ? response : response?.data || [];
-    return normalizeData(data);
+    const raw = Array.isArray(response) ? response : response?.data || [];
+    const normalized = normalizeData(raw);
+
+    if (appliedReportType === "transaction") {
+      console.log("✅ transaction branch entered, rows:", normalized.length);
+      console.log("first item raw:", raw[0]);
+      console.log("first item normalized:", normalized[0]);
+      const groupedRows = [];
+      const invoiceGroups = new Map();
+
+      normalized.forEach(item => {
+        if (!invoiceGroups.has(item.invNo)) {
+          invoiceGroups.set(item.invNo, {
+            invDate: item.invDate,
+            invNo: item.invNo,
+            invType: item.invType,
+            customerName: item.customerName,
+            qty: 0,
+            cogsSum: 0,
+            taxableAmount: 0,
+            taxAmount: 0,
+            totalAmount: 0,
+            finalAmount: item.finalAmount, // Take from first record
+            items: []
+          });
+        }
+        const group = invoiceGroups.get(item.invNo);
+        group.items.push(item);
+        group.qty += item.qty;
+        group.cogsSum += (item.cogs * item.qty);
+        group.taxableAmount += item.taxableAmount;
+        group.taxAmount += item.taxAmount;
+        group.totalAmount += item.totalAmount;
+      });
+
+      invoiceGroups.forEach(group => {
+        const avgCogs = group.qty ? group.cogsSum / group.qty : 0;
+        const avgRate = group.qty ? group.taxableAmount / group.qty : 0;
+
+        // Add Header Row
+        groupedRows.push({
+          invDate: group.invDate,
+          invNo: group.invNo,
+          invType: group.invType,
+          customerName: group.customerName,
+          itemName: "",
+          qty: group.qty,
+          cogs: Number((group.qty ? group.cogsSum / group.qty : 0).toFixed(2)),
+          rate: Number((group.qty ? group.taxableAmount / group.qty : 0).toFixed(2)),
+          taxableAmount: Number(group.taxableAmount.toFixed(2)),
+          taxAmount: group.taxAmount,
+          totalAmount: group.totalAmount,
+          finalAmount: group.finalAmount,
+          _style: {
+            fill: { fgColor: { rgb: "F8F9FA" } },
+            font: { bold: true },
+            border: { bottom: { style: "thin", color: { rgb: "CCCCCC" } } }
+          }
+        });
+
+        // Add Item Rows
+        group.items.forEach(it => {
+          groupedRows.push({
+            ...it,
+            invDate: "",
+            invNo: "",
+            invType: "",
+            customerName: "",
+            _cellStyles: {
+              rate: (it.rate < it.cogs) ? { 
+                font: { color: { rgb: "FF0000" }, bold: true },
+                fill: { fgColor: { rgb: "F8D7DA" } } 
+              } : {}
+            }
+          });
+        });
+      });
+
+      // Add Overall Total Row
+      const overall = normalized.reduce((acc, it) => {
+        acc.qty += it.qty;
+        acc.cogs += (it.cogs * it.qty);
+        acc.taxableAmount += it.taxableAmount;
+        acc.taxAmount += it.taxAmount;
+        acc.totalAmount += it.totalAmount;
+        acc.finalAmount += it.finalAmount;
+        return acc;
+      }, { qty: 0, cogs: 0, taxableAmount: 0, taxAmount: 0, totalAmount: 0, finalAmount: 0 });
+
+      groupedRows.push({
+        invDate: "Overall Total",
+        invNo: "",
+        invType: "",
+        customerName: "",
+        itemName: "",
+        qty: overall.qty,
+        cogs: Number((overall.qty ? overall.cogs / overall.qty : 0).toFixed(2)),
+        rate: Number((overall.qty ? overall.taxableAmount / overall.qty : 0).toFixed(2)),
+        taxableAmount: Number(overall.taxableAmount.toFixed(2)),
+        taxAmount: overall.taxAmount,
+        totalAmount: overall.totalAmount,
+        finalAmount: overall.finalAmount,
+        _style: {
+          fill: { fgColor: { rgb: "E8E8E8" } },
+          font: { bold: true }
+        }
+      });
+
+      return groupedRows;
+    }
+
+    // Standard Overall Total calculation for all other report types
+    const totals = normalized.reduce((acc, it) => {
+      acc.qty += Number(it.qty || it.totalQty || 0);
+      acc.cogsSum += (Number(it.cogs || 0) * Number(it.qty || it.totalQty || 0));
+      acc.taxableAmount += Number(it.taxableAmount || 0);
+      acc.igst += Number(it.igst || 0);
+      acc.cgst += Number(it.cgst || 0);
+      acc.sgst += Number(it.sgst || 0);
+      acc.taxAmount += Number(it.taxAmount || 0);
+      acc.totalAmount += Number(it.totalAmount || 0);
+      acc.expDiscount += Number(it.expDiscount || 0);
+      acc.roundOff += Number(it.roundOff || 0);
+      acc.finalAmount += Number(it.finalAmount || 0);
+      acc.addAmount += Number(it.addAmount || 0);
+      return acc;
+    }, {
+      qty: 0, cogsSum: 0, taxableAmount: 0, igst: 0, cgst: 0, sgst: 0,
+      taxAmount: 0, totalAmount: 0, expDiscount: 0, roundOff: 0, finalAmount: 0, addAmount: 0
+    });
+
+    const totalRow = {
+      invDate: "Overall Total",
+      customerName: "Overall Total",
+      itemName: "Overall Total",
+      invType: "",
+      invNo: "",
+      totalQty: totals.qty,
+      qty: totals.qty,
+      cogs: Number((totals.qty ? totals.cogsSum / totals.qty : 0).toFixed(2)),
+      avgPrice: Number((totals.qty ? totals.taxableAmount / totals.qty : 0).toFixed(2)),
+      rate: Number((totals.qty ? totals.taxableAmount / totals.qty : 0).toFixed(2)),
+      taxableAmount: Number(totals.taxableAmount.toFixed(2)),
+      igst: Number(totals.igst.toFixed(2)),
+      cgst: Number(totals.cgst.toFixed(2)),
+      sgst: Number(totals.sgst.toFixed(2)),
+      taxAmount: Number(totals.taxAmount.toFixed(2)),
+      totalAmount: Number(totals.totalAmount.toFixed(2)),
+      expDiscount: Number(totals.expDiscount.toFixed(2)),
+      roundOff: Number(totals.roundOff.toFixed(2)),
+      finalAmount: Number(totals.finalAmount.toFixed(2)),
+      addAmount: Number(totals.addAmount.toFixed(2)),
+      _style: { font: { bold: true }, fill: { fgColor: { rgb: "E8E8E8" } } }
+    };
+
+    if (appliedReportType === "item") {
+      const itemData = normalized.map(it => ({
+        ...it,
+        _cellStyles: (invTypeValue === "Sales" && it.rate < it.cogs) ? {
+          rate: {
+            font: { color: { rgb: "FF0000" }, bold: true },
+            fill: { fgColor: { rgb: "F8D7DA" } }
+          },
+          avgPrice: {
+            font: { color: { rgb: "FF0000" }, bold: true },
+            fill: { fgColor: { rgb: "F8D7DA" } }
+          }
+        } : {}
+      }));
+      return [...itemData, totalRow];
+    }
+
+    return [...normalized, totalRow];
   };
 
   return (
