@@ -4,7 +4,6 @@ import {
     Card, CardHeader, CardBody, Col, Container, Row,
     Button, Input, Label, Table, Spinner
 } from 'reactstrap';
-import Flatpickr from "react-flatpickr";
 import * as XLSX from 'xlsx-js-style';
 import { saveAs } from 'file-saver';
 import { getStockSummaryReport } from "../../helpers/fakebackend_helper";
@@ -13,8 +12,17 @@ import BreadCrumb from '../../Components/Common/BreadCrumb';
 import "./StockSummaryReport.css";
 
 const StockSummaryReport = () => {
-    const [fromDate, setFromDate] = useState(new Date(new Date().getFullYear(), new Date().getMonth(), 1));
-    const [toDate, setToDate] = useState(new Date());
+    const today = new Date();
+    const firstOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+
+    const formatLocalYMD = (d) => {
+        if (!d) return '';
+        const date = d instanceof Date ? d : new Date(d);
+        return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    };
+
+    const [fromDate, setFromDate] = useState(formatLocalYMD(firstOfMonth));
+    const [toDate, setToDate] = useState(formatLocalYMD(today));
     const [reportData, setReportData] = useState(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -22,11 +30,6 @@ const StockSummaryReport = () => {
     const [hideZero, setHideZero] = useState(true);
     const [sortBy, setSortBy] = useState({ key: 'productName', dir: 'asc' });
 
-    const formatLocalYMD = (d) => {
-        if (!d) return '';
-        const date = d instanceof Date ? d : new Date(d);
-        return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-    };
 
     const formatQty = (qty) => {
         return Number(qty || 0).toLocaleString('en-IN', {
@@ -51,7 +54,7 @@ const StockSummaryReport = () => {
         setError('');
         try {
             const companyId = secureStorage.getPlain('companyId') || 10001;
-            const response = await getStockSummaryReport(companyId, formatLocalYMD(fromDate), formatLocalYMD(toDate));
+            const response = await getStockSummaryReport(companyId, fromDate, toDate);
             const data = Array.isArray(response) ? response : (response?.data || []);
             setReportData(data);
         } catch (err) {
@@ -185,7 +188,7 @@ const StockSummaryReport = () => {
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, "Stock Summary");
         const buffer = XLSX.write(wb, { bookType: "xlsx", type: "array" });
-        saveAs(new Blob([buffer]), `Stock_Summary_${formatLocalYMD(fromDate)}_to_${formatLocalYMD(toDate)}.xlsx`);
+        saveAs(new Blob([buffer]), `Stock_Summary_${fromDate}_to_${toDate}.xlsx`);
     };
 
     const handlePrint = () => {
@@ -234,20 +237,20 @@ const StockSummaryReport = () => {
                                     <Row className="g-3 align-items-end">
                                         <Col md={3}>
                                             <Label className="text-muted text-uppercase fw-semibold mb-1">From Date</Label>
-                                            <Flatpickr
+                                            <Input
+                                                type="date"
                                                 className="form-control"
                                                 value={fromDate}
-                                                onChange={([date]) => setFromDate(date)}
-                                                options={{ dateFormat: "d M Y" }}
+                                                onChange={(e) => setFromDate(e.target.value)}
                                             />
                                         </Col>
                                         <Col md={3}>
                                             <Label className="text-muted text-uppercase fw-semibold mb-1">To Date</Label>
-                                            <Flatpickr
+                                            <Input
+                                                type="date"
                                                 className="form-control"
                                                 value={toDate}
-                                                onChange={([date]) => setToDate(date)}
-                                                options={{ dateFormat: "d M Y" }}
+                                                onChange={(e) => setToDate(e.target.value)}
                                             />
                                         </Col>
                                         <Col md={2}>
