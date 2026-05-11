@@ -231,6 +231,9 @@ const useNavData = () => {
         finalLink = "/reports/sale-purchase-register-partywise";
       } else if (tabName === "Stock Summary") {
         finalLink = "/reports/stock-summary";
+      // Developed by Hetak on 11-05-2026
+      } else if (tabName === "Stock Ledger Datewise" || tabName === "Stock Ledger") {
+        finalLink = "/reports/stock-ledger-datewise";
       } else if (tabName === "Trial Balance") {
         finalLink = "/reports/TrialBalanceReport";
       } else if (tabName === "Expense" || tabName === "Expenses") {

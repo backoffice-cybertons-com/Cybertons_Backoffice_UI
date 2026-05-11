@@ -121,6 +121,8 @@ export const DELETE_SALES_TRANSACTION = "/api/salesTransaction";
 export const GET_SALES_TRANSACTION_DETAILS = "/api/salesTransaction";
 export const GET_PARTY_OUTSTANDING = "/api/salesTransaction/outstanding";
 export const GET_STOCK_SUMMARY_REPORT = "/api/Report/stock-summary";
+// Developed by Hetak on 11-05-2026
+export const GET_STOCK_LEDGER_DATEWISE = "/api/Report/stock-ledger-datewise";
 
 // Payment & Receipt
 export const GET_PAYMENT_RECEIPTS = "/api/paymentReceipt/list";

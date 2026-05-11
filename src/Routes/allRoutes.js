@@ -68,6 +68,8 @@ import OutstandingComparison from "../pages/Reports/OutstandingComparison";
 
 import TrialBalanceReport from "../pages/Reports/TrialBalanceReport";
 import StockSummaryReport from "../pages/Reports/StockSummaryReport";
+// Developed by Hetak on 11-05-2026
+import StockLedgerDatewiseReport from "../pages/Reports/StockLedgerDatewiseReport";
 
 
 import SalePurInvWiseRpt from "../pages/Reports/SalePurInvWiseRpt";
@@ -383,6 +385,8 @@ const authProtectedRoutes = [
 
   { path: "/reports/TrialBalanceReport", component: <TrialBalanceReport /> },
   { path: "/reports/stock-summary", component: <StockSummaryReport /> },
+  // Developed by Hetak on 11-05-2026
+  { path: "/reports/stock-ledger-datewise", component: <StockLedgerDatewiseReport /> },
 
 
   { path: "/reports/sale-pur-invwise", component: <SalePurInvWiseRpt /> },
