@@ -5,6 +5,8 @@ import './assets/scss/themes.scss';
 
 //imoprt Route
 import Route from './Routes';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 // Import Firebase Configuration file
 // import { initFirebaseBackend } from "./helpers/firebase_helper";
@@ -33,6 +35,7 @@ function App() {
   return (
     <React.Fragment>
       <Route />
+      <ToastContainer autoClose={2000} limit={1} />
     </React.Fragment>
   );
 }

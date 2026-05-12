@@ -22,6 +22,19 @@ export const ADD_NEW_EVENT = "/add/event";
 export const UPDATE_EVENT = "/update/event";
 export const DELETE_EVENT = "/delete/event";
 
+// Task API
+export const GET_CALENDAR_TASKS = "/api/Task";
+export const ADD_CALENDAR_TASK = "/api/Task";
+export const UPDATE_CALENDAR_TASK = "/api/Task";
+export const DELETE_CALENDAR_TASK = "/api/Task";
+export const GET_USERS = "/api/Master/User";
+
+// Task Template API
+export const GET_TASK_TEMPLATES = "/api/TaskTemplate";
+export const ADD_TASK_TEMPLATE = "/api/TaskTemplate";
+export const DELETE_TASK_TEMPLATE = "/api/TaskTemplate";
+
+
 // Chat
 export const GET_DIRECT_CONTACT = "/chat";
 export const GET_MESSAGES = "/messages";
