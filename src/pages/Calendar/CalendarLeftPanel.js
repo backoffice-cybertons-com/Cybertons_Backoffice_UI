@@ -10,7 +10,7 @@ import FeatherIcon from "feather-icons-react";
 import TaskTemplates from "./TaskTemplates";
 import UpcomingTasks from "./UpcomingTasks";
 
-const CalendarLeftPanel = ({ toggle, onDrag, events, users = [] }) => {
+const CalendarLeftPanel = ({ toggle, onDrag, events, users = [], filters, setFilters }) => {
   return (
     <React.Fragment>
       <Card className="card-h-100">
@@ -27,7 +27,12 @@ const CalendarLeftPanel = ({ toggle, onDrag, events, users = [] }) => {
         </CardBody>
       </Card>
 
-      <UpcomingTasks events={events} users={users} />
+      <UpcomingTasks
+        events={events}
+        users={users}
+        filters={filters}
+        setFilters={setFilters}
+      />
 
       {/* <Card>
         <CardBody className="bg-info-subtle">

@@ -15,7 +15,7 @@ import {
 
 
 // Mapping Helpers
-// Status and Priority are now stored as direct strings: Pending, Completed, Canceled, Low, Medium, High, Urgent
+// Status and Priority are now stored as direct strings: Pending, Completed, Canceled, High, Medium, Low
 
 const transformTaskToEvent = (task) => {
   const start = moment(task.assigned_date || task.assignedDate);
@@ -31,7 +31,7 @@ const transformTaskToEvent = (task) => {
     allDay: isAllDay,
     description: task.description,
     status: task.task_status || task.taskStatus || "Pending",
-    priority: task.priority || "Medium",
+    priority: (task.priority === "Urgent" ? "High" : task.priority) || "Medium",
     category: (task.task_category_id || task.taskCategoryId) ? categoryReverseMap[task.task_category_id || task.taskCategoryId] : "bg-info-subtle",
     className: (task.task_category_id || task.taskCategoryId) ? categoryReverseMap[task.task_category_id || task.taskCategoryId] : "bg-info-subtle",
     assignedUserId: task.assigned_user_id || task.assignedUserId || null,

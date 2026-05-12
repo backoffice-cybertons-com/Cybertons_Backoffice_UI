@@ -50,6 +50,19 @@ const Calendar = () => {
   const [selectedTask, setSelectedTask] = useState(null);
   const [taskIdToDelete, setTaskIdToDelete] = useState(null);
 
+  // Unified Filter State
+  const [filters, setFilters] = useState({
+    user: "",
+    priority: "",
+    status: "",
+    quick: "All",      // All, Pending, Overdue, Today, Completed
+    category: "",    // Task Type
+    dateRange: "All", // Upcoming, Overdue, All
+    sortBy: "DateAsc" // DateAsc, DateDesc, Priority
+  });
+
+
+
   // --- REDUX DATA ---
   const selectLayoutState = (state) => state.Calendar;
   const calendarDataProperties = createSelector(selectLayoutState, (state) => ({
@@ -61,6 +74,76 @@ const Calendar = () => {
   }));
 
   const { events, categories, isEventUpdated, loading, users } = useSelector(calendarDataProperties);
+
+  // Enhanced Filtering & Sorting Engine
+  const filteredEvents = React.useMemo(() => {
+    let result = (events || []).filter(event => {
+      // 1. User Filter
+      if (filters.user && event.assignedUserId?.toString() !== filters.user) return false;
+
+      // 2. Status & Priority (Advanced)
+      if (filters.status && event.status !== filters.status) return false;
+      if (filters.priority && event.priority !== filters.priority) return false;
+      if (filters.category && event.category !== filters.category) return false;
+
+      // 3. Quick Filters & Date Ranges
+      const now = new Date();
+      now.setHours(0, 0, 0, 0);
+      const eventStart = new Date(event.start);
+      const eventEnd = new Date(event.end || event.start);
+      eventEnd.setHours(23, 59, 59, 999); // End of day check
+
+      // Handle Quick Filter Logic
+      if (filters.quick === "Pending") {
+        if (event.status === "Completed") return false;
+      } else if (filters.quick === "Completed") {
+        if (event.status !== "Completed") return false;
+      } else if (filters.quick === "Today") {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        if (eventStart < today || eventStart > new Date(today.getTime() + 86400000)) return false;
+      } else if (filters.quick === "Overdue") {
+        if (event.status === "Completed" || eventEnd >= now) return false;
+      }
+
+      // Handle Advanced Date Range Filter
+      if (filters.dateRange === "Overdue") {
+        if (event.status === "Completed" || eventEnd >= now) return false;
+      } else if (filters.dateRange === "Upcoming") {
+        if (eventEnd < now) return false;
+      }
+
+      return true;
+    });
+
+    // 4. Sorting Engine
+    result.sort((a, b) => {
+      // A. Priority Sort (Highest first)
+      if (filters.sortBy === "Priority") {
+        const priorityOrder = { "High": 0, "Medium": 1, "Low": 2 };
+        const scoreA = priorityOrder[a.priority] ?? 3;
+        const scoreB = priorityOrder[b.priority] ?? 3;
+        if (scoreA !== scoreB) return scoreA - scoreB;
+      }
+
+
+
+      // C. Date-based sorting
+      const dateA = new Date(a.finishDate || a.end || a.start);
+      const dateB = new Date(b.finishDate || b.end || b.start);
+
+      if (filters.sortBy === "DateDesc") {
+        return dateB - dateA;
+      } else {
+        // Standard Ascending (Oldest First) - also used for Default secondary sort
+        return dateA - dateB;
+      }
+    });
+
+    return result;
+  }, [events, filters]);
+
+
 
   // --- EFFECTS ---
   useEffect(() => {
@@ -107,7 +190,7 @@ const Calendar = () => {
       category: event.classNames[0],
       description: event.extendedProps.description || "",
       status: event.extendedProps.status || "Pending",
-      priority: event.extendedProps.priority || "Medium",
+      priority: (event.extendedProps.priority === "Urgent") ? "High" : (event.extendedProps.priority || "Medium"),
       assignedUserId: event.extendedProps.assignedUserId || null,
       reminder: event.extendedProps.reminder || false,
       reminderDate: event.extendedProps.reminderDate || null,
@@ -177,7 +260,7 @@ const Calendar = () => {
       category: event.classNames[0],
       description: event.extendedProps.description || "",
       status: event.extendedProps.status || "Pending",
-      priority: event.extendedProps.priority || "Medium",
+      priority: (event.extendedProps.priority === "Urgent") ? "High" : (event.extendedProps.priority || "Medium"),
       assignedUserId: event.extendedProps.assignedUserId || null,
       reminder: event.extendedProps.reminder || false,
       reminderDate: event.extendedProps.reminderDate || null,
@@ -204,7 +287,7 @@ const Calendar = () => {
           title: template.template_name || template.templateName,
           description: template.description || "",
           status: template.default_status || template.defaultStatus || "Pending",
-          priority: template.default_priority || template.defaultPriority || "Medium",
+          priority: (template.default_priority === "Urgent" || template.defaultPriority === "Urgent") ? "High" : (template.default_priority || template.defaultPriority || "Medium"),
           category: template.template_color || template.templateColor || "bg-info-subtle",
           assignedUserId: template.default_assigned_user_id || template.defaultAssignedUserId || null,
           start: modifiedDate,
@@ -246,11 +329,19 @@ const Calendar = () => {
             <Col xs={12}>
               <Row>
                 <Col xl={3}>
-                  <CalendarLeftPanel toggle={toggle} onDrag={onDrag} events={events} users={users} />
+                  <CalendarLeftPanel
+                    toggle={toggle}
+                    onDrag={onDrag}
+                    events={filteredEvents}
+                    users={users}
+                    filters={filters}
+                    setFilters={setFilters}
+                  />
+
                 </Col>
                 <Col xl={9}>
                   <CalendarView
-                    events={events}
+                    events={filteredEvents}
                     users={users}
                     handleDateClick={handleDateClick}
                     handleEventClick={handleEventClick}
@@ -258,6 +349,7 @@ const Calendar = () => {
                     handleEventDrop={handleEventDrop}
                   />
                 </Col>
+
               </Row>
 
               <div style={{ clear: "both" }}></div>

@@ -4,37 +4,21 @@
 //    │        └── UpcomingTasks
 //    │
 //    └── CalendarView
-import React from "react";
+import React, { useState } from "react";
 import SimpleBar from "simplebar-react";
-import { Card, CardBody, Badge } from "reactstrap";
+import { Card, CardBody, Badge, Button, Nav, NavItem, NavLink } from "reactstrap";
+import classnames from "classnames";
+import AdvancedFilterModal from "./AdvancedFilterModal";
 
 /**
  * UpcomingTasks Component
  * Displays a list of tasks synchronized with the Redux store.
- * Filters for tasks from today onwards and sorts them by date.
- * Enhanced with Status and Priority badge indicators.
+ * Enhanced with Quick Filter chips and Advanced Filtering.
  */
-const UpcomingTasks = ({ events, users = [] }) => {
+const UpcomingTasks = ({ events = [], users = [], filters = {}, setFilters = {} }) => {
+  const [isAdvancedModalOpen, setAdvancedModalOpen] = useState(false);
 
-  const [userFilter, setUserFilter] = React.useState("");
-  const [priorityFilter, setPriorityFilter] = React.useState("");
-  const [statusFilter, setStatusFilter] = React.useState("");
-
-  // Single Source of Truth: Filter and Sort Redux events
-  const upcomingEvents = (events || [])
-    .filter(event => {
-      const eventDate = new Date(event.start);
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      return eventDate >= today;
-    })
-    .filter(event => {
-      if (userFilter && event.assignedUserId?.toString() !== userFilter) return false;
-      if (priorityFilter && event.priority !== priorityFilter) return false;
-      if (statusFilter && event.status !== statusFilter) return false;
-      return true;
-    })
-    .sort((a, b) => new Date(a.start) - new Date(b.start));
+  const toggleAdvancedModal = () => setAdvancedModalOpen(!isAdvancedModalOpen);
 
   // Date Formatting Helper
   const formatDate = (dateStr) => {
@@ -58,10 +42,9 @@ const UpcomingTasks = ({ events, users = [] }) => {
   // Helper: Priority Color Mapping
   const getPriorityBadgeColor = (priority) => {
     switch (priority) {
-      case "Low": return "secondary";
-      case "Medium": return "primary";
-      case "High": return "warning";
-      case "Urgent": return "danger";
+      case "High": return "danger";
+      case "Medium": return "warning";
+      case "Low": return "success";
       default: return "primary";
     }
   };
@@ -76,7 +59,6 @@ const UpcomingTasks = ({ events, users = [] }) => {
     }
   };
 
-  // Helper to get bootstrap color class from event className (for the icon)
   const getColorClass = (className) => {
     if (!className) return "primary";
     const parts = className.split("-");
@@ -84,138 +66,138 @@ const UpcomingTasks = ({ events, users = [] }) => {
     return "primary";
   };
 
+  const handleQuickFilter = (value) => {
+    setFilters(prev => ({ ...prev, quick: value }));
+  };
+
   return (
     <div className="mt-4">
-      {/* <h5 className="mb-1">Upcoming Tasks</h5>
-      <p className="text-muted">Don't miss scheduled business tasks</p>
-       */}
-      <div className="d-flex justify-content-between align-items-start mb-3 flex-wrap gap-2">
-
+      <div className="d-flex justify-content-between align-items-center mb-3">
         <div>
           <h5 className="mb-1">Task Schedule</h5>
-
-          <p className="text-muted mb-0 fs-13">
-            Track upcoming and pending activities
+          <p className="text-muted mb-0 fs-12">
+            Manage your activities and deadlines
           </p>
         </div>
-
-        <div className="d-flex gap-2 flex-wrap">
-
-          {/* User Filter */}
-          <select
-            className="form-select form-select-sm"
-            style={{ width: "140px" }}
-            value={userFilter}
-            onChange={(e) => setUserFilter(e.target.value)}
-          >
-            <option value="">All Users</option>
-            {users.map((user) => (
-              <option key={user.userId} value={user.userId?.toString()}>
-                {user.fullName}
-              </option>
-            ))}
-          </select>
-
-          {/* Priority Filter */}
-          <select
-            className="form-select form-select-sm"
-            style={{ width: "120px" }}
-            value={priorityFilter}
-            onChange={(e) => setPriorityFilter(e.target.value)}
-          >
-            <option value="">All Priorities</option>
-            <option value="Low">Low</option>
-            <option value="Medium">Medium</option>
-            <option value="High">High</option>
-            <option value="Urgent">Urgent</option>
-          </select>
-
-          {/* Status Filter */}
-          <select
-            className="form-select form-select-sm"
-            style={{ width: "120px" }}
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-          >
-            <option value="">All Statuses</option>
-            <option value="Pending">Pending</option>
-            <option value="Completed">Completed</option>
-            <option value="Canceled">Canceled</option>
-          </select>
-
-        </div>
-
+        <Button
+          color="soft-primary"
+          size="sm"
+          outline
+          onClick={toggleAdvancedModal}
+          className="btn-icon waves-effect waves-light"
+        >
+          <i className="ri-filter-2-line"></i>
+        </Button>
       </div>
-      <SimpleBar className="pe-2 me-n1 mb-3" style={{ height: "400px" }}>
+
+      {/* Quick Filter Chips */}
+      <div className="mb-3 overflow-auto">
+        <Nav pills className="nav-success gap-1 flex-nowrap pb-1" style={{ fontSize: '12px' }}>
+          {["All", "Pending", "Overdue", "Today", "Completed"].map((type) => (
+            <NavItem key={type}>
+              <NavLink
+                href="#"
+                className={classnames({ active: filters.quick === type }, "py-1 px-2 rounded-pill border")}
+                onClick={(e) => { e.preventDefault(); handleQuickFilter(type); }}
+                style={{ whiteSpace: 'nowrap' }}
+              >
+                {type}
+              </NavLink>
+            </NavItem>
+          ))}
+        </Nav>
+      </div>
+
+      <SimpleBar className="pe-2 me-n1 mb-3" style={{ height: "450px" }}>
         <div id="upcoming-event-list">
-          {upcomingEvents.length > 0 ? (
-            upcomingEvents.map((task, key) => (
-              <Card className="mb-3 shadow-none border" key={key}>
-                <CardBody>
-                  <div className="d-flex mb-3 align-items-center">
+          {events.length > 0 ? (
+            events.map((task, key) => (
+              <Card className={classnames("mb-3 shadow-none border", { "border-start border-start-3": true, [`border-start-${getColorClass(task.className)}`]: true })} key={key}>
+                <CardBody className="p-3">
+                  <div className="d-flex mb-2 align-items-center justify-content-between">
                     <div className="flex-grow-1">
-                      <i className={`mdi mdi-checkbox-blank-circle me-2 text-${getColorClass(task.className)}`}></i>
-                      <span className="fw-medium">
+                      <span className="text-muted fs-11 fw-medium">
+                        <i className="ri-calendar-event-line align-bottom me-1 text-primary"></i>
                         {formatDate(task.start)}
-                        {task.end && formatDate(task.start) !== formatDate(task.end) && ` to ${formatDate(task.end)}`}
+                        {task.end && formatDate(task.start) !== formatDate(task.end) && (
+                          <>
+                            <span className="mx-1 text-muted fw-normal">to</span>
+                            {formatDate(task.end)}
+                          </>
+                        )}
                       </span>
                     </div>
-                    <div className="flex-shrink-0">
-                      {task.allDay ? (
-                        <Badge color="info" className="bg-info-subtle text-info">Full day event</Badge>
+                    <div className="flex-shrink-0 align-self-start d-flex align-items-center">
+                      {task.reminder && (
+                        <span className="bg-warning-subtle text-warning rounded-circle d-inline-flex align-items-center justify-content-center me-2"
+                          style={{ width: "24px", height: "24px" }}
+                        >
+                          <i className="ri-notification-3-fill fs-14"></i>
+                        </span>
+                      )}
+
+                      {task.status === "Completed" ? (
+                        <Badge color="success" className="bg-success-subtle text-success">
+                          <i className="ri-check-line align-bottom me-1"></i> Done
+                        </Badge>
                       ) : (
-                        <small className="text-muted">
-                          {formatTime(task.start)}
-                          {task.end && ` - ${formatTime(task.end)}`}
-                        </small>
+                        <Badge color={getPriorityBadgeColor(task.priority)} pill>
+                          {task.priority || "Medium"}
+                        </Badge>
                       )}
                     </div>
                   </div>
-                  <div className="d-flex align-items-start justify-content-between gap-2 mb-3">
 
-                    <h6 className="card-title fs-16 fw-semibold mb-0 text-dark">
-                      {task.title}
-                    </h6>
+                  <h6 className="card-title fs-14 fw-semibold mb-1 text-dark text-truncate">
+                    {task.title}
+                  </h6>
 
-                    <div className="d-flex gap-2 flex-shrink-0">
-
-                      {/* Priority Badge */}
-                      <Badge color={getPriorityBadgeColor(task.priority)} pill>
-                        {task.priority || "Medium"}
-                      </Badge>
-
-                      {/* Status Badge */}
-                      <Badge color={getStatusBadgeColor(task.status)} pill>
-                        {task.status || "Pending"}
-                      </Badge>
-
-                    </div>
-                  </div>
-                  <p className="text-muted text-truncate-two-lines mb-1 fs-13">
-                    <span className="fw-medium">Assigned To: </span>
-                    {users.find(u => u.userId?.toString() === task.assignedUserId?.toString())?.fullName || "Unassigned"}
-                  </p>
-
-                  <p className="text-muted text-truncate-two-lines mb-0 fs-13">
+                  <p className="text-muted text-truncate-two-lines mb-2 fs-12" style={{ minHeight: '36px' }}>
                     {task.description || "No description provided."}
                   </p>
 
-                  {/* 
-                      FUTURE DASHBOARD INTEGRATION:
-                      - Add 'Assigned To' avatar here
-                      - Add 'Due In' countdown
-                      - Add 'Overdue' alert if applicable
-                  */}
+                  <div className="d-flex align-items-center justify-content-between border-top pt-2">
+                    <div className="d-flex align-items-center">
+                      <Badge color={getStatusBadgeColor(task.status)} className="me-2">
+                        {task.status}
+                      </Badge>
+                      {!task.allDay && (
+                        <small className="text-muted fs-11">
+                          <i className="ri-time-line align-bottom me-1"></i>
+                          {formatTime(task.start)}
+                        </small>
+                      )}
+                    </div>
+                    <div className="flex-shrink-0">
+                      <small className="text-muted fs-11">
+                        {users.find(u => u.userId?.toString() === task.assignedUserId?.toString())?.fullName || "Unassigned"}
+                      </small>
+                    </div>
+                  </div>
                 </CardBody>
               </Card>
             ))
           ) : (
-            <div className="text-center py-4">
-              <p className="text-muted">No upcoming tasks found.</p>
+            <div className="text-center py-5">
+              <div className="avatar-md mx-auto mb-3">
+                <div className="avatar-title bg-light text-primary rounded-circle fs-24">
+                  <i className="ri-task-line"></i>
+                </div>
+              </div>
+              <h5 className="fs-15">No tasks found</h5>
+              <p className="text-muted">Try adjusting your filters</p>
             </div>
           )}
         </div>
       </SimpleBar>
+
+      <AdvancedFilterModal
+        isOpen={isAdvancedModalOpen}
+        toggle={toggleAdvancedModal}
+        filters={filters}
+        setFilters={setFilters}
+        users={users}
+      />
     </div>
   );
 };

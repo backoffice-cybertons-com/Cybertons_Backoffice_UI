@@ -47,11 +47,12 @@ const TemplateModal = ({ isOpen, toggle, users }) => {
   });
 
   const priorityOptions = [
-    { label: "Low", value: "Low" },
-    { label: "Medium", value: "Medium" },
     { label: "High", value: "High" },
-    { label: "Urgent", value: "Urgent" },
+    { label: "Medium", value: "Medium" },
+    { label: "Low", value: "Low" },
+    { label: "Done", value: "Done" },
   ];
+
 
   const statusOptions = [
     { label: "Pending", value: "Pending" },

@@ -68,10 +68,10 @@ const TaskModal = ({
   // Helper: Priority Colors
   const getPriorityColor = (priority) => {
     switch (priority) {
-      case "Low": return "secondary";
-      case "Medium": return "primary";
-      case "High": return "warning";
-      case "Urgent": return "danger";
+      case "High": return "danger";
+      case "Medium": return "warning";
+      case "Low": return "success";
+      case "Done": return "info";
       default: return "primary";
     }
   };
@@ -490,10 +490,9 @@ const TaskModal = ({
                     onChange={validation.handleChange}
                     value={validation.values.priority}
                   >
-                    <option value="Low">Low</option>
-                    <option value="Medium">Medium</option>
                     <option value="High">High</option>
-                    <option value="Urgent">Urgent</option>
+                    <option value="Medium">Medium</option>
+                    <option value="Low">Low</option>
                   </Input>
                 </div>
               </Col>

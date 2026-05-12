@@ -31,6 +31,9 @@ const CalendarView = ({
 
     return (
       <div className={`text-truncate text-center w-100 ${textColorClass}`} style={{ fontSize: '12px', fontWeight: '600' }}>
+        {eventInfo.event.extendedProps.reminder && (
+          <i className="ri-notification-3-line me-1"></i>
+        )}
         {eventInfo.event.title}
       </div>
     );
