@@ -37,7 +37,7 @@ const TaskModal = ({
   users = [],
 }) => {
   const [isEditButton, setIsEditButton] = useState(true);
-  
+
   // Create a stable reference for "now" to avoid re-initialization on every render
   const now = useMemo(() => new Date(), [isOpen]);
 
@@ -125,11 +125,19 @@ const TaskModal = ({
     }),
     onSubmit: (values) => {
       // Manual Validations
-      const startDT = moment(moment(values.assignedDate).format("YYYY-MM-DD") + " " + (values.allDay ? "00:00:00" : values.assignedTime));
-      const endDT = values.allDay
-        ? moment(values.expectedDate).add(1, 'days').startOf('day')
-        : moment(moment(values.expectedDate).format("YYYY-MM-DD") + " " + values.expectedTime);
+      const startDT = values.allDay
+        ? moment(values.assignedDate).startOf("day")
+        : moment(
+          `${moment(values.assignedDate).format("YYYY-MM-DD")} ${values.assignedTime}`,
+          "YYYY-MM-DD hh:mm A"
+        );
 
+      const endDT = values.allDay
+        ? moment(values.expectedDate).add(1, "days").startOf("day")
+        : moment(
+          `${moment(values.expectedDate).format("YYYY-MM-DD")} ${values.expectedTime}`,
+          "YYYY-MM-DD hh:mm A"
+        );
       if (endDT.isBefore(startDT)) {
         toast.error("Expected Date/Time cannot be earlier than Assigned Date/Time", { autoClose: 3000 });
         return;
