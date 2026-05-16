@@ -324,8 +324,8 @@ const TrialBalanceReport = () => {
                     {/* Filter Card */}
                     <Row>
                         <Col lg={12}>
-                            <Card>
-                                <CardBody>
+                            <Card className="mb-2">
+                                <CardBody className="py-2">
                                     <Row className="g-3 align-items-end">
                                         <Col lg={3}>
                                             <Label className="form-label text-muted text-uppercase fw-semibold mb-1">As of Date</Label>
@@ -411,7 +411,7 @@ const TrialBalanceReport = () => {
 
                         <Row>
                             <Col lg={12}>
-                                <Card id="trialBalancePrintArea">
+                                <Card id="reportViewContainer" className="report-card-compact">
 
                                     {/*COMMON HEADER */}
                                     <div className="text-start">
@@ -439,7 +439,7 @@ const TrialBalanceReport = () => {
                                             </div>
                                         </div>
                                     </div>
-                                    <CardHeader className="border-0 d-flex align-items-start align-items-md-center flex-wrap gap-2 py-2">
+                                    <CardHeader className="border-0 d-flex align-items-start align-items-md-center flex-wrap gap-1 py-1">
                                         <div className="flex-grow-1">
                                             <div className="d-flex align-items-center flex-wrap gap-2">
                                                 <h6 className="card-title mb-0 fs-6 fw-semibold">Trial Balance</h6>
@@ -455,11 +455,11 @@ const TrialBalanceReport = () => {
                                         </div>
                                     </CardHeader>
 
-                                    <CardBody className="pt-0 pb-2">
-                                        <Row className="g-2 mb-2">
+                                    <CardBody className="pt-0 pb-0">
+                                        <Row className="g-1 mb-1">
                                             <Col md={4}>
-                                                <Card className="tb-summary-card border">
-                                                    <CardBody>
+                                                <Card className="tb-summary-card tb-summary-debit">
+                                                    <CardBody className="py-1 px-2">
                                                         <div className="d-flex align-items-start justify-content-between gap-2">
                                                             <div className="text-muted text-uppercase fw-semibold tb-summary-label">Total Debit</div>
                                                             <i className="ri-arrow-right-up-line text-success tb-summary-icon" aria-hidden />
@@ -469,8 +469,8 @@ const TrialBalanceReport = () => {
                                                 </Card>
                                             </Col>
                                             <Col md={4}>
-                                                <Card className="tb-summary-card border">
-                                                    <CardBody>
+                                                <Card className="tb-summary-card tb-summary-credit">
+                                                    <CardBody className="py-1 px-2">
                                                         <div className="d-flex align-items-start justify-content-between gap-2">
                                                             <div className="text-muted text-uppercase fw-semibold tb-summary-label">Total Credit</div>
                                                             <i className="ri-arrow-right-down-line text-danger tb-summary-icon" aria-hidden />
@@ -480,8 +480,8 @@ const TrialBalanceReport = () => {
                                                 </Card>
                                             </Col>
                                             <Col md={4}>
-                                                <Card className="tb-summary-card border">
-                                                    <CardBody>
+                                                <Card className="tb-summary-card tb-summary-diff">
+                                                    <CardBody className="py-1 px-2">
                                                         <div className="d-flex align-items-start justify-content-between gap-2">
                                                             <div className="text-muted text-uppercase fw-semibold tb-summary-label">Difference</div>
                                                             <i className={`ri-scales-3-line tb-summary-icon ${isBalanced ? "text-success" : "text-warning"}`} aria-hidden />
@@ -539,7 +539,7 @@ const TrialBalanceReport = () => {
 
                                             {/* Static Total Strip Under Table */}
                                             <div className="tb-total-strip d-flex align-items-center py-2">
-                                                <div style={{ width: '50%' }} className="text-end pe-3 text-dark fw-bold">GRAND TOTAL</div>
+                                                <div style={{ width: '50%' }} className="text-start ps-4 text-dark fw-bold">GRAND TOTAL</div>
                                                 <div style={{ width: '25%' }} className="text-end text-success fw-bold">{formatMoney(totalDebit)}</div>
                                                 <div style={{ width: '25%' }} className="text-end text-danger pe-3 fw-bold">{formatMoney(totalCredit)}</div>
                                             </div>

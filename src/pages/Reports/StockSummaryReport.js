@@ -194,7 +194,7 @@ const StockSummaryReport = () => {
     };
 
     const handlePrint = () => {
-        const content = document.getElementById('stockSummaryPrintArea');
+        const content = document.getElementById('reportViewContainer');
         if (!content) return;
         const w = window.open('', '_blank');
         w.document.write(`<html><head><title>Stock Summary Report</title>
@@ -234,8 +234,8 @@ const StockSummaryReport = () => {
 
                     <Row>
                         <Col lg={12}>
-                            <Card>
-                                <CardBody>
+                            <Card className="mb-2">
+                                <CardBody className="py-2">
                                     <Row className="g-3 align-items-end">
                                         <Col md={3}>
                                             <Label className="text-muted text-uppercase fw-semibold mb-1">From Date</Label>
@@ -296,16 +296,16 @@ const StockSummaryReport = () => {
                     {reportData && (
                         <Row>
                             <Col lg={12}>
-                                <Card id="stockSummaryPrintArea">
+                                <Card id="reportViewContainer" className="report-card-compact">
                                     <HeaderForAllRpt reportName='Stock Summary Report' />
 
-                                    <CardBody>
+                                    <CardBody className="py-1">
 
-                                        <Row className="g-2 mb-3 d-print-none">
+                                        <Row className="g-1 d-print-none">
 
                                             <Col md={3}>
                                                 <Card className="ssr-summary-card opening">
-                                                    <CardBody className="p-3 text-center">
+                                                    <CardBody className="py-1 px-2 text-center">
                                                         <div className="text-muted text-uppercase fw-semibold ssr-summary-label">Opening</div>
                                                         <h4 className="ssr-summary-value mb-0 text-primary">{formatQty(totals.opening)}</h4>
                                                     </CardBody>
@@ -313,7 +313,7 @@ const StockSummaryReport = () => {
                                             </Col>
                                             <Col md={3}>
                                                 <Card className="ssr-summary-card inward">
-                                                    <CardBody className="p-3 text-center">
+                                                    <CardBody className="py-1 px-2 text-center">
                                                         <div className="text-muted text-uppercase fw-semibold ssr-summary-label">Inward (+)</div>
                                                         <h4 className="ssr-summary-value mb-0 text-success">{formatQty(totals.inward)}</h4>
                                                     </CardBody>
@@ -321,25 +321,19 @@ const StockSummaryReport = () => {
                                             </Col>
                                             <Col md={3}>
                                                 <Card className="ssr-summary-card outward">
-                                                    <CardBody className="p-3 text-center">
+                                                    <CardBody className="py-1 px-2 text-center">
                                                         <div className="text-muted text-uppercase fw-semibold ssr-summary-label">Outward (-)</div>
                                                         <h4 className="ssr-summary-value mb-0 text-danger">{formatQty(totals.outward)}</h4>
                                                     </CardBody>
                                                 </Card>
                                             </Col>
                                             <Col md={3}>
-                                                <Card className="ssr-summary-card closing">
-                                                    <CardBody className="p-3 text-center">
+                                                <Card className="ssr-summary-card closing mb-0">
+                                                    <CardBody className="py-1 px-2 text-center">
                                                         <div className="text-muted text-uppercase fw-semibold ssr-summary-label">Closing</div>
                                                         <h4 className="ssr-summary-value mb-0 text-dark">{formatQty(totals.closing)}</h4>
                                                     </CardBody>
                                                 </Card>
-                                                {/* <div className="text-muted fs-12 text-end" style={{ paddingRight: '50px' }}>
-                                                    Found <b>{shownRows.length}</b> products
-                                                </div> */}
-                                                <div className="text-muted fs-12 text-end pe-5">
-                                                    Found <b>{shownRows.length}</b> products
-                                                </div>
                                             </Col>
                                         </Row>
                                         <div className="ssr-table-wrap">
@@ -390,7 +384,8 @@ const StockSummaryReport = () => {
                                                 </Table>
                                             </div>
                                             <div className="ssr-total-strip d-flex align-items-center py-2 px-3">
-                                                <div style={{ width: '50%' }} className="text-uppercase">Grand Total</div>
+                                                <div style={{ width: '40%' }} className="text-start ps-3 text-uppercase fw-bold">Grand Total</div>
+                                                <div style={{ width: '10%' }} className="text-muted fs-11">Found {shownRows.length}</div>
                                                 <div style={{ width: '12.5%' }} className="text-end">{formatQty(totals.opening)}</div>
                                                 <div style={{ width: '12.5%' }} className="text-end text-success">{formatQty(totals.inward)}</div>
                                                 <div style={{ width: '12.5%' }} className="text-end text-danger">{formatQty(totals.outward)}</div>

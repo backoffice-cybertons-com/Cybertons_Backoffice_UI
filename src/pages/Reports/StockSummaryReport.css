@@ -3,9 +3,15 @@
 .ssr-table-wrap {
     border: 1px solid #e9ebec;
     border-radius: 0.25rem;
-    overflow: hidden;
     background: #fff;
     position: relative;
+
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+
+    min-height: 0;
+    overflow: hidden;
 }
 
 .ssr-table {
@@ -52,16 +58,20 @@
     color: #abb9e8;
 }
 
+/* Grand Total Strip */
 .ssr-total-strip {
+    flex-shrink: 0;
+
     background: #f8f9fa;
     border-top: 2px solid #dee2e6;
+
     font-weight: 700;
     color: #212529;
-    position: sticky;
-    bottom: 0;
+
     z-index: 2;
 }
 
+/* Summary Cards */
 .ssr-summary-card {
     transition: all 0.3s ease;
     border-radius: 12px !important;
@@ -80,14 +90,34 @@
     height: 100%;
 }
 
-.ssr-summary-card.opening::before { background-color: #405189; }
-.ssr-summary-card.inward::before { background-color: #0ab39c; }
-.ssr-summary-card.outward::before { background-color: #f06548; }
-.ssr-summary-card.closing::before { background-color: #212529; }
+.ssr-summary-card.opening::before {
+    background-color: #405189;
+}
+
+.ssr-summary-card.inward::before {
+    background-color: #0ab39c;
+}
+
+.ssr-summary-card.outward::before {
+    background-color: #f06548;
+}
+
+.ssr-summary-card.closing::before {
+    background-color: #212529;
+}
 
 .ssr-summary-card:hover {
     transform: translateY(-3px);
     box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+/* Keep label/value breathing room; not affected by compact report flex layout */
+.ssr-summary-card .card-body {
+    flex: 0 0 auto;
+    min-height: auto;
+    overflow: visible;
+    padding-top: 0.75rem !important;
+    padding-bottom: 0.75rem !important;
 }
 
 .ssr-summary-label {
@@ -95,6 +125,7 @@
     letter-spacing: 0.05em;
     font-weight: 700;
     color: #64748b;
+    margin-bottom: 0.25rem;
 }
 
 .ssr-summary-value {
@@ -130,34 +161,127 @@
     justify-content: center;
 }
 
+/* Scrollable Table */
 .ssr-table-container {
-    max-height: 60vh;
+    flex: 1;
+
+    min-height: 0;
+
     overflow-y: auto;
+    overflow-x: auto;
+
+    max-height: none !important;
 }
 
 /* Custom Scrollbar */
 .ssr-table-container::-webkit-scrollbar {
     width: 6px;
+    height: 6px;
 }
+
 .ssr-table-container::-webkit-scrollbar-track {
     background: #f1f1f1;
 }
+
 .ssr-table-container::-webkit-scrollbar-thumb {
     background: #ced4da;
     border-radius: 10px;
 }
+
 .ssr-table-container::-webkit-scrollbar-thumb:hover {
     background: #adb5bd;
 }
 
+/* ───────────────────────────────────────────── */
+/* REPORT CARD COMPACT LAYOUT */
+/* ───────────────────────────────────────────── */
+
+.report-card-compact {
+    display: flex;
+    flex-direction: column;
+
+    height: calc(100vh - 260px) !important;
+
+    overflow: hidden;
+
+    margin-bottom: 10px;
+
+    background: #fff;
+}
+
+/* Fixed header area */
+.report-card-compact > .border-bottom,
+.report-card-compact > .card-header {
+    flex-shrink: 0;
+}
+
+/* Main card body only (not nested summary cards) */
+.report-card-compact > .card-body {
+    flex: 1;
+
+    display: flex;
+    flex-direction: column;
+
+    min-height: 0;
+
+    overflow: hidden;
+
+    padding-bottom: 0 !important;
+}
+
+/* Summary KPI row must not shrink when table area flexes */
+.report-card-compact > .card-body > .d-print-none,
+.report-card-compact > .card-body > .row.g-1 {
+    flex-shrink: 0;
+}
+
+/* Footer always visible */
+.report-card-compact .footer-print-sticky {
+    flex-shrink: 0;
+
+    width: 100%;
+
+    padding: 8px 12px;
+
+    border-top: 1px solid #e9ebec;
+
+    background: #fff;
+
+    position: relative;
+
+    z-index: 5;
+
+    font-size: 12px;
+
+    color: #212529 !important;
+}
+
+/* Sticky table header */
+.ssr-table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 3;
+}
+
 /* Print Styles */
 @media print {
+
     .page-content {
         padding: 0 !important;
         margin: 0 !important;
     }
-    .ssr-table-container {
-        max-height: none !important;
+
+    .report-card-compact {
+        height: auto !important;
         overflow: visible !important;
+    }
+
+    .ssr-table-container {
+        overflow: visible !important;
+        max-height: none !important;
+    }
+
+    .footer-print-sticky {
+        position: relative !important;
     }
 }

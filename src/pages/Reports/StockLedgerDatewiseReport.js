@@ -149,7 +149,7 @@ const StockLedgerDatewiseReport = () => {
     };
 
     const handlePrint = () => {
-        const content = document.getElementById('stockLedgerPrintArea');
+        const content = document.getElementById('reportViewContainer');
         if (!content) return;
         const w = window.open('', '_blank');
         w.document.write(`<html><head><title>Stock Ledger Datewise Report</title>
@@ -189,8 +189,8 @@ const StockLedgerDatewiseReport = () => {
                     {/* ── Filter Card ── */}
                     <Row>
                         <Col lg={12}>
-                            <Card>
-                                <CardBody>
+                            <Card className="mb-2">
+                                <CardBody className="py-2">
                                     <Row className="g-3 align-items-end">
 
                                         <Col md={3}>
@@ -231,15 +231,15 @@ const StockLedgerDatewiseReport = () => {
                     {reportData && (
                         <Row>
                             <Col lg={12}>
-                                <Card id="stockLedgerPrintArea">
+                                <Card id="reportViewContainer" className="report-card-compact">
                                     <HeaderForAllRpt reportName='Stock Ledger Datewise Report' />
-                                    <CardBody>
+                                    <CardBody className="py-1">
 
                                         {/* Summary Cards */}
-                                        <Row className="g-2 mb-3 d-print-none">
+                                        <Row className="g-1 mb-1 d-print-none">
                                             <Col md={3}>
                                                 <Card className="ssr-summary-card inward">
-                                                    <CardBody className="p-3 text-center">
+                                                    <CardBody className="py-1 px-2 text-center">
                                                         <div className="text-muted text-uppercase fw-semibold ssr-summary-label">Total Inward</div>
                                                         <h4 className="ssr-summary-value mb-0 text-success">{formatQty(totals.inward)}</h4>
                                                     </CardBody>
@@ -247,7 +247,7 @@ const StockLedgerDatewiseReport = () => {
                                             </Col>
                                             <Col md={3}>
                                                 <Card className="ssr-summary-card outward">
-                                                    <CardBody className="p-3 text-center">
+                                                    <CardBody className="py-1 px-2 text-center">
                                                         <div className="text-muted text-uppercase fw-semibold ssr-summary-label">Total Outward</div>
                                                         <h4 className="ssr-summary-value mb-0 text-danger">{formatQty(totals.outward)}</h4>
                                                     </CardBody>
@@ -255,7 +255,7 @@ const StockLedgerDatewiseReport = () => {
                                             </Col>
                                             <Col md={3}>
                                                 <Card className="ssr-summary-card closing">
-                                                    <CardBody className="p-3 text-center">
+                                                    <CardBody className="py-1 px-2 text-center">
                                                         <div className="text-muted text-uppercase fw-semibold ssr-summary-label">Closing Balance</div>
                                                         <h4 className="ssr-summary-value mb-0 text-dark">
                                                             {rows.length > 0 ? formatQty(rows[rows.length - 1].balanceQty) : '—'}
@@ -265,7 +265,7 @@ const StockLedgerDatewiseReport = () => {
                                             </Col>
                                             <Col md={3}>
                                                 <Card className="ssr-summary-card opening">
-                                                    <CardBody className="p-3 text-center">
+                                                    <CardBody className="py-1 px-2 text-center">
                                                         <div className="text-muted text-uppercase fw-semibold ssr-summary-label">Transactions</div>
                                                         <h4 className="ssr-summary-value mb-0 text-primary">{rows.length}</h4>
                                                     </CardBody>
@@ -294,7 +294,7 @@ const StockLedgerDatewiseReport = () => {
                                                                 </td>
                                                             </tr>
                                                         ) : rows.map((r, i) => (
-                                                            <tr key={i} className={r.description === 'Opening' ? 'table-light fw-semibold' : ''}>
+                                                            <tr key={i} className={r.description === 'Opening' ? 'fw-semibold' : ''}>
                                                                 <td className="text-muted">{r.srNo}</td>
                                                                 <td className="text-muted">{r.tranDate ? formatDate(r.tranDate) : ''}</td>
                                                                 <td className="fw-medium">{r.description}</td>

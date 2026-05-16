@@ -27,7 +27,7 @@ const HeaderForAllRpt = ({ reportName = "Outstanding Comparison Report" }) => {
 
   return (
     <div
-      className="border-bottom mb-3 pb-2"
+      className="border-bottom mb-1 pb-1"
       style={{
         background: "#fff",
         padding: "10px 18px",
@@ -95,7 +95,6 @@ const HeaderForAllRpt = ({ reportName = "Outstanding Comparison Report" }) => {
           </div>
         </div>
 
-        {/* Right Side Report Name */}
         {/* Right Side */}
         <div
           style={{
@@ -107,18 +106,6 @@ const HeaderForAllRpt = ({ reportName = "Outstanding Comparison Report" }) => {
             textAlign: "center",
           }}
         >
-          {/* <div
-              style={{
-                fontSize: "11px",
-                color: "#64748b",
-                letterSpacing: "1px",
-                textTransform: "uppercase",
-                marginBottom: "4px",
-              }}
-            >
-              Report
-            </div> */}
-
           <h4
             style={{
               margin: 0,

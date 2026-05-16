@@ -133,14 +133,50 @@ const LedgerReport = () => {
             const cr = reportData.entries?.reduce((acc, c) => acc + (c.credit || 0), 0) || 0;
             return { dr, cr, closing: reportData.closingBalance };
         } else {
-            const drT = summaryData.totalRow?.resDebit || 0;
-            const crT = summaryData.totalRow?.resCredit || 0;
+            const drT = summaryData.dataRows.reduce((acc, c) => acc + (c.resDebit || 0), 0);
+            const crT = summaryData.dataRows.reduce((acc, c) => acc + (c.resCredit || 0), 0);
             const drO = summaryData.openingRow?.resDebit || 0;
             const crO = summaryData.openingRow?.resCredit || 0;
             const last = [...summaryData.dataRows].pop();
             return { dr: drT + drO, cr: crT + crO, closing: last?.resBalance ?? summaryData.openingRow?.resBalance ?? 0 };
         }
     }, [reportData, summaryData]);
+
+    const splitDetailRows = useMemo(() => {
+        if (!reportData?.entries) return { debit: [], credit: [], debitPad: 0, creditPad: 0 };
+        const debit = reportData.entries.filter(e => e.debit !== 0);
+        const credit = reportData.entries.filter(e => e.credit !== 0);
+        return {
+            debit,
+            credit,
+            debitPad: Math.max(0, credit.length - debit.length),
+            creditPad: Math.max(0, debit.length - credit.length),
+        };
+    }, [reportData]);
+
+    const splitSummaryRows = useMemo(() => {
+        const debit = [
+            ...(summaryData.openingRow?.resDebit > 0 ? [summaryData.openingRow] : []),
+            ...summaryData.dataRows.filter(e => e.resDebit > 0),
+        ];
+        const credit = [
+            ...(summaryData.openingRow?.resCredit > 0 ? [summaryData.openingRow] : []),
+            ...summaryData.dataRows.filter(e => e.resCredit > 0),
+        ];
+        return {
+            debit,
+            credit,
+            debitPad: Math.max(0, credit.length - debit.length),
+            creditPad: Math.max(0, debit.length - credit.length),
+        };
+    }, [summaryData]);
+
+    const renderPadRows = (count, colSpan) =>
+        Array.from({ length: count }, (_, i) => (
+            <tr key={`pad-${i}`} className="lsd-pad-row" aria-hidden="true">
+                <td colSpan={colSpan}>&#8203;</td>
+            </tr>
+        ));
 
     // ------------- EXCEL STYLE HELPERS -------------
     const S = {
@@ -252,33 +288,31 @@ const LedgerReport = () => {
 
         if (isBank) {
             return (
-                <div className="bg-light bg-opacity-50 border-top border-2 p-3">
+                <div className="lsd-ledger-totals bg-light bg-opacity-50 border-top border-2 py-2 px-3">
                     {/* Row 1: Totals */}
                     <Row className="g-0 align-items-center">
-                        <Col lg={7} md={6} sm={5}>
-                             <h6 className="mb-0 fw-bold text-uppercase fs-12">Total Debit</h6>
+                        <Col lg={4} md={1} className="d-none d-md-block"></Col>
+                        <Col lg={2} md={3} sm={4} className="text-end pe-3">
+                             <h6 className="mb-0 fw-bold text-uppercase fs-12 text-nowrap">Total Debit</h6>
                         </Col>
-                        <Col lg={2} md={2} sm={3} className="text-end">
+                        <Col lg={2} md={3} sm={4} className="text-end">
                             <h5 className="mb-0 fw-bold text-success fs-14">{fmtMoney(totals.dr)}</h5>
                         </Col>
-                        <Col lg={1} md={2} sm={1} className="ps-4">
-                             <h6 className="mb-0 fw-bold text-uppercase fs-12">Total Credit</h6>
+                        <Col lg={2} md={2} sm={4} className="text-end pe-3">
+                             <h6 className="mb-0 fw-bold text-uppercase fs-12 text-nowrap">Total Credit</h6>
                         </Col>
-                        <Col lg={2} md={2} sm={3} className="text-end">
+                        <Col lg={2} md={3} sm={4} className="text-end">
                              <h5 className="mb-0 fw-bold text-danger fs-14">{fmtMoney(totals.cr)}</h5>
                         </Col>
                     </Row>
 
-                    {/* Row 2: Closing Balance [MODIFIED 2026-05-07] */}
+                    {/* Row 2: Closing Balance */}
                     <Row className="g-0 mt-2 align-items-center">
-                        <Col lg={7} md={6} sm={5} className="text-end pe-4">
-                            {/* Word under Debit column area */}
-                            <span className="text-muted fs-11 fw-medium">To Closing Balance</span>
+                        <Col lg={8} md={7} sm={8}></Col>
+                        <Col lg={2} md={2} sm={4} className="text-end pe-3">
+                            <span className="text-muted fs-11 fw-medium text-nowrap">Closing Balance</span>
                         </Col>
-                        <Col lg={2} md={2} sm={3}></Col>
-                        <Col lg={1} md={2} sm={1}></Col>
-                        <Col lg={2} md={2} sm={3} className="text-end">
-                             {/* Amount under Credit column area */}
+                        <Col lg={2} md={3} sm={4} className="text-end">
                              <span className={`fw-bold fs-13 ${balClass(totals.closing)}`}>{balanceLabel(totals.closing)}</span>
                         </Col>
                     </Row>
@@ -288,15 +322,15 @@ const LedgerReport = () => {
 
         // Original Split Layout (Dual Ledger)
         return (
-            <Row className="g-0 border-top border-2 mt-0 bg-light bg-opacity-50">
-                <Col lg={6} className="border-end p-3">
+            <Row className="lsd-ledger-totals g-0 border-top border-2 mt-0 bg-light bg-opacity-50">
+                <Col lg={6} className="border-end py-2 px-3">
                     <div className="d-flex justify-content-between align-items-center">
                         <h6 className="mb-0 fw-bold text-uppercase fs-12">Total Debit</h6>
                         <h5 className="mb-0 fw-bold text-success">{fmtMoney(totals.dr)}</h5>
                     </div>
                     {totals.closing < 0 && (<div className="d-flex justify-content-between align-items-center mt-2 text-muted fs-11"><span>By Closing Balance</span><span>{fmtMoney(Math.abs(totals.closing))}</span></div>)}
                 </Col>
-                <Col lg={6} className="p-3">
+                <Col lg={6} className="py-2 px-3">
                     <div className="d-flex justify-content-between align-items-center">
                         <h6 className="mb-0 fw-bold text-uppercase fs-12">Total Credit</h6>
                         <h5 className="mb-0 fw-bold text-danger">{fmtMoney(totals.cr)}</h5>
@@ -312,9 +346,9 @@ const LedgerReport = () => {
             <div className="page-content">
                 <Container fluid>
                     <BreadCrumb title="Ledger Report" pageTitle="Reports" />
-                    <Card>
-                        <CardBody>
-                            <Row className="g-3 align-items-end">
+                    <Card className="mb-2">
+                        <CardBody className="py-2">
+                            <Row className="g-2 align-items-end">
                                 <Col lg={3}><Label className="fw-semibold mb-1">Account</Label><Select value={selectedAccount} onChange={setSelectedAccount} options={accounts} placeholder="Select..." isClearable /></Col>
                                 <Col lg={2}><Label className="fw-semibold mb-1">From</Label><Input type="date" value={fromDate} onChange={e => setFromDate(e.target.value)} /></Col>
                                 <Col lg={2}><Label className="fw-semibold mb-1">To</Label><Input type="date" value={toDate} onChange={e => setToDate(e.target.value)} /></Col>
@@ -327,13 +361,13 @@ const LedgerReport = () => {
                     {loading && <Card><CardBody className="py-5 text-center"><Spinner className="me-2" />Loading...</CardBody></Card>}
 
                     {!loading && reportData && (
-                        <Card id="reportViewContainer">
+                        <Card id="reportViewContainer" className="report-card-compact">
 
 
                             <HeaderForAllReport reportName={"Ledger Report"} />
 
 
-                            <CardHeader className="border-0 d-flex align-items-center py-3">
+                            <CardHeader className="border-0 d-flex align-items-center py-2">
                                 <div className="flex-grow-1">
                                     <h4 className="mb-1 fw-bold">{selectedAccount?.label}</h4>
                                     <div className="text-muted fs-12">{fmtDate(fromDate)} to {fmtDate(toDate)} | <span className="fw-medium text-info">{reportType.label}</span></div>
@@ -351,16 +385,24 @@ const LedgerReport = () => {
                                     <Button color="secondary" outline size="sm" onClick={() => handlePrint('reportViewContainer', reportType.label)} title="Print Report"><i className="ri-printer-line" /></Button>
                                 </div>
                             </CardHeader>
-                            <CardBody className="p-0">
+                            <CardBody className="p-0 lsd-report-body">
+                                <div className="lsd-table-wrap">
+                                <div className="lsd-scroll-area">
                                 {reportData.type === 'detailed_split' && (
-                                    <Row className="g-0">
-                                        <Col lg={6} className="border-end">
+                                    <Row className="g-0 lsd-split-row">
+                                        <Col lg={6} className="lsd-split-col border-end">
                                             <Table className="table-sm table-nowrap mb-0"><thead className="table-light"><tr><th colSpan="5" className="text-center text-success py-2">DEBIT (Dr)</th></tr><tr className="fs-11"><th>Date</th><th>Type</th><th>No</th><th>Particulars</th><th className="text-end">Amount</th></tr></thead>
-                                                <tbody className="fs-12">{reportData.entries?.filter(e => e.debit !== 0).map((e, i) => (<tr key={i}><td>{fmtDate(e.jvDate)}</td><td><Link to={getVchLink(e)} className="badge bg-info-subtle text-info">{e.vType}</Link></td><td>{e.vCode}</td><td className="text-wrap">{e.description}</td><td className="text-end">{fmtMoney(e.debit)}</td></tr>))}</tbody></Table>
+                                                <tbody className="fs-12">
+                                                    {splitDetailRows.debit.map((e, i) => (<tr key={i}><td>{fmtDate(e.jvDate)}</td><td><Link to={getVchLink(e)} className="badge bg-info-subtle text-info">{e.vType}</Link></td><td>{e.vCode}</td><td className="text-wrap">{e.description}</td><td className="text-end">{fmtMoney(e.debit)}</td></tr>))}
+                                                    {renderPadRows(splitDetailRows.debitPad, 5)}
+                                                </tbody></Table>
                                         </Col>
-                                        <Col lg={6}>
+                                        <Col lg={6} className="lsd-split-col">
                                             <Table className="table-sm table-nowrap mb-0"><thead className="table-light"><tr><th colSpan="5" className="text-center text-danger py-2">CREDIT (Cr)</th></tr><tr className="fs-11"><th>Date</th><th>Type</th><th>No</th><th>Particulars</th><th className="text-end">Amount</th></tr></thead>
-                                                <tbody className="fs-12">{reportData.entries?.filter(e => e.credit !== 0).map((e, i) => (<tr key={i}><td>{fmtDate(e.jvDate)}</td><td><Link to={getVchLink(e)} className="badge bg-danger-subtle text-danger">{e.vType}</Link></td><td>{e.vCode}</td><td className="text-wrap">{e.description}</td><td className="text-end">{fmtMoney(e.credit)}</td></tr>))}</tbody></Table>
+                                                <tbody className="fs-12">
+                                                    {splitDetailRows.credit.map((e, i) => (<tr key={i}><td>{fmtDate(e.jvDate)}</td><td><Link to={getVchLink(e)} className="badge bg-danger-subtle text-danger">{e.vType}</Link></td><td>{e.vCode}</td><td className="text-wrap">{e.description}</td><td className="text-end">{fmtMoney(e.credit)}</td></tr>))}
+                                                    {renderPadRows(splitDetailRows.creditPad, 5)}
+                                                </tbody></Table>
                                         </Col>
                                     </Row>
                                 )}
@@ -376,26 +418,39 @@ const LedgerReport = () => {
                                         </tbody></Table>
                                 )}
                                 {reportData.type === 'summary_split' && (
-                                    <Row className="g-0">
-                                        <Col lg={6} className="border-end">
+                                    <Row className="g-0 lsd-split-row">
+                                        <Col lg={6} className="lsd-split-col border-end">
                                             <Table className="table-sm mb-0"><thead className="table-light"><tr><th colSpan="3" className="text-center text-success py-2">DEBIT SUMMARY</th></tr><tr className="fs-11"><th>Date</th><th>Particular</th><th className="text-end">Amount</th></tr></thead>
                                                 <tbody className="fs-12">
-                                                    {summaryData.openingRow && summaryData.openingRow.resDebit > 0 && (<tr className="bg-light bg-opacity-50"><td>{fmtDate(summaryData.openingRow.resDate)}</td><td>Opening Balance</td><td className="text-end">{fmtMoney(summaryData.openingRow.resDebit)}</td></tr>)}
-                                                    {summaryData.dataRows.filter(e => e.resDebit > 0).map((e, i) => (<tr key={i}><td>{fmtDate(e.resDate)}</td><td>{e.resParticular}</td><td className="text-end">{fmtMoney(e.resDebit)}</td></tr>))}
+                                                    {splitSummaryRows.debit.map((e, i) => (
+                                                        <tr key={i} className={i === 0 && summaryData.openingRow?.resDebit > 0 ? 'bg-light bg-opacity-50' : ''}>
+                                                            <td>{fmtDate(e.resDate)}</td>
+                                                            <td>{i === 0 && summaryData.openingRow?.resDebit > 0 ? 'Opening Balance' : e.resParticular}</td>
+                                                            <td className="text-end">{fmtMoney(e.resDebit)}</td>
+                                                        </tr>
+                                                    ))}
+                                                    {renderPadRows(splitSummaryRows.debitPad, 3)}
                                                 </tbody></Table>
                                         </Col>
-                                        <Col lg={6}>
+                                        <Col lg={6} className="lsd-split-col">
                                             <Table className="table-sm mb-0"><thead className="table-light"><tr><th colSpan="3" className="text-center text-danger py-2">CREDIT SUMMARY</th></tr><tr className="fs-11"><th>Date</th><th>Particular</th><th className="text-end">Amount</th></tr></thead>
                                                 <tbody className="fs-12">
-                                                    {summaryData.openingRow && summaryData.openingRow.resCredit > 0 && (<tr className="bg-light bg-opacity-50"><td>{fmtDate(summaryData.openingRow.resDate)}</td><td>Opening Balance</td><td className="text-end">{fmtMoney(summaryData.openingRow.resCredit)}</td></tr>)}
-                                                    {summaryData.dataRows.filter(e => e.resCredit > 0).map((e, i) => (<tr key={i}><td>{fmtDate(e.resDate)}</td><td>{e.resParticular}</td><td className="text-end">{fmtMoney(e.resCredit)}</td></tr>))}
+                                                    {splitSummaryRows.credit.map((e, i) => (
+                                                        <tr key={i} className={i === 0 && summaryData.openingRow?.resCredit > 0 ? 'bg-light bg-opacity-50' : ''}>
+                                                            <td>{fmtDate(e.resDate)}</td>
+                                                            <td>{i === 0 && summaryData.openingRow?.resCredit > 0 ? 'Opening Balance' : e.resParticular}</td>
+                                                            <td className="text-end">{fmtMoney(e.resCredit)}</td>
+                                                        </tr>
+                                                    ))}
+                                                    {renderPadRows(splitSummaryRows.creditPad, 3)}
                                                 </tbody></Table>
                                         </Col>
                                     </Row>
                                 )}
+                                </div>{/* end lsd-scroll-area */}
+                                </div>{/* end lsd-table-wrap */}
                                 <FinalTotalSection />
                             </CardBody>
-
                             <FooterForAllRpt />
                         </Card>
                     )}
