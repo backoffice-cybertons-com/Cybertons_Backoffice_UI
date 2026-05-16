@@ -70,6 +70,7 @@ const SalePurTransactionWiseRpt = ({
   setCurrentPage,
   rowsPerPage,
   onTotalChange,
+  tableRef,
 }) => {
   const api = new APIClient();
   const fromRef = useRef(null);
@@ -273,8 +274,11 @@ const SalePurTransactionWiseRpt = ({
       <HeaderForAllRpt reportName="Transaction Wise Report" />
       <CardBody className="p-0">
         <CommonTable
+          ref={tableRef}
           columns={columns}
           data={reportData}
+          currentPage={currentPage}
+          rowsPerPage={rowsPerPage}
           loading={loading}
           isDark={isDarkMode}
           maxHeight="calc(100vh - 350px)"

@@ -130,6 +130,7 @@ const RegisterReport = ({ type }) => {
 
   const fromRef = useRef(null);
   const toRef = useRef(null);
+  const tableRef = useRef(null);
 
   const [toDate, setToDate] = useState("2026-12-31");
 
@@ -200,6 +201,7 @@ const RegisterReport = ({ type }) => {
       setCurrentPage,
       rowsPerPage,
       onTotalChange: setTotalEntries,
+      tableRef,
       key: `${appliedReportType}-${invTypeValue}`,
     };
     if (appliedReportType === "item") return <SalePurchaseRegisterItemwise {...commonProps} />;
@@ -243,29 +245,35 @@ const RegisterReport = ({ type }) => {
   const fetchExportData = async () => {
     console.log("✅ fetchExportData called, type:", appliedReportType);
 
-    const endpoint = REPORT_ENDPOINTS[appliedReportType];
-    const companyId = localStorage.getItem("companyId");
+    let raw = [];
+    if (tableRef.current && tableRef.current.getSortedData) {
+      raw = tableRef.current.getSortedData();
+    } else {
+      const endpoint = REPORT_ENDPOINTS[appliedReportType];
+      const companyId = localStorage.getItem("companyId");
 
-    const conditions = [];
-    const fromD = fromRef.current?.value;
-    const toD = toRef.current?.value;
+      const conditions = [];
+      const fromD = fromRef.current?.value;
+      const toD = toRef.current?.value;
 
-    if (fromD && toD) conditions.push(`tsp.inv_date BETWEEN '${fromD}' AND '${toD}'`);
-    if (selectedParty?.value) conditions.push(`pm.display_name = '${selectedParty.value.replace(/'/g, "''")}'`);
-    if (selectedProduct?.value) conditions.push(`prod.product_name = '${selectedProduct.value.replace(/'/g, "''")}'`);
-    if (invoiceNo) conditions.push(`tsp.inv_no = '${invoiceNo.replace(/'/g, "''")}'`);
+      if (fromD && toD) conditions.push(`tsp.inv_date BETWEEN '${fromD}' AND '${toD}'`);
+      if (selectedParty?.value) conditions.push(`pm.display_name = '${selectedParty.value.replace(/'/g, "''")}'`);
+      if (selectedProduct?.value) conditions.push(`prod.product_name = '${selectedProduct.value.replace(/'/g, "''")}'`);
+      if (invoiceNo) conditions.push(`tsp.inv_no = '${invoiceNo.replace(/'/g, "''")}'`);
 
-    const where = conditions.length ? conditions.join(" AND ") : "1=1";
+      const where = conditions.length ? conditions.join(" AND ") : "1=1";
 
-    const params = {
-      companyId: companyId || null,
-      invType: invTypeValue,
-      reportType: appliedReportType.toUpperCase(),
-      where: where
-    };
+      const params = {
+        companyId: companyId || null,
+        invType: invTypeValue,
+        reportType: appliedReportType.toUpperCase(),
+        where: where
+      };
 
-    const response = await api.get(endpoint, { params });
-    const raw = Array.isArray(response) ? response : response?.data || [];
+      const response = await api.get(endpoint, { params });
+      raw = Array.isArray(response) ? response : response?.data || [];
+    }
+
     const normalized = normalizeData(raw);
 
     if (appliedReportType === "transaction") {

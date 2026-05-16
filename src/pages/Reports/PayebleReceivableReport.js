@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   Card, CardHeader, CardBody, Col, Container, Row,
   Input, Button, Label, Spinner
@@ -15,7 +15,7 @@ import FooterForAllRpt from "../../Components/Common/FooterForAllRpt";
 const api = new APIClient();
 
 const PayebleReceivableReport = () => {
-  const companyId = localStorage.getItem("companyId") || 10001;
+  const companyId = localStorage.getItem("companyId");
   const [companyInfo, setCompanyInfo] = useState(null);
 
   const [partys, setPartys] = useState([]);
@@ -97,8 +97,9 @@ const PayebleReceivableReport = () => {
     [""] // spacing
   ], [companyInfo]);
 
+  const tableRef = useRef(null);
   const fetchExportData = async () => {
-    return reportData || [];
+    return tableRef.current?.getExportData() || reportData || [];
   };
   const handleClear = () => {
     setSelectedParty(null);
@@ -206,20 +207,6 @@ const PayebleReceivableReport = () => {
       setLoading(false);
     }
   };
-  const paginatedData = useMemo(() => {
-
-    if (rowsPerPage === "all") {
-      return reportData;
-    }
-
-    const start = (currentPage - 1) * rowsPerPage;
-
-    return reportData.slice(
-      start,
-      start + rowsPerPage
-    );
-
-  }, [reportData, currentPage, rowsPerPage]);
 
   document.title = "Payable Receivable Report | SoftBook";
 
@@ -383,13 +370,15 @@ const PayebleReceivableReport = () => {
 
               <CardBody className="pt-3 pl-3 pr-3 pb-3">
                 <CommonTable
+                  ref={tableRef}
                   columns={columns}
-                  data={paginatedData}
+                  data={reportData}
+                  currentPage={currentPage}
+                  rowsPerPage={rowsPerPage}
                   loading={loading}
                   maxHeight="calc(100vh - 350px)"
                   minWidth="1600px"
                   showTotals
-                  paginatedData={paginatedData}
                 />
               </CardBody>
 

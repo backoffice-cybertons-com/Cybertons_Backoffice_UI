@@ -93,6 +93,7 @@ const SalePurchaseRegisterPartywise = ({
     setCurrentPage,
     rowsPerPage,
     onTotalChange,
+    tableRef,
 }) => {
     const api = new APIClient();
 
@@ -223,13 +224,6 @@ const SalePurchaseRegisterPartywise = ({
     const totalEntries = reportData.length;
     useEffect(() => { if (onTotalChange) onTotalChange(totalEntries); }, [totalEntries, onTotalChange]);
 
-    const effectiveRowsPerPage = rowsPerPage === "all" ? Math.max(totalEntries, 1) : Number(rowsPerPage);
-    const safeCurrentPage = Math.min(currentPage || 1, Math.max(1, Math.ceil(totalEntries / effectiveRowsPerPage)));
-    const startIndex = (safeCurrentPage - 1) * effectiveRowsPerPage;
-    const paginatedData = useMemo(
-        () => rowsPerPage === "all" ? reportData : reportData.slice(startIndex, startIndex + effectiveRowsPerPage),
-        [reportData, startIndex, effectiveRowsPerPage, rowsPerPage]
-    );
 
     /* ── totals for excel ── */
     const totals = useMemo(() => {
@@ -254,7 +248,8 @@ const SalePurchaseRegisterPartywise = ({
 
     /* ── excel export ── */
     const handleDownloadExcel = () => {
-        if (reportData.length === 0) return;
+        const exportData = tableRef.current?.getSortedData() || reportData;
+        if (exportData.length === 0) return;
 
         const dateStr = dateRange.length > 0
             ? `Period: ${formatDate(dateRange[0])} to ${formatDate(dateRange[1] || dateRange[0])}`
@@ -273,19 +268,35 @@ const SalePurchaseRegisterPartywise = ({
             "Exp Discount", "Round Off", "Final Amount", "Add Price", "Add Amount",
         ];
 
-        const rows = reportData.map(item => [
-            item.partyName, item.invType, item.qty, item.avgPrice,
-            item.taxableAmount, item.igstAmount, item.cgstAmount, item.sgstAmount,
+        const rows = exportData.map(item => [
+            item.partyName, item.invType, item.qty, item.avgPrice, item.taxableAmount,
+            item.igstAmount, item.cgstAmount, item.sgstAmount,
             item.taxAmount, item.totalAmount, item.totDiscount, item.roundOff,
             item.finalAmount, item.addPrice, item.addAmount,
         ]);
 
+        const exportTotals = exportData.reduce((acc, curr) => ({
+            totalQty: acc.totalQty + (Number(curr.qty) || 0),
+            taxableAmount: acc.taxableAmount + (Number(curr.taxableAmount) || 0),
+            igstAmount: acc.igstAmount + (Number(curr.igstAmount) || 0),
+            cgstAmount: acc.cgstAmount + (Number(curr.cgstAmount) || 0),
+            sgstAmount: acc.sgstAmount + (Number(curr.sgstAmount) || 0),
+            taxAmount: acc.taxAmount + (Number(curr.taxAmount) || 0),
+            totalAmount: acc.totalAmount + (Number(curr.totalAmount) || 0),
+            totDiscount: acc.totDiscount + (Number(curr.totDiscount) || 0),
+            roundOff: acc.roundOff + (Number(curr.roundOff) || 0),
+            finalAmount: acc.finalAmount + (Number(curr.finalAmount) || 0),
+            addAmount: acc.addAmount + (Number(curr.addAmount) || 0),
+        }), { totalQty: 0, taxableAmount: 0, igstAmount: 0, cgstAmount: 0, sgstAmount: 0, taxAmount: 0, totalAmount: 0, totDiscount: 0, roundOff: 0, finalAmount: 0, addAmount: 0 });
+
+        exportTotals.avgPrice = exportTotals.totalQty !== 0 ? exportTotals.taxableAmount / exportTotals.totalQty : 0;
+        exportTotals.addPrice = exportTotals.totalQty !== 0 ? exportTotals.addAmount / exportTotals.totalQty : 0;
+
         const totalRow = [
-            "TOTAL", "",
-            totals.totalQty, totals.avgPrice, totals.taxableAmount,
-            totals.igstAmount, totals.cgstAmount, totals.sgstAmount,
-            totals.taxAmount, totals.totalAmount, totals.totDiscount,
-            totals.roundOff, totals.finalAmount, totals.addPrice, totals.addAmount,
+            "TOTAL", "", exportTotals.totalQty, exportTotals.avgPrice, exportTotals.taxableAmount,
+            exportTotals.igstAmount, exportTotals.cgstAmount, exportTotals.sgstAmount,
+            exportTotals.taxAmount, exportTotals.totalAmount, exportTotals.totDiscount, exportTotals.roundOff,
+            exportTotals.finalAmount, exportTotals.addPrice, exportTotals.addAmount,
         ];
 
         const worksheet = XLSX.utils.aoa_to_sheet([...header, tableHeader, ...rows, totalRow]);
@@ -438,13 +449,15 @@ const SalePurchaseRegisterPartywise = ({
                                     <HeaderForAllRpt reportName="Partywise Report" />
                                     <CardBody className="pt-3 pl-3 pr-3 pb-3">
                                         <CommonTable
+                                            ref={tableRef}
                                             columns={columns}
-                                            data={paginatedData}
+                                            data={reportData}
+                                            currentPage={currentPage}
+                                            rowsPerPage={rowsPerPage}
                                             loading={loading}
                                             maxHeight="calc(100vh - 280px)"
                                             minWidth="1600px"
                                             showTotals
-                                            paginatedData={paginatedData}
                                         />
                                     </CardBody>
                                     <FooterForAllRpt />

@@ -33,7 +33,7 @@
  *  decimals      number             Decimal places for number formatting (default 2)
  */
 
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useCallback, forwardRef, useImperativeHandle } from "react";
 import "./CommonTable.css";
 
 /* ── helpers ──────────────────────────────────────────────── */
@@ -65,7 +65,7 @@ const SortIcon = ({ colKey, sortConfig }) => {
 };
 
 /* ── main component ───────────────────────────────────────── */
-const CommonTable = ({
+const CommonTable = forwardRef(({
     columns = [],
     data = [],
     loading = false,
@@ -73,9 +73,11 @@ const CommonTable = ({
     maxHeight = "calc(100vh - 280px)",
     minWidth = "100%",
     showTotals = true,
-    paginatedData,
+    paginatedData, // Deprecated: use data=fullData and currentPage/rowsPerPage instead
+    currentPage = 1,
+    rowsPerPage = "all",
     customRowRender,
-}) => {
+}, ref) => {
     /* ── state ── */
     const [columnFilters, setColumnFilters] = useState({});
     const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" });
@@ -118,6 +120,7 @@ const CommonTable = ({
     }, [data, columnFilters, columns]);
 
     /* ── sorted rows ── */
+    /* ── sorted rows ── */
     const sortedData = useMemo(() => {
         if (!sortConfig.key) return filteredData;
         const col = columns.find((c) => c.key === sortConfig.key);
@@ -132,7 +135,38 @@ const CommonTable = ({
         });
     }, [filteredData, sortConfig, columns]);
 
-    /* expose sorted+filtered data up if needed (via ref pattern or callback – here we keep it self-contained) */
+    /* ── data for display (sliced if paginated) ── */
+    const displayData = useMemo(() => {
+        if (rowsPerPage === "all") return sortedData;
+        const rpp = Number(rowsPerPage);
+        const start = (currentPage - 1) * rpp;
+        return sortedData.slice(start, start + rpp);
+    }, [sortedData, currentPage, rowsPerPage]);
+
+    /* expose sorted+filtered data up via ref */
+    useImperativeHandle(ref, () => ({
+        getSortedData: () => sortedData,
+        getExportData: () => {
+            if (!showTotals || sortedData.length === 0) return sortedData;
+
+            const totalRow = {
+                _style: { font: { bold: true }, fill: { fgColor: { rgb: "EEEEEE" } } }
+            };
+            // Find first column to place "Total" label
+            if (columns.length > 0) {
+                totalRow[columns[0].key] = "Overall Total";
+            }
+
+            // Fill in the numeric totals
+            Object.keys(totals).forEach((key) => {
+                totalRow[key] = totals[key];
+            });
+
+            return [...sortedData, totalRow];
+        },
+        getFilters: () => columnFilters,
+        getTotals: () => totals
+    }));
 
     /* ── totals ── */
     //const rowsForTotals = paginatedData ?? sortedData;
@@ -292,8 +326,8 @@ const CommonTable = ({
                                 </tr>
                             ) : (
                                 customRowRender
-                                    ? customRowRender(sortedData, columns)
-                                    : sortedData.map((row, rowIdx) => (
+                                    ? customRowRender(displayData, columns)
+                                    : displayData.map((row, rowIdx) => (
                                         <tr key={row.id ?? row.spUniqueCode ?? rowIdx}>
                                             {columns.map((col) => {
                                                 const cellValue = row[col.key] ?? "";
@@ -314,8 +348,8 @@ const CommonTable = ({
                                                     }
                                                 }
 
-                                                const cellClassName = typeof col.cellClassName === 'function' 
-                                                    ? col.cellClassName(row) 
+                                                const cellClassName = typeof col.cellClassName === 'function'
+                                                    ? col.cellClassName(row)
                                                     : (col.cellClassName || "");
 
                                                 return (
@@ -352,7 +386,7 @@ const CommonTable = ({
                                         <span className="ct-footer-label">
                                             <span className="ct-footer-badge">Overall Total</span>
                                             <span style={{ fontSize: "11px" }}>
-                                                {sortedData.length} rows
+                                                {sortedData.length} records
                                             </span>
                                         </span>
                                     </td>
@@ -377,6 +411,6 @@ const CommonTable = ({
             </div>
         </div>
     );
-};
+});
 
 export default CommonTable;

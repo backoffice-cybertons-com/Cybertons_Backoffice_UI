@@ -69,6 +69,7 @@ const SalePurchaseRegisterItemwise = ({
     setCurrentPage,
     rowsPerPage,
     onTotalChange,
+    tableRef,
 }) => {
     const api = new APIClient();
 
@@ -202,13 +203,6 @@ const SalePurchaseRegisterItemwise = ({
     const totalEntries = reportData.length;
     useEffect(() => { if (onTotalChange) onTotalChange(totalEntries); }, [totalEntries, onTotalChange]);
 
-    const effectiveRowsPerPage = rowsPerPage === "all" ? Math.max(totalEntries, 1) : Number(rowsPerPage);
-    const safeCurrentPage = Math.min(currentPage || 1, Math.max(1, Math.ceil(totalEntries / effectiveRowsPerPage)));
-    const startIndex = (safeCurrentPage - 1) * effectiveRowsPerPage;
-    const paginatedData = useMemo(
-        () => rowsPerPage === "all" ? reportData : reportData.slice(startIndex, startIndex + effectiveRowsPerPage),
-        [reportData, startIndex, effectiveRowsPerPage, rowsPerPage]
-    );
 
     /* ── totals for excel ── */
     const totals = useMemo(() => {
@@ -233,7 +227,8 @@ const SalePurchaseRegisterItemwise = ({
 
     /* ── excel export ── */
     const handleDownloadExcel = () => {
-        if (reportData.length === 0) return;
+        const exportData = tableRef.current?.getSortedData() || reportData;
+        if (exportData.length === 0) return;
 
         const dateStr = `Period: ${fromRef.current?.value} to ${toRef.current?.value}`;
 
@@ -250,16 +245,32 @@ const SalePurchaseRegisterItemwise = ({
             "Add Price", "Add Amount",
         ];
  
-        const rows = reportData.map(item => [
+        const rows = exportData.map(item => [
             item.productName, item.qty, ...(isSale ? [item.unitCogs] : []), item.avgPrice, item.taxableAmount,
             item.igstAmount, item.cgstAmount, item.sgstAmount,
             item.taxAmount, item.totalAmount, item.addPrice, item.addAmount,
         ]);
  
+        const exportTotals = exportData.reduce((a, b) => ({
+            qty: a.qty + b.qty,
+            cogsSum: a.cogsSum + b.totalCogs,
+            taxableAmount: a.taxableAmount + b.taxableAmount,
+            sgstAmount: a.sgstAmount + b.sgstAmount,
+            cgstAmount: a.cgstAmount + b.cgstAmount,
+            igstAmount: a.igstAmount + b.igstAmount,
+            taxAmount: a.taxAmount + b.taxAmount,
+            totalAmount: a.totalAmount + b.totalAmount,
+            finalAmount: a.finalAmount + b.finalAmount,
+            addAmount: a.addAmount + b.addAmount,
+        }), { qty: 0, cogsSum: 0, taxableAmount: 0, sgstAmount: 0, cgstAmount: 0, igstAmount: 0, taxAmount: 0, totalAmount: 0, finalAmount: 0, addAmount: 0 });
+
+        exportTotals.avgCogs = Number((exportTotals.qty > 0 ? exportTotals.cogsSum / exportTotals.qty : 0).toFixed(2));
+        exportTotals.avgPrice = Number((exportTotals.qty > 0 ? exportTotals.taxableAmount / exportTotals.qty : 0).toFixed(2));
+
         const totalRow = [
-            "TOTAL", totals.qty, ...(isSale ? [totals.avgCogs] : []), totals.avgPrice, totals.taxableAmount,
-            totals.igstAmount, totals.cgstAmount, totals.sgstAmount,
-            totals.taxAmount, totals.totalAmount, totals.addPrice, totals.addAmount,
+            "TOTAL", exportTotals.qty, ...(isSale ? [exportTotals.avgCogs] : []), exportTotals.avgPrice, exportTotals.taxableAmount,
+            exportTotals.igstAmount, exportTotals.cgstAmount, exportTotals.sgstAmount,
+            exportTotals.taxAmount, exportTotals.totalAmount, exportTotals.addPrice, exportTotals.addAmount,
         ];
 
         const worksheet = XLSX.utils.aoa_to_sheet([...header, tableHeader, ...rows, totalRow]);
@@ -346,13 +357,15 @@ const SalePurchaseRegisterItemwise = ({
                         <HeaderForAllRpt reportName="Itemwise Report" />
                         <CardBody className="pt-3 pl-3 pr-3 pb-3">
                             <CommonTable
+                                ref={tableRef}
                                 columns={columns}
-                                data={paginatedData}
+                                data={reportData}
+                                currentPage={currentPage}
+                                rowsPerPage={rowsPerPage}
                                 loading={loading}
                                 maxHeight="calc(100vh - 280px)"
                                 minWidth="1360px"
                                 showTotals
-                                paginatedData={paginatedData}
                             />
                         </CardBody>
                         <FooterForAllRpt />

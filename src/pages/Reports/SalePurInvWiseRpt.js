@@ -129,6 +129,7 @@ const SalePurInvWiseRpt = ({
   setCurrentPage,
   rowsPerPage,
   onTotalChange,
+  tableRef,
 }) => {
   const api = new APIClient();
   const fromRef = useRef(null);
@@ -203,14 +204,6 @@ const SalePurInvWiseRpt = ({
   const totalEntries = reportData.length;
   useEffect(() => { if (onTotalChange) onTotalChange(totalEntries); }, [totalEntries, onTotalChange]);
 
-  const effectiveRowsPerPage = rowsPerPage === "all"
-    ? Math.max(totalEntries, 1)
-    : Number(rowsPerPage);
-  const totalPages = Math.max(1, Math.ceil(totalEntries / effectiveRowsPerPage));
-  const safeCurrentPage = Math.min(currentPage || 1, totalPages);
-  const startIndex = (safeCurrentPage - 1) * effectiveRowsPerPage;
-  const endIndex = Math.min(startIndex + effectiveRowsPerPage, totalEntries);
-  const paginatedData = rowsPerPage === "all" ? reportData : reportData.slice(startIndex, endIndex);
 
   /* ── fetch ── */
   const fetchReport = async () => {
@@ -428,7 +421,7 @@ const SalePurInvWiseRpt = ({
                       </Button>
                       <ExportButton
                         color="success"
-                        data={reportData}
+                        data={() => tableRef.current?.getExportData() || reportData}
                         columns={exportColumns}
                         headerRows={headerRows}
                         fileName="Sale_Purchase_Register_InvoiceWise"
@@ -461,14 +454,16 @@ const SalePurInvWiseRpt = ({
                 <CardBody className="pt-3 pl-3 pr-3 pb-3">
                   {/* ── CommonTable ── */}
                   <CommonTable
+                    ref={tableRef}
                     columns={columns}
-                    data={paginatedData}
+                    data={reportData}
+                    currentPage={currentPage}
+                    rowsPerPage={rowsPerPage}
                     loading={loading}
                     isDark={isDarkMode}
                     maxHeight="calc(100vh - 280px)"
                     minWidth="1910px"
                     showTotals
-                    paginatedData={paginatedData}
                   />
                 </CardBody>
                 <FooterForAllRpt />

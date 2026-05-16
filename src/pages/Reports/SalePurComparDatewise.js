@@ -297,8 +297,9 @@ export default function SalePurComparDatewise() {
         [""] // spacing
     ], [companyInfo]);
 
+    const tableRef = useRef(null);
     const fetchExportData = async () => {
-        return data || [];
+        return tableRef.current?.getExportData() || data || [];
     };
     const fetchReport = async () => {
 
@@ -397,20 +398,6 @@ export default function SalePurComparDatewise() {
         }
 
     };
-    const paginatedData = useMemo(() => {
-
-        if (rowsPerPage === "all") {
-            return data;
-        }
-
-        const start = (currentPage - 1) * Number(rowsPerPage);
-
-        return data.slice(
-            start,
-            start + Number(rowsPerPage)
-        );
-
-    }, [data, currentPage, rowsPerPage]);
 
     document.title = "DateWise Comparative Report | SoftBook";
     return (
@@ -614,8 +601,11 @@ export default function SalePurComparDatewise() {
 
 
                                         <CommonTable
+                                            ref={tableRef}
                                             columns={columns}
-                                            data={paginatedData}
+                                            data={data}
+                                            currentPage={currentPage}
+                                            rowsPerPage={rowsPerPage}
                                             showTotals
                                             minWidth="1800px"
                                         />
