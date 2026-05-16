@@ -53,7 +53,7 @@ const SalesInvoice = () => {
     const [company, setCompany] = useState(null);
     const [header, setHeader] = useState(null);
     const [lines, setLines] = useState([]);
-    const [partyName, setPartyName] = useState("");
+    const [partyMaster, setPartyMaster] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
@@ -83,7 +83,7 @@ const SalesInvoice = () => {
                 const found = custArr.find(c =>
                     String(c.partyId ?? c.PartyId) === String(partyId)
                 );
-                setPartyName(found?.displayName || found?.DisplayName || `Party ${partyId}`);
+                setPartyMaster(found || null);
             } else {
                 setError("Invoice data not found.");
             }
@@ -143,13 +143,13 @@ const SalesInvoice = () => {
     const prevOutstanding = header?.previousOutstanding || header?.PreviousOutstanding || 0;
     const finalOutstanding = header?.finalOutstanding || header?.FinalOutstanding || 0;
 
-    // Company info
-    const companyName = company?.companyName || company?.CompanyName || "Your Company";
-    const companyAddress = company?.companyAddress || company?.CompanyAddress || company?.address || "";
+    // Company info (from Master Profile)
+    const companyName = company?.companyName || company?.CompanyName || company?.name || company?.Name || "Your Company";
+    const companyAddress = company?.companyAddress || company?.CompanyAddress || company?.address || company?.Address || "";
     const companyCity = company?.city || company?.City || "";
     const companyState = company?.state || company?.State || "";
-    const companyPin = company?.pinCode || company?.PinCode || "";
-    const companyMobile = company?.mobileNumber || company?.MobileNumber || company?.mobile || "";
+    const companyPin = company?.pinCode || company?.PinCode || company?.pin || company?.Pin || "";
+    const companyMobile = company?.mobileNumber || company?.MobileNumber || company?.mobile || company?.Mobile || company?.phone || "";
     const companyEmail = company?.email || company?.Email || "";
     const companyGstin = company?.gstin || company?.Gstin || company?.gstNo || company?.GstNo || "";
     const bankName = company?.bankName || company?.BankName || "";
@@ -157,6 +157,16 @@ const SalesInvoice = () => {
     const bankAccount = company?.accountNumber || company?.AccountNumber || "";
     const bankIfsc = company?.ifscCode || company?.IfscCode || "";
     const jurisdiction = header?.jurisdiction || header?.Jurisdiction || "";
+
+    // Party / Buyer info (Prioritize Master Data)
+    const buyerName = partyMaster?.displayName || partyMaster?.DisplayName || partyMaster?.name || partyMaster?.Name || header?.partyName || header?.PartyName || "Party";
+    const buyerAddress = partyMaster?.billingAddress || partyMaster?.BillingAddress || partyMaster?.address || partyMaster?.Address || header?.billingAddress || header?.BillingAddress || "";
+    const buyerMobile = partyMaster?.mobileNo || partyMaster?.MobileNo || partyMaster?.mobile || partyMaster?.Mobile || header?.mobileNo || header?.MobileNo || "";
+    const buyerGstin = partyMaster?.gstin || partyMaster?.Gstin || partyMaster?.gstNo || partyMaster?.GstNo || header?.gstin || header?.Gstin || "";
+    const buyerPan = partyMaster?.panNo || partyMaster?.PanNo || header?.panNo || header?.PanNo || "";
+    const buyerState = partyMaster?.state || partyMaster?.State || header?.jurisdiction || "-";
+    const deliveryDate = header?.deliveryDate || header?.DeliveryDate;
+    const transporterCode = header?.transporterCode || header?.TransporterCode || header?.transporter_id || header?.TransporterId || header?.transporterId || "-";
 
     if (loading) return (
         <div className="si-loading">
@@ -290,25 +300,25 @@ const SalesInvoice = () => {
                                 <tbody>
                                     <tr>
                                         <td className="si-lbl-col">Name</td>
-                                        <td>: <strong>{partyName}</strong></td>
+                                        <td>: <strong>{buyerName}</strong></td>
                                         <td className="si-lbl-col"></td>
                                         <td></td>
                                     </tr>
                                     <tr>
                                         <td className="si-lbl-col" rowSpan={2}>Address</td>
-                                        <td rowSpan={2}>: {header?.billingAddress || header?.BillingAddress || ""}</td>
+                                        <td rowSpan={2}>: {buyerAddress}</td>
                                         <td className="si-lbl-col">State</td>
-                                        <td>: {header?.jurisdiction || "-"}</td>
+                                        <td>: {buyerState}</td>
                                     </tr>
                                     <tr>
                                         <td className="si-lbl-col">PAN No.</td>
-                                        <td>: {header?.panNo || ""}</td>
+                                        <td>: {buyerPan}</td>
                                     </tr>
                                     <tr>
                                         <td className="si-lbl-col">Mob. No.</td>
-                                        <td>: {header?.mobileNo || header?.MobileNo || ""}</td>
+                                        <td>: {buyerMobile}</td>
                                         <td className="si-lbl-col">GSTIN No.</td>
-                                        <td>: {header?.gstin || header?.Gstin || ""}</td>
+                                        <td>: {buyerGstin}</td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -323,6 +333,14 @@ const SalesInvoice = () => {
                                     <tr>
                                         <td className="si-lbl-col">Invoice Dt.</td>
                                         <td>: <strong>{formatDate(header?.invDate || header?.InvDate)}</strong></td>
+                                    </tr>
+                                    <tr>
+                                        <td className="si-lbl-col">Delivery Dt.</td>
+                                        <td>: <strong>{formatDate(deliveryDate)}</strong></td>
+                                    </tr>
+                                    <tr>
+                                        <td className="si-lbl-col">Transporter Code</td>
+                                        <td>: <strong>{transporterCode}</strong></td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -468,14 +486,14 @@ const SalesInvoice = () => {
                                         <td className="gst-cell text-right"></td>
                                         <td className="gst-cell text-right"></td>
                                     </tr>
-                                    <tr>
+                                    {/* <tr>
                                         <td className="os-cell">Today's O/S &nbsp;&nbsp;: <span className="os-val">{fmt(grandTotal - (header?.todaysReceipt || header?.TodaysReceipt || 0))}</span></td>
                                         <td className="gst-cell text-center"></td>
                                         <td className="gst-cell text-right"></td>
                                         <td className="gst-cell text-right"></td>
                                         <td className="gst-cell text-right"></td>
                                         <td className="gst-cell text-right"></td>
-                                    </tr>
+                                    </tr> */}
                                     <tr>
                                         <td className="os-cell" style={{ borderTop: '1px solid #000' }}>Final O/S &nbsp;&nbsp;&nbsp;&nbsp;: <span className="os-val bold">{fmt(prevOutstanding + grandTotal - (header?.todaysReceipt || header?.TodaysReceipt || 0))}</span></td>
                                         <td className="gst-cell text-center"></td>

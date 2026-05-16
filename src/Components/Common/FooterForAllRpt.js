@@ -17,6 +17,16 @@ const FooterForAllRpt = () => {
         <>
             <style>
                 {`
+                /* Hide the global theme footer when viewing reports to save space */
+                footer.footer {
+                    display: none !important;
+                }
+
+                /* Reduce page-content padding to allow the card to take more space */
+                .page-content {
+                    padding-bottom: 5px !important;
+                }
+
                 @media print {
                     /* Try to make the parent container take full height so footer can go to bottom */
                     .card {
@@ -41,21 +51,23 @@ const FooterForAllRpt = () => {
                 `}
             </style>
             <div
-                className="footer-print-sticky mt-3 py-2 mx-3"
+                className="footer-print-sticky py-2 px-3"
                 style={{
-                    fontSize: "12px"
+                    fontSize: "11px",
+                    borderTop: "1px solid #e9ebec",
+                    background: "#fff"
                 }}
             >
-                <div className="d-flex justify-content-between align-items-center flex-wrap">
+                <div className="d-flex justify-content-between align-items-center flex-wrap gap-2">
 
                     {/* Left Side */}
-                    <div style={{ fontWeight: "500" }}>
-                        Powered by <strong>SoftOnCloud</strong>
+                    <div style={{ fontWeight: "500", color: "#6c757d" }}>
+                        Powered by <strong style={{ color: "#405189" }}>SoftOnCloud</strong>
                     </div>
 
                     {/* Right Side */}
-                    <div>
-                        Generated On : <strong>{generatedOn}</strong>
+                    <div className="text-muted">
+                        Generated On : <strong className="text-dark">{generatedOn}</strong>
                     </div>
 
                 </div>

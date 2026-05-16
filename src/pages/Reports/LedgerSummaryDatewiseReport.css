@@ -1,42 +1,99 @@
 /* ── Table container ── */
 .lsd-table-wrap {
   border: 1px solid rgba(0,0,0,0.08);
-  border-radius: 0.75rem;
+  border-radius: 0.75rem 0.75rem 0 0;
   overflow: hidden;
   background: #fff;
   display: flex;
   flex-direction: column;
+  min-height: 0;
 }
 
 .lsd-scroll-area {
-  max-height: calc(100vh - 480px);
-  min-height: 220px;
-  overflow: auto;
+  overflow-x: auto;
+  overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-  flex: 1;
 }
 
-/* ── Sticky header ── */
-.lsd-table thead th {
+/* border-collapse: separate required for sticky thead in tables */
+.lsd-scroll-area .table {
+  border-collapse: separate;
+  border-spacing: 0;
+  margin-bottom: 0;
+}
+
+/* ── Sticky two-row header (no gap between banner + column rows) ── */
+.lsd-scroll-area .table thead {
+  --lsd-banner-h: 2.5rem;
+}
+
+.lsd-scroll-area .table thead th {
   position: sticky;
-  top: 0;
   z-index: 10;
-  background-color: #f3f4f6 !important;
+  background-color: #f3f6f9 !important;
+  background-clip: padding-box;
   white-space: nowrap;
+  vertical-align: middle;
+}
+
+/* Banner row: DEBIT (Dr) / CREDIT (Cr) */
+.lsd-scroll-area .table thead tr:first-child th {
+  top: 0;
+  z-index: 12;
+  height: var(--lsd-banner-h);
+  box-sizing: border-box;
+  padding-top: 0.5rem !important;
+  padding-bottom: 0.5rem !important;
+  border-bottom: none !important;
+  box-shadow: 0 1px 0 #dee2e6;
+}
+
+/* Column headers (2nd row) — top must match banner height exactly */
+.lsd-scroll-area .table thead tr:nth-child(2) th {
+  top: var(--lsd-banner-h);
+  z-index: 11;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  padding-top: 0.35rem !important;
+  padding-bottom: 0.35rem !important;
+  border-top: none !important;
+  box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.08);
+}
+
+/* Single-row header (running balance detail) */
+.lsd-scroll-area .table thead tr:only-child th {
+  top: 0;
+  height: auto;
   font-size: 0.6875rem;
   font-weight: 600;
   padding-top: 0.4rem !important;
   padding-bottom: 0.4rem !important;
-  vertical-align: middle;
-  box-shadow: inset 0 -1px 0 rgba(0,0,0,0.10);
+  box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.08);
 }
 
 /* ── Body rows ── */
-.lsd-table tbody td {
+.lsd-scroll-area .table tbody td {
   font-size: 0.8125rem;
   padding-top: 0.3rem !important;
   padding-bottom: 0.3rem !important;
   vertical-align: middle;
+}
+
+/* Dual ledger: equal column height so credit header stays sticky while debit scrolls */
+.lsd-split-row {
+  align-items: stretch;
+}
+
+.lsd-split-col {
+  display: flex;
+  flex-direction: column;
+}
+
+.lsd-pad-row td {
+  border-bottom-color: transparent !important;
+  color: transparent;
+  user-select: none;
+  line-height: 1.45;
 }
 
 /* ── Opening balance row ── */
@@ -45,7 +102,7 @@
   border-bottom: 1px dashed #bae6fd !important;
 }
 
-/* ── Total strip (static footer below scroll) ── */
+/* ── Total strip ── */
 .lsd-total-strip {
   border-top: 2px solid #dee2e6;
   background-color: #f8f9fa;
@@ -72,6 +129,75 @@
 .bal-dr { color: #198754 !important; }
 .bal-cr { color: #dc3545 !important; }
 
+/* ── Viewport layout: fixed card height, table scrolls inside, totals + footer always visible ── */
+#reportViewContainer.report-card-compact {
+  display: flex;
+  flex-direction: column;
+  /* Fixed height so large datasets scroll inside table, not the whole page */
+  height: calc(100vh - 240px);
+  max-height: calc(100vh - 240px);
+  min-height: 280px;
+  margin-bottom: 0.5rem;
+  overflow: hidden;
+}
+
+#reportViewContainer.report-card-compact > .border-bottom,
+#reportViewContainer.report-card-compact > .card-header {
+  flex: 0 0 auto;
+  flex-shrink: 0;
+}
+
+/* Card body: scrollable table + pinned totals */
+#reportViewContainer.report-card-compact > .card-body {
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding-bottom: 0 !important;
+}
+
+#reportViewContainer.report-card-compact .lsd-table-wrap {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+#reportViewContainer.report-card-compact .lsd-scroll-area {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow-x: auto;
+  overflow-y: auto;
+}
+
+#reportViewContainer.report-card-compact .lsd-ledger-totals {
+  flex: 0 0 auto;
+  flex-shrink: 0;
+  padding-top: 0.4rem !important;
+  padding-bottom: 0.4rem !important;
+  background: #f8f9fa;
+  border-top: 2px solid #dee2e6;
+}
+
+/* Footer — direct child of card, always visible at bottom */
+.report-card-compact .footer-print-sticky {
+  flex: 0 0 auto;
+  flex-shrink: 0;
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  position: relative;
+  z-index: 5;
+  width: 100%;
+  margin: 0 !important;
+  padding: 0.5rem 1rem !important;
+  border-top: 1px solid #e9ebec;
+  background: #fff !important;
+  color: #212529 !important;
+}
+
 /* ── Print overrides ── */
 @media print {
   .lsd-table-wrap {
@@ -81,5 +207,8 @@
   .lsd-scroll-area {
     max-height: none !important;
     overflow: visible !important;
+  }
+  .lsd-scroll-area .table thead th {
+    position: static !important;
   }
 }
