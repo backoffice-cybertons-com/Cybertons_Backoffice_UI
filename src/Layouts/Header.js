@@ -140,16 +140,8 @@ const Header = ({ onChangeLayoutMode, layoutModeType, headerClass }) => {
                             <Link
                                 to="/apps-calendar-month-grid"
                                 className="btn btn-icon rounded-circle header-item d-flex align-items-center justify-content-center"
-                                style={{
-                                    backgroundColor: "#eff6ff",
-                                    width: "36px",
-                                    height: "36px"
-                                }}
                             >
-                                <i
-                                    className="ri-calendar-2-fill fs-20"
-                                    style={{ color: "#3b82f6" }}
-                                ></i>
+                                <i className="ri-calendar-check-line fs-20 text-muted"></i>
                             </Link>
                             {/* LanguageDropdown */}
                             <LanguageDropdown />

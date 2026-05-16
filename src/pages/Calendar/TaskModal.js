@@ -21,6 +21,8 @@ import * as Yup from "yup";
 import { useFormik } from "formik";
 import Flatpickr from "react-flatpickr";
 import moment from "moment";
+import RecurrenceBuilder from "./RecurrenceBuilder";
+import "./recurrence.css";
 
 /**
  * TaskModal Component
@@ -37,6 +39,9 @@ const TaskModal = ({
   users = [],
 }) => {
   const [isEditButton, setIsEditButton] = useState(true);
+  const [actionModal, setActionModal] = useState({ isOpen: false, type: null, pendingValues: null });
+  const [actionScope, setActionScope] = useState("this");
+  const [saveAction, setSaveAction] = useState("task");
 
   // Create a stable reference for "now" to avoid re-initialization on every render
   const now = useMemo(() => new Date(), [isOpen]);
@@ -114,8 +119,26 @@ const TaskModal = ({
       reminderDate: (selectedTask && selectedTask.reminderDate) ? new Date(selectedTask.reminderDate) : (selectedTask && selectedTask.start ? new Date(selectedTask.start) : (selectedDate ? new Date(selectedDate) : now)),
       reminderTime: (selectedTask && selectedTask.reminderDate)
         ? moment(selectedTask.reminderDate).format("HH:mm:ss")
-        : getNearestTime(now),
+        : (selectedTask && selectedTask.isRecurring && selectedTask.reminderOffsetMinutes != null && selectedTask.start)
+          ? moment(selectedTask.start).add(selectedTask.reminderOffsetMinutes, 'minutes').format("HH:mm:ss")
+          : getNearestTime(now),
       finishDate: (selectedTask && selectedTask.finishDate) || null,
+      isRecurring: selectedTask?.isRecurring || false,
+      recurringGroupId: selectedTask?.recurringGroupId || null,
+      recurrenceParentId: selectedTask?.recurrenceParentId || null,
+      recurrenceType: selectedTask?.recurrenceType || "WEEKLY",
+      recurrenceInterval: selectedTask?.recurrenceInterval || 1,
+      recurrenceDays: selectedTask?.recurrenceDays || (selectedDate ? [moment(selectedDate).format("dd").toUpperCase().substring(0, 2)] : []),
+      recurrenceEndDate: selectedTask?.recurrenceEndDate || null,
+      recurrenceMonthOption: selectedTask?.recurrenceMonthOption || "DAY",
+      recurrenceMonthDay: selectedTask?.recurrenceMonthDay || (selectedDate ? moment(selectedDate).date() : 1),
+      recurrenceWeekNumber: selectedTask?.recurrenceWeekNumber || 1,
+      recurrenceWeekDay: selectedTask?.recurrenceWeekDay || "MO",
+      recurrenceYearMonth: selectedTask?.recurrenceYearMonth || (selectedDate ? moment(selectedDate).month() + 1 : 1),
+      recurrenceYearDay: selectedTask?.recurrenceYearDay || (selectedDate ? moment(selectedDate).date() : 1),
+      recurrenceEndType: selectedTask?.recurrenceEndType || "NEVER",
+      recurrenceOccurrenceCount: selectedTask?.recurrenceOccurrenceCount || 10,
+      reminderOffsetMinutes: selectedTask?.reminderOffsetMinutes || 0,
     },
     validationSchema: Yup.object({
       title: Yup.string().required("Please Enter Your Event Name"),
@@ -124,19 +147,32 @@ const TaskModal = ({
       priority: Yup.string().required("Priority is required"),
     }),
     onSubmit: (values) => {
+      if (selectedTask?.id && selectedTask?.isRecurring) {
+        if (saveAction === "recurrence") {
+          processSave(values, "all");
+        } else {
+          setActionModal({ isOpen: true, type: "save", pendingValues: values });
+        }
+        return;
+      }
+      processSave(values, "this");
+    },
+  });
+
+  const processSave = (values, scope) => {
       // Manual Validations
       const startDT = values.allDay
         ? moment(values.assignedDate).startOf("day")
         : moment(
           `${moment(values.assignedDate).format("YYYY-MM-DD")} ${values.assignedTime}`,
-          "YYYY-MM-DD hh:mm A"
+          "YYYY-MM-DD HH:mm:ss"
         );
 
       const endDT = values.allDay
         ? moment(values.expectedDate).add(1, "days").startOf("day")
         : moment(
           `${moment(values.expectedDate).format("YYYY-MM-DD")} ${values.expectedTime}`,
-          "YYYY-MM-DD hh:mm A"
+          "YYYY-MM-DD HH:mm:ss"
         );
       if (endDT.isBefore(startDT)) {
         toast.error("Expected Date/Time cannot be earlier than Assigned Date/Time", { autoClose: 3000 });
@@ -144,9 +180,16 @@ const TaskModal = ({
       }
 
       // Reminder Handling
+      const isRecurringReminder =
+        values.isRecurring &&
+        values.reminderOffsetMinutes != null;
+
+      const payloadReminder = values.isRecurring ? isRecurringReminder : values.reminder;
+      const payloadReminderOffsetMinutes = values.isRecurring ? values.reminderOffsetMinutes : null;
+
       let reminderDate = null;
-      if (values.reminder) {
-        reminderDate = moment(moment(values.reminderDate).format("YYYY-MM-DD") + " " + values.reminderTime);
+      if (!values.isRecurring && payloadReminder) {
+        reminderDate = moment(`${moment(values.reminderDate).format("YYYY-MM-DD")} ${values.reminderTime}`, "YYYY-MM-DD HH:mm:ss");
         if (reminderDate.isAfter(endDT)) {
           toast.error("Reminder Date/Time cannot be after Expected Date/Time", { autoClose: 3000 });
           return;
@@ -167,13 +210,16 @@ const TaskModal = ({
         ...values,
         start: startDT.toDate(),
         end: endDT.toDate(),
+        reminder: payloadReminder,
         reminderDate: reminderDate ? reminderDate.toDate() : null,
+        reminderOffsetMinutes: payloadReminderOffsetMinutes !== null ? parseInt(payloadReminderOffsetMinutes) : null,
         finishDate: finishDate
-      }, !!selectedTask?.id);
+      }, !!selectedTask?.id, scope);
 
-      toggle();
-    },
-  });
+      if (actionModal.isOpen) {
+        setActionModal({ isOpen: false, type: null, pendingValues: null });
+      }
+  };
 
   // Effect to manage View/Edit mode
   useEffect(() => {
@@ -187,7 +233,16 @@ const TaskModal = ({
     setIsEditButton(true);
   };
 
+  const handleDeleteClick = () => {
+    if (selectedTask?.isRecurring) {
+      setActionModal({ isOpen: true, type: "delete", pendingValues: null });
+    } else {
+      onDelete(selectedTask.id);
+    }
+  };
+
   return (
+    <>
     <Modal isOpen={isOpen} toggle={toggle} id="event-modal" centered size="lg">
       <ModalHeader toggle={toggle} tag="h5" className="p-3 bg-info-subtle modal-title">
         {!!selectedTask?.id ? (isEditButton ? "Edit Task" : selectedTask.title) : "Add New Task"}
@@ -302,6 +357,31 @@ const TaskModal = ({
                       </div>
                     </div>
                   )}
+                  {validation.values.isRecurring && (
+                    <div className="d-flex mb-3">
+                      <div className="flex-shrink-0 me-3">
+                        <i className="ri-repeat-2-line text-info fs-18"></i>
+                      </div>
+                      <div className="flex-grow-1">
+                        <h6 className="mb-0">
+                          Recurrence: <span className="text-info">
+                            {(() => {
+                              const v = validation.values;
+                              let summary = `Every ${v.recurrenceInterval} ${v.recurrenceType.toLowerCase().replace("ly", "")}${v.recurrenceInterval > 1 ? "s" : ""}`;
+                              if (v.recurrenceType === "WEEKLY" && v.recurrenceDays?.length > 0) {
+                                summary += ` on ${v.recurrenceDays.join(", ")}`;
+                              } else if (v.recurrenceType === "MONTHLY") {
+                                if (v.recurrenceMonthOption === "DAY") summary += ` on day ${v.recurrenceMonthDay}`;
+                                else summary += ` on the ${v.recurrenceWeekNumber} ${v.recurrenceWeekDay}`;
+                              }
+                              if (v.recurrenceEndDate) summary += ` until ${moment(v.recurrenceEndDate).format("DD MMM YYYY")}`;
+                              return summary;
+                            })()}
+                          </span>
+                        </h6>
+                      </div>
+                    </div>
+                  )}
                   <div className="d-flex">
                     <div className="flex-shrink-0 me-3">
                       <i className="ri-discuss-line text-muted fs-18"></i>
@@ -354,7 +434,10 @@ const TaskModal = ({
                     <Flatpickr
                       className="form-control"
                       placeholder="Select Date"
-                      options={{ dateFormat: "Y-m-d" }}
+                      options={{
+                        dateFormat: "Y-m-d",
+                        allowInput: true
+                      }}
                       value={validation.values.assignedDate}
                       onChange={(date) => validation.setFieldValue("assignedDate", date[0])}
                     />
@@ -366,17 +449,30 @@ const TaskModal = ({
                 <Col md={5}>
                   <div className="mb-3">
                     <Label>Assigned Time</Label>
-                    <Input
-                      type="select"
-                      name="assignedTime"
-                      className="form-select"
-                      value={validation.values.assignedTime}
-                      onChange={validation.handleChange}
-                    >
-                      {timeIntervals.map((t) => (
-                        <option key={`start-${t.value}`} value={t.value}>{t.label}</option>
-                      ))}
-                    </Input>
+                    <div className="input-group">
+                      <Flatpickr
+                        className="form-control"
+                        options={{
+                          enableTime: true,
+                          noCalendar: true,
+                          dateFormat: "h:i K",
+                          allowInput: true,
+                          minuteIncrement: 1
+                        }}
+                        value={moment(validation.values.assignedTime, "HH:mm:ss").toDate()}
+                        onChange={(selectedDates) => {
+                          if (selectedDates && selectedDates.length > 0) {
+                            validation.setFieldValue("assignedTime", moment(selectedDates[0]).format("HH:mm:ss"));
+                          }
+                        }}
+                        onClose={(selectedDates) => {
+                          if (selectedDates && selectedDates.length > 0) {
+                            validation.setFieldValue("assignedTime", moment(selectedDates[0]).format("HH:mm:ss"));
+                          }
+                        }}
+                      />
+                      <span className="input-group-text"><i className="ri-time-line"></i></span>
+                    </div>
                   </div>
                 </Col>
               )}
@@ -389,7 +485,10 @@ const TaskModal = ({
                     <Flatpickr
                       className="form-control"
                       placeholder="Select Date"
-                      options={{ dateFormat: "Y-m-d" }}
+                      options={{
+                        dateFormat: "Y-m-d",
+                        allowInput: true
+                      }}
                       value={validation.values.expectedDate}
                       onChange={(date) => validation.setFieldValue("expectedDate", date[0])}
                     />
@@ -401,17 +500,30 @@ const TaskModal = ({
                 <Col md={5}>
                   <div className="mb-3">
                     <Label>Expected Time</Label>
-                    <Input
-                      type="select"
-                      name="expectedTime"
-                      className="form-select"
-                      value={validation.values.expectedTime}
-                      onChange={validation.handleChange}
-                    >
-                      {timeIntervals.map((t) => (
-                        <option key={`end-${t.value}`} value={t.value}>{t.label}</option>
-                      ))}
-                    </Input>
+                    <div className="input-group">
+                      <Flatpickr
+                        className="form-control"
+                        options={{
+                          enableTime: true,
+                          noCalendar: true,
+                          dateFormat: "h:i K",
+                          allowInput: true,
+                          minuteIncrement: 1
+                        }}
+                        value={moment(validation.values.expectedTime, "HH:mm:ss").toDate()}
+                        onChange={(selectedDates) => {
+                          if (selectedDates && selectedDates.length > 0) {
+                            validation.setFieldValue("expectedTime", moment(selectedDates[0]).format("HH:mm:ss"));
+                          }
+                        }}
+                        onClose={(selectedDates) => {
+                          if (selectedDates && selectedDates.length > 0) {
+                            validation.setFieldValue("expectedTime", moment(selectedDates[0]).format("HH:mm:ss"));
+                          }
+                        }}
+                      />
+                      <span className="input-group-text"><i className="ri-time-line"></i></span>
+                    </div>
                   </div>
                 </Col>
               )}
@@ -423,12 +535,13 @@ const TaskModal = ({
                     type="checkbox"
                     id="reminder"
                     name="reminder"
-                    checked={validation.values.reminder}
+                    checked={validation.values.isRecurring ? false : validation.values.reminder}
                     onChange={validation.handleChange}
+                    disabled={validation.values.isRecurring}
                   />
                   <Label check for="reminder" className="fw-medium">Enable Reminder</Label>
                 </FormGroup>
-                <Collapse isOpen={validation.values.reminder}>
+                <Collapse isOpen={validation.values.isRecurring ? false : validation.values.reminder}>
                   <div
                     style={{
                       opacity: validation.values.reminder ? 1 : 0,
@@ -439,42 +552,58 @@ const TaskModal = ({
                     }}
                   >
                     <div className="pt-2">
-                      <Row className="g-3">
-                        <Col md={7}>
-                          <Label>Reminder Date</Label>
-                          <div className="input-group">
-                            <Flatpickr
-                              className="form-control"
-                              placeholder="Select Date"
-                              options={{ dateFormat: "Y-m-d" }}
-                              value={validation.values.reminderDate}
-                              onChange={(date) =>
-                                validation.setFieldValue("reminderDate", date[0])
-                              }
-                            />
-                            <span className="input-group-text">
-                              <i className="ri-calendar-event-line"></i>
-                            </span>
-                          </div>
-                        </Col>
-
-                        <Col md={5}>
-                          <Label>Reminder Time</Label>
-                          <Input
-                            type="select"
-                            name="reminderTime"
-                            className="form-select"
-                            value={validation.values.reminderTime}
-                            onChange={validation.handleChange}
-                          >
-                            {timeIntervals.map((t) => (
-                              <option key={`rem-${t.value}`} value={t.value}>
-                                {t.label}
-                              </option>
-                            ))}
-                          </Input>
-                        </Col>
-                      </Row>
+                        <Row className="g-3">
+                          <Col md={7}>
+                            <Label>Reminder Date</Label>
+                            <div className="input-group">
+                              <Flatpickr
+                                className="form-control"
+                                placeholder="Select Date"
+                                options={{
+                                  dateFormat: "Y-m-d",
+                                  allowInput: true
+                                }}
+                                value={validation.values.reminderDate}
+                                onChange={(date) =>
+                                  validation.setFieldValue("reminderDate", date[0])
+                                }
+                                disabled={validation.values.isRecurring}
+                              />
+                              <span className="input-group-text">
+                                <i className="ri-calendar-event-line"></i>
+                              </span>
+                            </div>
+                          </Col>
+  
+                          <Col md={5}>
+                            <Label>Reminder Time</Label>
+                            <div className="input-group">
+                              <Flatpickr
+                                className="form-control"
+                                options={{
+                                  enableTime: true,
+                                  noCalendar: true,
+                                  dateFormat: "h:i K",
+                                  allowInput: true,
+                                  minuteIncrement: 1
+                                }}
+                                value={moment(validation.values.reminderTime, "HH:mm:ss").toDate()}
+                                onChange={(selectedDates) => {
+                                  if (selectedDates && selectedDates.length > 0) {
+                                    validation.setFieldValue("reminderTime", moment(selectedDates[0]).format("HH:mm:ss"));
+                                  }
+                                }}
+                                onClose={(selectedDates) => {
+                                  if (selectedDates && selectedDates.length > 0) {
+                                    validation.setFieldValue("reminderTime", moment(selectedDates[0]).format("HH:mm:ss"));
+                                  }
+                                }}
+                                disabled={validation.values.isRecurring}
+                              />
+                              <span className="input-group-text"><i className="ri-time-line"></i></span>
+                            </div>
+                          </Col>
+                        </Row>
                     </div>
                   </div>
                 </Collapse>
@@ -529,12 +658,10 @@ const TaskModal = ({
                     }}
                     onBlur={() => validation.setFieldTouched("assignedUserId", true)}
                     value={
-                      (users || []).find((user) => user.userId?.toString() === validation.values.assignedUserId?.toString())
-                        ? {
-                          value: validation.values.assignedUserId?.toString(),
-                          label: (users || []).find((user) => user.userId?.toString() === validation.values.assignedUserId?.toString())?.fullName,
-                        }
-                        : null
+                      (() => {
+                        const user = (users || []).find((u) => u.userId?.toString() === validation.values.assignedUserId?.toString());
+                        return user ? { value: user.userId.toString(), label: user.fullName } : null;
+                      })()
                     }
                     isClearable={true}
                     isSearchable={true}
@@ -576,40 +703,149 @@ const TaskModal = ({
                   ></textarea>
                 </div>
               </Col>
+
+              <Col xs={12}>
+                <div className="hstack gap-2 justify-content-end mt-2 mb-4">
+                  {!!selectedTask?.id && (
+                    <Button
+                      type="button"
+                      color="soft-danger"
+                      onClick={handleDeleteClick}
+                    >
+                      <i className="ri-delete-bin-line align-bottom"></i> Delete
+                    </Button>
+                  )}
+                  {isEditButton && (
+                    <Button 
+                      type="submit" 
+                      color="success" 
+                      onClick={() => setSaveAction("task")}
+                      disabled={loading && saveAction === "task"}
+                    >
+                      {loading && saveAction === "task" ? (
+                        <>
+                          <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                          Saving...
+                        </>
+                      ) : (
+                        !!selectedTask?.id ? "Save Task Changes" : "Create Task"
+                      )}
+                    </Button>
+                  )}
+                </div>
+              </Col>
+
+              {/* RECURRENCE SECTION */}
+              <Col xs={12} className="mt-2">
+                {!!selectedTask?.id && selectedTask?.isRecurring ? (
+                  <div className="section-title fw-bold mb-3 border-top pt-4 text-primary">
+                    Recurrence Settings
+                  </div>
+                ) : (
+                  <FormGroup check className="mb-2">
+                    <Input
+                      type="checkbox"
+                      id="isRecurring"
+                      name="isRecurring"
+                      checked={validation.values.isRecurring}
+                      onChange={validation.handleChange}
+                    />
+                    <Label check for="isRecurring" className="fw-medium">
+                      Repeat Task
+                    </Label>
+                  </FormGroup>
+                )}
+                <Collapse isOpen={validation.values.isRecurring}>
+                  <RecurrenceBuilder
+                    values={validation.values}
+                    setFieldValue={validation.setFieldValue}
+                  />
+                  {!!selectedTask?.id && selectedTask?.isRecurring && isEditButton && (
+                    <div className="hstack gap-2 justify-content-end mt-4">
+                      <Button 
+                        type="submit" 
+                        color="primary" 
+                        onClick={() => setSaveAction("recurrence")}
+                        disabled={loading && saveAction === "recurrence"}
+                      >
+                        {loading && saveAction === "recurrence" ? (
+                          <>
+                            <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                            Updating...
+                          </>
+                        ) : (
+                          "Update Recurrence Pattern"
+                        )}
+                      </Button>
+                    </div>
+                  )}
+                </Collapse>
+              </Col>
             </Row>
           )}
-
-          <div className="hstack gap-2 justify-content-end mt-4">
-            {!!selectedTask?.id && (
-
-              <Button
-                type="button"
-                color="soft-danger"
-                onClick={() => {
-                  onDelete(selectedTask.id);
-                  toggle();
-                }}
-              >
-                <i className="ri-delete-bin-line align-bottom"></i> Delete
-              </Button>
-            )}
-            {isEditButton && (
-              <Button type="submit" color="success" id="btn-save-event" disabled={loading}>
-                {loading ? (
-                  <>
-                    <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                    Saving...
-                  </>
-                ) : (
-                  !!selectedTask?.id ? "Update Task" : "Create Task"
-
-                )}
-              </Button>
-            )}
-          </div>
         </Form>
       </ModalBody>
     </Modal>
+    
+    {/* Recurrence Action Modal */}
+    <Modal isOpen={actionModal.isOpen} toggle={() => setActionModal({ isOpen: false, type: null, pendingValues: null })} centered size="sm">
+      <ModalHeader toggle={() => setActionModal({ isOpen: false, type: null, pendingValues: null })} tag="h5" className="p-3 bg-light modal-title">
+        {actionModal.type === "save" ? "Edit Recurring Task" : "Delete Recurring Task"}
+      </ModalHeader>
+      <ModalBody>
+        <div className="mb-4 mt-2">
+          <FormGroup check className="mb-3">
+            <Input
+              type="radio"
+              name="actionScope"
+              value="this"
+              checked={actionScope === "this"}
+              onChange={(e) => setActionScope(e.target.value)}
+            />
+            <Label check className="fw-medium fs-15">This event only</Label>
+          </FormGroup>
+          <FormGroup check className="mb-3">
+            <Input
+              type="radio"
+              name="actionScope"
+              value="future"
+              checked={actionScope === "future"}
+              onChange={(e) => setActionScope(e.target.value)}
+            />
+            <Label check className="fw-medium fs-15">This and following events</Label>
+          </FormGroup>
+          <FormGroup check>
+            <Input
+              type="radio"
+              name="actionScope"
+              value="all"
+              checked={actionScope === "all"}
+              onChange={(e) => setActionScope(e.target.value)}
+            />
+            <Label check className="fw-medium fs-15">All events in the series</Label>
+          </FormGroup>
+        </div>
+        <div className="hstack gap-2 justify-content-end">
+          <Button color="light" onClick={() => setActionModal({ isOpen: false, type: null, pendingValues: null })}>
+            Cancel
+          </Button>
+          <Button
+            color={actionModal.type === "save" ? "primary" : "danger"}
+            onClick={() => {
+              if (actionModal.type === "save") {
+                processSave(actionModal.pendingValues, actionScope);
+              } else if (actionModal.type === "delete") {
+                onDelete(selectedTask.id, actionScope);
+                setActionModal({ isOpen: false, type: null, pendingValues: null });
+              }
+            }}
+          >
+            Ok
+          </Button>
+        </div>
+      </ModalBody>
+    </Modal>
+    </>
   );
 };
 

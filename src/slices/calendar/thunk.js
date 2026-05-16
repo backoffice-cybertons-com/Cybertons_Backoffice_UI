@@ -8,6 +8,7 @@ import {
   updateTask,
   deleteTask,
   getUsers as getUsersApi,
+  getMaster as getMasterApi,
   getTemplates as getTemplatesApi,
   addTemplate as addTemplateApi,
   deleteTemplate as deleteTemplateApi,
@@ -38,6 +39,17 @@ const transformTaskToEvent = (task) => {
     reminder: task.reminder || false,
     reminderDate: task.reminder_date || task.reminderDate || null,
     finishDate: task.finish_date || task.finishDate || null,
+    isRecurring: task.is_recurring || task.isRecurring || false,
+    recurringGroupId: task.recurring_group_id || task.recurringGroupId || null,
+    recurrenceParentId: task.recurrence_parent_id || task.recurrenceParentId || null,
+    recurrenceType: task.recurrence_type || task.recurrenceType || null,
+    recurrenceInterval: task.recurrence_interval || task.recurrenceInterval || 1,
+    recurrenceDays: (task.recurrence_days || task.recurrenceDays) ? (task.recurrence_days || task.recurrenceDays).split(",") : [],
+    recurrenceRule: task.recurrence_rule || task.recurrenceRule || null,
+    recurrenceEndDate: task.recurrence_end_date || task.recurrenceEndDate || null,
+    recurrenceEndType: (task.recurrence_end_date || task.recurrenceEndDate) ? "DATE" : ((task.recurrence_occurrence_count || task.recurrenceOccurrenceCount) ? "COUNT" : "NEVER"),
+    recurrenceOccurrenceCount: task.recurrence_occurrence_count || task.recurrenceOccurrenceCount || null,
+    reminderOffsetMinutes: task.reminder_offset_minutes || task.reminderOffsetMinutes || null,
   };
 };
 
@@ -59,8 +71,7 @@ const categoryMap = {
 
 const transformEventToTask = (event) => {
   const authUser = JSON.parse(localStorage.getItem("authUser") || "{}");
-  const userId = authUser.id || 1;
-
+  const userId = authUser.user?.id || 1;
   return {
     task_id: event.id && !isNaN(event.id) ? parseInt(event.id) : 0,
     title: event.title,
@@ -76,6 +87,16 @@ const transformEventToTask = (event) => {
     reminder_date: event.reminderDate ? moment(event.reminderDate).format("YYYY-MM-DDTHH:mm:ss") : null,
     finish_date: event.finishDate ? moment(event.finishDate).format("YYYY-MM-DDTHH:mm:ss") : null,
     is_deleted: false,
+    is_recurring: event.isRecurring || false,
+    recurring_group_id: event.recurringGroupId || null,
+    recurrence_parent_id: event.recurrenceParentId || null,
+    recurrence_type: event.recurrenceType || null,
+    recurrence_interval: event.recurrenceInterval || 1,
+    recurrence_days: Array.isArray(event.recurrenceDays) ? event.recurrenceDays.join(",") : (event.recurrenceDays || null),
+    recurrence_rule: event.recurrenceRule || null,
+    recurrence_end_date: (event.recurrenceEndType === "DATE" && event.recurrenceEndDate) ? moment(event.recurrenceEndDate).format("YYYY-MM-DDTHH:mm:ss") : null,
+    recurrence_occurrence_count: event.recurrenceEndType === "COUNT" && event.recurrenceOccurrenceCount ? parseInt(event.recurrenceOccurrenceCount) : null,
+    reminder_offset_minutes: event.reminderOffsetMinutes !== null && event.reminderOffsetMinutes !== undefined ? parseInt(event.reminderOffsetMinutes) : null,
   };
 };
 
@@ -91,10 +112,10 @@ export const getEvents = createAsyncThunk("calendar/getEvents", async (companyId
 
 export const getUsers = createAsyncThunk("calendar/getUsers", async (companyId, { rejectWithValue }) => {
   try {
-    const response = await getUsersApi(companyId);
+    const response = await getMasterApi("User", companyId);
     return (response || []).map(u => ({
       userId: u.UserId || u.userId,
-      fullName: u.FullName || u.fullName
+      fullName: u.Username || u.Username
     }));
   } catch (error) {
     console.error("API Error [getUsers]:", error);
@@ -102,20 +123,29 @@ export const getUsers = createAsyncThunk("calendar/getUsers", async (companyId, 
   }
 });
 
-export const addNewEvent = createAsyncThunk("calendar/addNewEvent", async (event, { rejectWithValue }) => {
+export const getMasterData = createAsyncThunk("calendar/getMasterData", async ({ masterName, companyId }, { rejectWithValue }) => {
   try {
-    debugger;
+    const response = await getMasterApi(masterName, companyId);
+    return response || [];
+  } catch (error) {
+    console.error(`API Error [getMasterData - ${masterName}]:`, error);
+    return rejectWithValue(error);
+  }
+});
+
+export const addNewEvent = createAsyncThunk("calendar/addNewEvent", async (event, { rejectWithValue, dispatch }) => {
+  try {
     const taskData = transformEventToTask(event);
     console.log("Adding Task [Payload]:", JSON.stringify(taskData, null, 2));
     const companyId = localStorage.getItem("companyId");
     const response = await addTask(companyId, taskData);
-    //const response = await addTask(taskData);
     const newTaskId = response.task_id || response.taskId;
     if (response && newTaskId) {
       toast.success("Task Created Successfully", { autoClose: 3000 });
-      return transformTaskToEvent({ ...taskData, task_id: newTaskId, taskId: newTaskId });
+      await dispatch(getEvents(companyId));
+      return true;
     }
-    return event;
+    return false;
   } catch (error) {
     console.error("API Error [addTask]:", error);
     toast.error("Failed To Save Task", { autoClose: 3000 });
@@ -123,16 +153,20 @@ export const addNewEvent = createAsyncThunk("calendar/addNewEvent", async (event
   }
 });
 
-export const updateEvent = createAsyncThunk("calendar/updateEvent", async (event, { rejectWithValue }) => {
+export const updateEvent = createAsyncThunk("calendar/updateEvent", async (payload, { rejectWithValue, dispatch }) => {
   try {
+    const isPayloadObj = payload && typeof payload === 'object' && payload.event;
+    const event = isPayloadObj ? payload.event : payload;
+    const updateType = isPayloadObj ? payload.updateType : "this";
+
     const taskData = transformEventToTask(event);
     console.log("Updating Task [Payload]:", JSON.stringify(taskData, null, 2));
-    const companyId = JSON.parse(localStorage.getItem("companyId") || "{}");
+    const companyId = localStorage.getItem("companyId");
 
-    await updateTask(companyId, taskData);
-    //await updateTask(taskData);
+    await updateTask(companyId, taskData, updateType);
     toast.success("Task Updated Successfully", { autoClose: 3000 });
-    return event;
+    await dispatch(getEvents(companyId));
+    return true;
   } catch (error) {
     console.error("API Error [updateTask]:", error);
     toast.error("Failed To Save Task", { autoClose: 3000 });
@@ -140,14 +174,18 @@ export const updateEvent = createAsyncThunk("calendar/updateEvent", async (event
   }
 });
 
-export const deleteEvent = createAsyncThunk("calendar/deleteEvent", async (taskId, { rejectWithValue }) => {
+export const deleteEvent = createAsyncThunk("calendar/deleteEvent", async (payload, { rejectWithValue, dispatch }) => {
   try {
-    const companyId = JSON.parse(localStorage.getItem("companyId") || "{}");
+    const isPayloadObj = payload && typeof payload === 'object' && payload.taskId;
+    const taskId = isPayloadObj ? payload.taskId : payload;
+    const deleteType = isPayloadObj ? payload.deleteType : "this";
 
-    await deleteTask(companyId, taskId);
-    //   await deleteTask(taskId);
+    const companyId = localStorage.getItem("companyId");
+
+    await deleteTask(companyId, taskId, deleteType);
     toast.success("Task deleted successfully", { autoClose: 3000 });
-    return taskId;
+    await dispatch(getEvents(companyId));
+    return true;
   } catch (error) {
     console.error("API Error [deleteTask]:", error);
     toast.error("Failed to delete task", { autoClose: 3000 });

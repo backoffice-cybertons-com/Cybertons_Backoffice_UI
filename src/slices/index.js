@@ -71,6 +71,7 @@ import PurchaseTransactionReducer from "./purchaseTransaction/reducer";
 import SalesTransactionReducer from "./salesTransaction/reducer";
 import PaymentReceiptReducer from "./paymentReceipt/reducer";
 import DashboardReducer from "./dashboard/reducer";
+import NotificationsReducer from "./notifications/reducer";
 
 
 // API Key
@@ -107,7 +108,8 @@ const rootReducer = combineReducers({
     PurchaseTransaction: PurchaseTransactionReducer,
     SalesTransaction: SalesTransactionReducer,
     PaymentReceipt: PaymentReceiptReducer,
-    Dashboard: DashboardReducer
+    Dashboard: DashboardReducer,
+    Notifications: NotificationsReducer
 });
 
 

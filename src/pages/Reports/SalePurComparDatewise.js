@@ -617,6 +617,7 @@ export default function SalePurComparDatewise() {
                                             columns={columns}
                                             data={paginatedData}
                                             showTotals
+                                            autoHeight={true}
                                             minWidth="1800px"
                                         />
 

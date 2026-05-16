@@ -95,7 +95,7 @@ const Calendar = () => {
 
       // Handle Quick Filter Logic
       if (filters.quick === "Pending") {
-        if (event.status === "Completed") return false;
+        if (event.status !== "Pending") return false;
       } else if (filters.quick === "Completed") {
         if (event.status !== "Completed") return false;
       } else if (filters.quick === "Today") {
@@ -157,6 +157,8 @@ const Calendar = () => {
   useEffect(() => {
     if (isEventUpdated) {
       setSelectedTask(null);
+      setModal(false);
+      setDeleteModal(false);
     }
   }, [isEventUpdated]);
 
@@ -195,53 +197,69 @@ const Calendar = () => {
       reminder: event.extendedProps.reminder || false,
       reminderDate: event.extendedProps.reminderDate || null,
       finishDate: event.extendedProps.finishDate || null,
+      isRecurring: event.extendedProps.isRecurring || false,
+      recurringGroupId: event.extendedProps.recurringGroupId || null,
+      recurrenceParentId: event.extendedProps.recurrenceParentId || null,
+      recurrenceType: event.extendedProps.recurrenceType || "WEEKLY",
+      recurrenceInterval: event.extendedProps.recurrenceInterval || 1,
+      recurrenceDays: event.extendedProps.recurrenceDays || [],
+      recurrenceMonthDay: event.extendedProps.recurrenceMonthDay || 1,
+      recurrenceWeekNumber: event.extendedProps.recurrenceWeekNumber || 1,
+      recurrenceWeekDay: event.extendedProps.recurrenceWeekDay || "MO",
+      recurrenceEndDate: event.extendedProps.recurrenceEndDate || null,
+      recurrenceOccurrenceCount: event.extendedProps.recurrenceOccurrenceCount || 10,
+      reminderOffsetMinutes: event.extendedProps.reminderOffsetMinutes || 0,
+      recurrenceMonthOption: event.extendedProps.recurrenceMonthOption || "DAY",
+      recurrenceYearMonth: event.extendedProps.recurrenceYearMonth || 1,
+      recurrenceYearDay: event.extendedProps.recurrenceYearDay || 1,
+      recurrenceEndType: event.extendedProps.recurrenceEndType || "NEVER",
     });
     toggle();
   };
 
-  const handleSaveTask = (values, isEdit) => {
+  const handleSaveTask = (values, isEdit, updateScope = "this") => {
+    const eventPayload = {
+      title: values.title,
+      className: values.category,
+      category: values.category,
+      start: values.start,
+      end: values.end,
+      allDay: values.allDay,
+      description: values.description,
+      status: values.status,
+      priority: values.priority,
+      assignedUserId: values.assignedUserId,
+      reminder: values.reminder,
+      reminderDate: values.reminderDate,
+      finishDate: values.finishDate,
+      isRecurring: values.isRecurring,
+      recurrenceType: values.recurrenceType,
+      recurrenceInterval: values.recurrenceInterval,
+      recurrenceDays: values.recurrenceDays,
+      recurrenceMonthDay: values.recurrenceMonthDay,
+      recurrenceWeekNumber: values.recurrenceWeekNumber,
+      recurrenceWeekDay: values.recurrenceWeekDay,
+      recurrenceEndDate: values.recurrenceEndDate,
+      recurrenceOccurrenceCount: values.recurrenceOccurrenceCount,
+      reminderOffsetMinutes: values.reminderOffsetMinutes,
+      recurrenceMonthOption: values.recurrenceMonthOption,
+      recurrenceYearMonth: values.recurrenceYearMonth,
+      recurrenceYearDay: values.recurrenceYearDay,
+      recurrenceEndType: values.recurrenceEndType,
+      recurringGroupId: values.recurringGroupId,
+      recurrenceParentId: values.recurrenceParentId,
+    };
+
     if (isEdit) {
-      const updateEventData = {
-        id: values.id,
-        title: values.title,
-        className: values.category,
-        category: values.category,
-        start: values.start,
-        end: values.end,
-        allDay: values.allDay,
-        description: values.description,
-        status: values.status,
-        priority: values.priority,
-        assignedUserId: values.assignedUserId,
-        reminder: values.reminder,
-        reminderDate: values.reminderDate,
-        finishDate: values.finishDate,
-      };
-      dispatch(onUpdateEvent(updateEventData));
+      dispatch(onUpdateEvent({ event: { ...eventPayload, id: values.id }, updateType: updateScope }));
     } else {
-      const newEvent = {
-        id: Math.floor(Math.random() * 1000),
-        title: values.title,
-        start: values.start,
-        end: values.end,
-        allDay: values.allDay,
-        className: values.category,
-        category: values.category,
-        description: values.description,
-        status: values.status,
-        priority: values.priority,
-        assignedUserId: values.assignedUserId,
-        reminder: values.reminder,
-        reminderDate: values.reminderDate,
-        finishDate: values.finishDate,
-      };
-      dispatch(onAddNewEvent(newEvent));
+      dispatch(onAddNewEvent({ ...eventPayload, id: Math.floor(Math.random() * 1000) }));
     }
   };
 
   const handleDeleteTask = () => {
     if (taskIdToDelete) {
-      dispatch(onDeleteEvent(taskIdToDelete));
+      dispatch(onDeleteEvent({ taskId: taskIdToDelete, deleteType: "this" }));
       setDeleteModal(false);
       setTaskIdToDelete(null);
     }
@@ -265,6 +283,22 @@ const Calendar = () => {
       reminder: event.extendedProps.reminder || false,
       reminderDate: event.extendedProps.reminderDate || null,
       finishDate: event.extendedProps.finishDate || null,
+      isRecurring: event.extendedProps.isRecurring || false,
+      recurringGroupId: event.extendedProps.recurringGroupId || null,
+      recurrenceParentId: event.extendedProps.recurrenceParentId || null,
+      recurrenceType: event.extendedProps.recurrenceType || "WEEKLY",
+      recurrenceInterval: event.extendedProps.recurrenceInterval || 1,
+      recurrenceDays: event.extendedProps.recurrenceDays || [],
+      recurrenceMonthDay: event.extendedProps.recurrenceMonthDay || 1,
+      recurrenceWeekNumber: event.extendedProps.recurrenceWeekNumber || 1,
+      recurrenceWeekDay: event.extendedProps.recurrenceWeekDay || "MO",
+      recurrenceEndDate: event.extendedProps.recurrenceEndDate || null,
+      recurrenceOccurrenceCount: event.extendedProps.recurrenceOccurrenceCount || 10,
+      reminderOffsetMinutes: event.extendedProps.reminderOffsetMinutes || 0,
+      recurrenceMonthOption: event.extendedProps.recurrenceMonthOption || "DAY",
+      recurrenceYearMonth: event.extendedProps.recurrenceYearMonth || 1,
+      recurrenceYearDay: event.extendedProps.recurrenceYearDay || 1,
+      recurrenceEndType: event.extendedProps.recurrenceEndType || "NEVER",
       successMessage: "Task rescheduled successfully",
     };
 
@@ -363,9 +397,14 @@ const Calendar = () => {
                 onSave={handleSaveTask}
                 loading={loading}
                 users={users}
-                onDelete={(id) => {
-                  setTaskIdToDelete(id);
-                  setDeleteModal(true);
+                onDelete={(id, scope) => {
+                  if (scope) {
+                    dispatch(onDeleteEvent({ taskId: id, deleteType: scope }));
+                    toggle();
+                  } else {
+                    setTaskIdToDelete(id);
+                    setDeleteModal(true);
+                  }
                 }}
               />
             </Col>

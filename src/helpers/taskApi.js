@@ -20,19 +20,23 @@ export const addTask = (companyId, data) =>
     );
 
 // Update task
-export const updateTask = (companyId, data) =>
+export const updateTask = (companyId, data, updateType = "this") =>
     api.put(
-        `${url.UPDATE_CALENDAR_TASK}?companyId=${companyId}`,
+        `${url.UPDATE_CALENDAR_TASK}?companyId=${companyId}&updateType=${updateType}`,
         data
     );
 // Delete task
-export const deleteTask = (companyId, id) =>
+export const deleteTask = (companyId, id, deleteType = "this") =>
     api.delete(
-        `${url.DELETE_CALENDAR_TASK}/${id}?companyId=${companyId}`
+        `${url.DELETE_CALENDAR_TASK}/${id}?companyId=${companyId}&deleteType=${deleteType}`
     );
 // Get all users
 export const getUsers = (companyId) =>
     api.get(url.GET_USERS, { companyId });
+
+// Generic Master API
+export const getMaster = (masterName, companyId) =>
+    api.get(`/api/Master/${masterName}`, { companyId });
 
 // // Task Template API
 

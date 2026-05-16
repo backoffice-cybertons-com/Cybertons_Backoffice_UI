@@ -438,7 +438,7 @@ const SalePurchaseRegisterMonthwise = ({
                                             columns={columns}
                                             data={paginatedData}
                                             loading={loading}
-                                            maxHeight="calc(100vh - 280px)"
+                                            autoHeight={true}
                                             minWidth="1600px"
                                             showTotals
                                             paginatedData={paginatedData}

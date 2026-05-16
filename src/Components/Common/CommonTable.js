@@ -15,6 +15,7 @@
  *  loading       boolean            Show spinner overlay
  *  isDark        boolean            Dark-mode toggle
  *  maxHeight     string             CSS max-height for scroll area  (default "calc(100vh - 280px)")
+ *  autoHeight    boolean            Automatically calculate height to fit screen (default false)
  *  minWidth      string             Minimum table width             (default "100%")
  *  showTotals    boolean            Show footer totals row          (default true)
  *  paginatedData Array<Object>      Rows for current page (used for footer totals; falls back to `data`)
@@ -33,7 +34,7 @@
  *  decimals      number             Decimal places for number formatting (default 2)
  */
 
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import "./CommonTable.css";
 
 /* ── helpers ──────────────────────────────────────────────── */
@@ -71,6 +72,7 @@ const CommonTable = ({
     loading = false,
     isDark = false,
     maxHeight = "calc(100vh - 280px)",
+    autoHeight = false,
     minWidth = "100%",
     showTotals = true,
     paginatedData,
@@ -79,6 +81,50 @@ const CommonTable = ({
     /* ── state ── */
     const [columnFilters, setColumnFilters] = useState({});
     const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" });
+    const [dynamicMaxHeight, setDynamicMaxHeight] = useState(maxHeight);
+
+    React.useEffect(() => {
+        if (autoHeight) {
+            document.body.classList.add("report-no-scroll");
+        }
+        return () => {
+            document.body.classList.remove("report-no-scroll");
+        };
+    }, [autoHeight]);
+
+    const containerRef = useRef(null);
+
+    /* ── auto height logic ── */
+    useEffect(() => {
+        if (!autoHeight) {
+            setDynamicMaxHeight(maxHeight);
+            return;
+        }
+
+        const calculateHeight = () => {
+            if (containerRef.current) {
+                const rect = containerRef.current.getBoundingClientRect();
+                const vh = window.innerHeight;
+                // Leave some space at bottom for footer (e.g. 60px)
+                const margin = 60;
+                const available = vh - rect.top - margin;
+                
+                // Ensure at least 200px height
+                setDynamicMaxHeight(`${Math.max(available, 200)}px`);
+            }
+        };
+
+        calculateHeight();
+        // Delay a bit to ensure layout is settled
+        const timer = setTimeout(calculateHeight, 100);
+
+        window.addEventListener("resize", calculateHeight);
+        return () => {
+            window.removeEventListener("resize", calculateHeight);
+            clearTimeout(timer);
+        };
+    }, [autoHeight, maxHeight]);
+
 
     /* ── filter handler ── */
     const handleFilterChange = useCallback((key, value) => {
@@ -199,10 +245,10 @@ const CommonTable = ({
     /* ── render ── */
     return (
         <div className={`ct-dark-wrapper${isDark ? " ct-dark" : ""}`}>
-            <div className="ct-wrapper">
+            <div className="ct-wrapper" ref={containerRef}>
                 <div
                     className="ct-scroll-container"
-                    style={{ maxHeight }}
+                    style={{ maxHeight: dynamicMaxHeight }}
                 >
                     <table className="ct-table" style={{ minWidth }}>
                         {/* col widths */}
