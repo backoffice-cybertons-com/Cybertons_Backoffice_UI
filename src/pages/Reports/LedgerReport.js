@@ -39,6 +39,18 @@ const balClass = (bal) => {
     return bal >= 0 ? 'bal-dr text-success' : 'bal-cr text-danger';
 };
 
+/* Keep menu in the filter card DOM (no body portal): filter card z-index is above the report,
+   so the list stacks over the table. Portaling to body was still losing to sticky thead in some layouts. */
+const ledgerSelectProps = {
+    classNamePrefix: 'lsd-select',
+    menuPlacement: 'auto',
+    menuShouldScrollIntoView: false,
+    styles: {
+        menu: (base) => ({ ...base, zIndex: 50 }),
+        menuList: (base) => ({ ...base, maxHeight: 280 }),
+    },
+};
+
 const LedgerReport = () => {
     document.title = 'Ledger Report | SoftBook';
     const api = new APIClient();
@@ -50,7 +62,6 @@ const LedgerReport = () => {
     const [selectedAccount, setSelectedAccount] = useState(null);
     const [fromDate, setFromDate] = useState(toLocalYMD(firstOfMonth));
     const [toDate, setToDate] = useState(toLocalYMD(today));
-
     const [reportType, setReportType] = useState({ value: 'detailed_split', label: 'Dual Ledger' });
     const reportTypeOptions = [
         { value: 'detailed_split', label: 'Dual Ledger' },
@@ -343,17 +354,17 @@ const LedgerReport = () => {
 
     return (
         <React.Fragment>
-            <div className="page-content">
+            <div className="page-content ledger-report-page">
                 <Container fluid>
                     <BreadCrumb title="Ledger Report" pageTitle="Reports" />
-                    <Card className="mb-2">
+                    <Card className="mb-2 lsd-filter-card">
                         <CardBody className="py-2">
                             <Row className="g-2 align-items-end">
-                                <Col lg={3}><Label className="fw-semibold mb-1">Account</Label><Select value={selectedAccount} onChange={setSelectedAccount} options={accounts} placeholder="Select..." isClearable /></Col>
-                                <Col lg={2}><Label className="fw-semibold mb-1">From</Label><Input type="date" value={fromDate} onChange={e => setFromDate(e.target.value)} /></Col>
-                                <Col lg={2}><Label className="fw-semibold mb-1">To</Label><Input type="date" value={toDate} onChange={e => setToDate(e.target.value)} /></Col>
-                                <Col lg={3}><Label className="fw-semibold mb-1">Report Style</Label><Select value={reportType} onChange={setReportType} options={reportTypeOptions} /></Col>
-                                <Col lg={2}><Button color="primary" className="w-100" onClick={() => fetchReport()} disabled={loading}>{loading ? <Spinner size="sm" /> : "Show Report"}</Button></Col>
+                                <Col xxl={3} lg={3} md={6}><Label className="fw-semibold mb-1">Account</Label><Select value={selectedAccount} onChange={setSelectedAccount} options={accounts} placeholder="Select..." isClearable {...ledgerSelectProps} /></Col>
+                                <Col xxl={2} lg={2} md={3} sm={6}><Label className="fw-semibold mb-1">From</Label><Input type="date" value={fromDate} onChange={e => setFromDate(e.target.value)} /></Col>
+                                <Col xxl={2} lg={2} md={3} sm={6}><Label className="fw-semibold mb-1">To</Label><Input type="date" value={toDate} onChange={e => setToDate(e.target.value)} /></Col>
+                                <Col xxl={3} lg={3} md={6}><Label className="fw-semibold mb-1">Report Style</Label><Select value={reportType} onChange={setReportType} options={reportTypeOptions} {...ledgerSelectProps} /></Col>
+                                <Col xxl={2} lg={2} md={6}><Button color="primary" className="w-100" onClick={() => fetchReport()} disabled={loading}>{loading ? <Spinner size="sm" /> : "Show Report"}</Button></Col>
                             </Row>
                         </CardBody>
                     </Card>

@@ -317,7 +317,7 @@ const TrialBalanceReport = () => {
 
     return (
         <React.Fragment>
-            <div className="page-content">
+            <div className="page-content trial-balance-page">
                 <Container fluid>
                     <BreadCrumb title="Trial Balance" pageTitle="Reports" />
 
@@ -327,7 +327,7 @@ const TrialBalanceReport = () => {
                             <Card className="mb-2">
                                 <CardBody className="py-2">
                                     <Row className="g-3 align-items-end">
-                                        <Col lg={3}>
+                                        <Col xxl={2} lg={3} md={4}>
                                             <Label className="form-label text-muted text-uppercase fw-semibold mb-1">As of Date</Label>
                                             <Flatpickr
                                                 className="form-control"
@@ -336,7 +336,7 @@ const TrialBalanceReport = () => {
                                                 options={{ dateFormat: "d M Y", maxDate: "today" }}
                                             />
                                         </Col>
-                                        <Col lg={3}>
+                                        <Col xxl={2} lg={3} md={4}>
                                             <div className="d-flex gap-2">
                                                 <Button color="primary" className="flex-grow-1" onClick={fetchReport} disabled={loading}>
                                                     {loading
@@ -354,7 +354,7 @@ const TrialBalanceReport = () => {
                                                 </Button>
                                             </div>
                                         </Col>
-                                        <Col lg={4}>
+                                        <Col xxl={4} lg={5} md={8}>
                                             <Label className="form-label text-muted text-uppercase fw-semibold mb-1 tb-filter-label">Search account</Label>
                                             <div className="d-flex gap-2 tb-toolbar-search-row">
                                                 <Input
