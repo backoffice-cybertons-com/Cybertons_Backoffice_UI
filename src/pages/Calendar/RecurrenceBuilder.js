@@ -1,9 +1,35 @@
-import React, { useMemo } from "react";
-import { Row, Col, Label, Input, FormGroup } from "reactstrap";
+import React, { useMemo, useState } from "react";
+import { Row, Col, Label, Input, FormGroup, Button } from "reactstrap";
 import Flatpickr from "react-flatpickr";
 import moment from "moment";
-import Select from "react-select";
 import "./recurrence.css";
+
+const parseManualTime = (timeStr, currentVal) => {
+  if (!timeStr) return currentVal;
+  
+  const formats = [
+    "hh:mm A", "hh:mm a", "h:mm A", "h:mm a", 
+    "HH:mm", "H:mm", "HH:mm:ss", "hh:mma", "hh:mmA"
+  ];
+  let parsed = moment(timeStr, formats, true);
+  
+  if (parsed.isValid()) {
+    return parsed.format("HH:mm:ss");
+  }
+
+  parsed = moment(timeStr, ["HH:mm", "H:mm", "HH:mm:ss"], false);
+  if (parsed.isValid()) {
+    let hour = parsed.hour();
+    const currentIsPM = moment(currentVal, "HH:mm:ss").format("A") === "PM";
+    if (currentIsPM && hour < 12 && !/pm/i.test(timeStr) && !/am/i.test(timeStr)) {
+      hour += 12;
+    }
+    parsed.hour(hour);
+    return parsed.format("HH:mm:ss");
+  }
+
+  return currentVal;
+};
 
 const RecurrenceBuilder = ({ values, setFieldValue }) => {
   const recurrenceTypes = [
@@ -64,15 +90,58 @@ const RecurrenceBuilder = ({ values, setFieldValue }) => {
     { label: "1 week before", value: -10080 },
   ];
 
-  // Helper to extract base day offset
+  // Helper to extract base day offset based on calendar days difference
   const getBaseDayOffset = (offsetMinutes) => {
-    if (offsetMinutes === null) return "";
-    if (offsetMinutes > 0) return 0;
-    const days = Math.ceil(offsetMinutes / 1440);
-    return days * 1440;
+    if (offsetMinutes === null || offsetMinutes === undefined) return "";
+    
+    const reminderVal = values.reminderDate ? values.reminderDate : new Date();
+    const assignedVal = values.assignedDate ? values.assignedDate : new Date();
+    
+    const reminderDT = moment(reminderVal);
+    const assignedDT = moment(assignedVal);
+    
+    if (!reminderDT.isValid() || !assignedDT.isValid()) {
+      return Math.ceil(offsetMinutes / 1440) * 1440;
+    }
+    
+    const diffDays = reminderDT.startOf("day").diff(assignedDT.startOf("day"), 'days');
+    return diffDays * 1440;
   };
 
   const currentBaseDay = getBaseDayOffset(values.reminderOffsetMinutes);
+  const isPredefined = values.reminderOffsetMinutes !== null && values.reminderOffsetMinutes !== undefined && reminders.some(r => r.value === currentBaseDay);
+
+  const [isCustomMode, setIsCustomMode] = useState(() => {
+    if (values.reminderOffsetMinutes === null || values.reminderOffsetMinutes === undefined) return false;
+    return !isPredefined;
+  });
+
+  const currentSelectValue = isCustomMode ? "custom" : ((values.reminderOffsetMinutes === null || values.reminderOffsetMinutes === undefined) ? "" : (isPredefined ? currentBaseDay : "custom"));
+
+  const handleReminderTimeChange = (newReminderTimeStr) => {
+    setFieldValue("reminderTime", newReminderTimeStr);
+    const aTime = moment(values.assignedTime || "00:00:00", "HH:mm:ss");
+    const rTime = moment(newReminderTimeStr, "HH:mm:ss");
+    let timeDiff = rTime.diff(aTime, 'minutes');
+    const newOffset = currentBaseDay + timeDiff;
+    setFieldValue("reminderOffsetMinutes", newOffset);
+
+    const aDateStr = moment(values.assignedDate || new Date()).format("YYYY-MM-DD");
+    const calculatedReminderDT = moment(`${aDateStr} ${values.assignedTime || "00:00:00"}`, "YYYY-MM-DD HH:mm:ss").add(newOffset, 'minutes');
+    setFieldValue("reminderDate", calculatedReminderDT.toDate());
+  };
+
+  const handleCustomReminderTimeChange = (newReminderTimeStr) => {
+    setFieldValue("reminderTime", newReminderTimeStr);
+    const startDT = values.allDay
+      ? moment(values.assignedDate || new Date()).startOf("day")
+      : moment(
+        `${moment(values.assignedDate || new Date()).format("YYYY-MM-DD")} ${values.assignedTime || "00:00:00"}`,
+        "YYYY-MM-DD HH:mm:ss"
+      );
+    const reminderDT = moment(`${moment(values.reminderDate || values.assignedDate || new Date()).format("YYYY-MM-DD")} ${newReminderTimeStr}`, "YYYY-MM-DD HH:mm:ss");
+    setFieldValue("reminderOffsetMinutes", reminderDT.diff(startDT, 'minutes'));
+  };
 
   const toggleDay = (dayValue) => {
     const currentDays = values.recurrenceDays || [];
@@ -333,52 +402,141 @@ const RecurrenceBuilder = ({ values, setFieldValue }) => {
         {/* REMINDER OFFSET */}
         <div className="mb-4 pt-3 border-top">
           <Label className="section-label">Reminder</Label>
-          <div className="d-flex align-items-center gap-2">
-            <select
-              className="form-select form-select-sm w-auto"
-              value={currentBaseDay}
-              onChange={(e) => {
-                const newBase = e.target.value === "" ? null : parseInt(e.target.value);
-                if (newBase === null) {
-                  setFieldValue("reminderOffsetMinutes", null);
-                } else {
-                  // Re-calculate the total offset using the new base + existing time diff
-                  const aTime = moment(values.assignedTime || "00:00:00", "HH:mm:ss");
-                  const rTime = moment(values.reminderTime || values.assignedTime || "00:00:00", "HH:mm:ss");
-                  let timeDiff = rTime.diff(aTime, 'minutes');
-                  setFieldValue("reminderOffsetMinutes", newBase + timeDiff);
-                }
-              }}
-            >
-              <option value="">No Reminder</option>
-              {reminders.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
-            </select>
-
-            {values.reminderOffsetMinutes !== null && (
-              <div className="input-group input-group-sm w-auto">
-                <Flatpickr
-                  className="form-control"
-                  options={{
-                    enableTime: true,
-                    noCalendar: true,
-                    dateFormat: "h:i K",
-                    allowInput: true,
-                    minuteIncrement: 1
-                  }}
-                  value={moment(values.reminderTime, "HH:mm:ss").toDate()}
-                  onChange={(selectedDates) => {
-                    if (selectedDates && selectedDates.length > 0) {
-                      const newReminderTimeStr = moment(selectedDates[0]).format("HH:mm:ss");
-                      setFieldValue("reminderTime", newReminderTimeStr);
-                      // Update reminderOffsetMinutes with the new time difference
-                      const aTime = moment(values.assignedTime || "00:00:00", "HH:mm:ss");
-                      const rTime = moment(newReminderTimeStr, "HH:mm:ss");
-                      let timeDiff = rTime.diff(aTime, 'minutes');
-                      setFieldValue("reminderOffsetMinutes", currentBaseDay + timeDiff);
+          <div className="d-flex flex-column gap-2">
+            <div className="d-flex align-items-center gap-2">
+              <select
+                className="form-select form-select-sm w-auto"
+                value={currentSelectValue}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val === "") {
+                    setIsCustomMode(false);
+                    setFieldValue("reminderOffsetMinutes", null);
+                    setFieldValue("reminder", false);
+                  } else if (val === "custom") {
+                    setIsCustomMode(true);
+                    setFieldValue("reminder", true);
+                    if (!values.reminderDate) {
+                      setFieldValue("reminderDate", values.assignedDate || new Date());
                     }
-                  }}
-                />
-                <span className="input-group-text"><i className="ri-time-line"></i></span>
+                    const startDT = values.allDay
+                      ? moment(values.assignedDate || new Date()).startOf("day")
+                      : moment(
+                        `${moment(values.assignedDate || new Date()).format("YYYY-MM-DD")} ${values.assignedTime || "00:00:00"}`,
+                        "YYYY-MM-DD HH:mm:ss"
+                      );
+                    const reminderDT = moment(`${moment(values.reminderDate || values.assignedDate || new Date()).format("YYYY-MM-DD")} ${values.reminderTime || "09:00:00"}`, "YYYY-MM-DD HH:mm:ss");
+                    setFieldValue("reminderOffsetMinutes", reminderDT.diff(startDT, 'minutes'));
+                  } else {
+                    setIsCustomMode(false);
+                    const newBase = parseInt(val);
+                    const aTime = moment(values.assignedTime || "00:00:00", "HH:mm:ss");
+                    const rTime = moment(values.reminderTime || values.assignedTime || "00:00:00", "HH:mm:ss");
+                    let timeDiff = rTime.diff(aTime, 'minutes');
+                    const newOffset = newBase + timeDiff;
+                    setFieldValue("reminderOffsetMinutes", newOffset);
+                    setFieldValue("reminder", true);
+
+                    const aDateStr = moment(values.assignedDate || new Date()).format("YYYY-MM-DD");
+                    const calculatedReminderDT = moment(`${aDateStr} ${values.assignedTime || "00:00:00"}`, "YYYY-MM-DD HH:mm:ss").add(newOffset, 'minutes');
+                    setFieldValue("reminderDate", calculatedReminderDT.toDate());
+                    setFieldValue("reminderTime", calculatedReminderDT.format("HH:mm:ss"));
+                  }
+                }}
+              >
+                <option value="">No Reminder</option>
+                {reminders.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
+                <option value="custom">Custom Date</option>
+              </select>
+
+              {values.reminderOffsetMinutes !== null && currentSelectValue !== "custom" && (
+                <div className="input-group input-group-sm w-auto">
+                  <Flatpickr
+                    className="form-control"
+                    options={{
+                      enableTime: true,
+                      noCalendar: true,
+                      dateFormat: "h:i K",
+                      allowInput: true,
+                      minuteIncrement: 1
+                    }}
+                    value={moment(values.reminderTime, "HH:mm:ss").toDate()}
+                    onChange={(selectedDates) => {
+                      if (selectedDates && selectedDates.length > 0) {
+                        handleReminderTimeChange(moment(selectedDates[0]).format("HH:mm:ss"));
+                      }
+                    }}
+                    onClose={(selectedDates) => {
+                      if (selectedDates && selectedDates.length > 0) {
+                        handleReminderTimeChange(moment(selectedDates[0]).format("HH:mm:ss"));
+                      }
+                    }}
+                    onBlur={(e) => {
+                      const parsedVal = parseManualTime(e.target.value, values.reminderTime);
+                      handleReminderTimeChange(parsedVal);
+                    }}
+                  />
+                  <span className="input-group-text"><i className="ri-time-line"></i></span>
+                </div>
+              )}
+            </div>
+
+            {currentSelectValue === "custom" && (
+              <div className="d-flex align-items-center gap-2 mt-1 flex-wrap animation-fade-in">
+                <div className="input-group input-group-sm w-auto">
+                  <Flatpickr
+                    className="form-control"
+                    placeholder="Select Reminder Date"
+                    options={{
+                      dateFormat: "Y-m-d",
+                      allowInput: true
+                    }}
+                    value={values.reminderDate}
+                    onChange={(date) => {
+                      if (date && date.length > 0) {
+                        setFieldValue("reminderDate", date[0]);
+                        const startDT = values.allDay
+                          ? moment(values.assignedDate || new Date()).startOf("day")
+                          : moment(
+                            `${moment(values.assignedDate || new Date()).format("YYYY-MM-DD")} ${values.assignedTime || "00:00:00"}`,
+                            "YYYY-MM-DD HH:mm:ss"
+                          );
+                        const reminderDT = moment(`${moment(date[0]).format("YYYY-MM-DD")} ${values.reminderTime || "09:00:00"}`, "YYYY-MM-DD HH:mm:ss");
+                        setFieldValue("reminderOffsetMinutes", reminderDT.diff(startDT, 'minutes'));
+                      }
+                    }}
+                  />
+                  <span className="input-group-text"><i className="ri-calendar-event-line"></i></span>
+                </div>
+
+                <div className="input-group input-group-sm w-auto">
+                  <Flatpickr
+                    className="form-control"
+                    options={{
+                      enableTime: true,
+                      noCalendar: true,
+                      dateFormat: "h:i K",
+                      allowInput: true,
+                      minuteIncrement: 1
+                    }}
+                    value={moment(values.reminderTime, "HH:mm:ss").toDate()}
+                    onChange={(selectedDates) => {
+                      if (selectedDates && selectedDates.length > 0) {
+                        handleCustomReminderTimeChange(moment(selectedDates[0]).format("HH:mm:ss"));
+                      }
+                    }}
+                    onClose={(selectedDates) => {
+                      if (selectedDates && selectedDates.length > 0) {
+                        handleCustomReminderTimeChange(moment(selectedDates[0]).format("HH:mm:ss"));
+                      }
+                    }}
+                    onBlur={(e) => {
+                      const parsedVal = parseManualTime(e.target.value, values.reminderTime);
+                      handleCustomReminderTimeChange(parsedVal);
+                    }}
+                  />
+                  <span className="input-group-text"><i className="ri-time-line"></i></span>
+                </div>
               </div>
             )}
           </div>

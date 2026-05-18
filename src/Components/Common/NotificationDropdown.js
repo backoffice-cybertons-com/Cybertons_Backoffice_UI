@@ -53,14 +53,46 @@ const NotificationDropdown = () => {
         }
     }, [authUser, dispatch]);
 
-    // Initial Fetch & Polling
+    // Initial Fetch & Polling using Page Visibility API
     useEffect(() => {
-        fetchNotifications();
-        const interval = setInterval(() => {
-            fetchNotifications();
-        }, 30000); // 30 seconds polling
+        let intervalId = null;
 
-        return () => clearInterval(interval);
+        const startPolling = () => {
+            if (intervalId) {
+                clearInterval(intervalId);
+            }
+            if (document.visibilityState === 'visible') {
+                fetchNotifications();
+                intervalId = setInterval(() => {
+                    fetchNotifications();
+                }, 30000); // 30 seconds polling
+            }
+        };
+
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === 'visible') {
+                startPolling();
+            } else {
+                if (intervalId) {
+                    clearInterval(intervalId);
+                    intervalId = null;
+                }
+            }
+        };
+
+        // Start polling initially if visible
+        if (document.visibilityState === 'visible') {
+            startPolling();
+        }
+
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+
+        return () => {
+            if (intervalId) {
+                clearInterval(intervalId);
+            }
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+        };
     }, [fetchNotifications]);
 
     // Track notifications that have already been toasted in this session
