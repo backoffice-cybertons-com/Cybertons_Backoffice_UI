@@ -306,3 +306,43 @@
   .tb-actions{ border: 0 !important; background: transparent !important; padding: 0 !important; }
 }
 
+/* Responsive report sizing scoped to Trial Balance only. */
+.trial-balance-page .report-card-compact {
+  --trial-report-offset: clamp(180px, 24dvh, 250px);
+  height: calc(100dvh - var(--trial-report-offset));
+  max-height: none;
+  min-height: clamp(360px, 56dvh, 540px);
+}
+
+.trial-balance-page .tb-table {
+  min-width: 640px;
+}
+
+@media (max-width: 991.98px) {
+  .trial-balance-page .report-card-compact {
+    height: auto;
+    min-height: 0;
+    overflow: visible;
+  }
+
+  .trial-balance-page .report-card-compact > .card-body,
+  .trial-balance-page .tb-table-wrap {
+    overflow: visible;
+  }
+
+  .trial-balance-page .tb-table-wrap .table-responsive {
+    max-height: 58dvh;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .trial-balance-page .tb-toolbar-search-row {
+    flex-wrap: wrap;
+  }
+
+  .trial-balance-page .tb-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
+

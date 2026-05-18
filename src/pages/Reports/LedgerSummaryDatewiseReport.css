@@ -1,3 +1,30 @@
+/* ── Ledger report: filter row + react-select menu must stack above the report table ── */
+.ledger-report-page .lsd-filter-card {
+  position: relative;
+  z-index: 100;
+  overflow: visible !important;
+}
+
+.ledger-report-page .lsd-filter-card .card-body {
+  overflow: visible !important;
+}
+
+/* In-tree react-select menu (no portal) */
+.ledger-report-page .lsd-filter-card .lsd-select__menu {
+  z-index: 500 !important;
+}
+
+/* Sticky thead must stay *below* the filter card subtree (z-index only competes inside the report card) */
+.ledger-report-page #reportViewContainer.report-card-compact .lsd-scroll-area .table thead th {
+  z-index: 0 !important;
+}
+.ledger-report-page #reportViewContainer.report-card-compact .lsd-scroll-area .table thead tr:first-child th {
+  z-index: 1 !important;
+}
+.ledger-report-page #reportViewContainer.report-card-compact .lsd-scroll-area .table thead tr:nth-child(2) th {
+  z-index: 0 !important;
+}
+
 /* ── Table container ── */
 .lsd-table-wrap {
   border: 1px solid rgba(0,0,0,0.08);
@@ -29,7 +56,7 @@
 
 .lsd-scroll-area .table thead th {
   position: sticky;
-  z-index: 10;
+  z-index: 0;
   background-color: #f3f6f9 !important;
   background-clip: padding-box;
   white-space: nowrap;
@@ -39,7 +66,7 @@
 /* Banner row: DEBIT (Dr) / CREDIT (Cr) */
 .lsd-scroll-area .table thead tr:first-child th {
   top: 0;
-  z-index: 12;
+  z-index: 1;
   height: var(--lsd-banner-h);
   box-sizing: border-box;
   padding-top: 0.5rem !important;
@@ -51,7 +78,7 @@
 /* Column headers (2nd row) — top must match banner height exactly */
 .lsd-scroll-area .table thead tr:nth-child(2) th {
   top: var(--lsd-banner-h);
-  z-index: 11;
+  z-index: 0;
   font-size: 0.6875rem;
   font-weight: 600;
   padding-top: 0.35rem !important;
@@ -133,6 +160,8 @@
 #reportViewContainer.report-card-compact {
   display: flex;
   flex-direction: column;
+  position: relative;
+  z-index: 1;
   /* Fixed height so large datasets scroll inside table, not the whole page */
   height: calc(100vh - 240px);
   max-height: calc(100vh - 240px);
@@ -210,5 +239,38 @@
   }
   .lsd-scroll-area .table thead th {
     position: static !important;
+  }
+}
+
+/* Responsive report sizing: adapts to short/large monitors without sharing rules with other reports. */
+.ledger-report-page #reportViewContainer.report-card-compact {
+  --ledger-report-offset: clamp(170px, 22dvh, 240px);
+  height: calc(100dvh - var(--ledger-report-offset));
+  max-height: none;
+  min-height: clamp(340px, 54dvh, 520px);
+}
+
+.ledger-report-page #reportViewContainer.report-card-compact .lsd-scroll-area .table {
+  min-width: 720px;
+}
+
+.ledger-report-page #reportViewContainer.report-card-compact .lsd-split-col .table {
+  min-width: 560px;
+}
+
+@media (max-width: 991.98px) {
+  .ledger-report-page #reportViewContainer.report-card-compact {
+    height: auto;
+    min-height: 0;
+    overflow: visible;
+  }
+
+  .ledger-report-page #reportViewContainer.report-card-compact > .card-body,
+  .ledger-report-page #reportViewContainer.report-card-compact .lsd-table-wrap {
+    overflow: visible;
+  }
+
+  .ledger-report-page #reportViewContainer.report-card-compact .lsd-scroll-area {
+    max-height: 58dvh;
   }
 }
