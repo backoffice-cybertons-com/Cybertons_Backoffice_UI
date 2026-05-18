@@ -33,7 +33,11 @@ export const GET_USERS = "/api/Master/User";
 export const GET_TASK_TEMPLATES = "/api/TaskTemplate";
 export const ADD_TASK_TEMPLATE = "/api/TaskTemplate";
 export const DELETE_TASK_TEMPLATE = "/api/TaskTemplate";
-
+// Notification API
+export const GET_UNREAD_NOTIFICATIONS = "/api/Notification/unread";
+export const MARK_NOTIFICATION_READ = "/api/Notification/mark-as-read";
+export const MARK_TOAST_SHOWN = "/api/Notification/mark-toast-shown";
+export const GET_ALL_NOTIFICATIONS = "/api/Notification/all";
 
 // Chat
 export const GET_DIRECT_CONTACT = "/chat";

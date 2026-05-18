@@ -461,7 +461,7 @@ const SalePurInvWiseRpt = ({
                     rowsPerPage={rowsPerPage}
                     loading={loading}
                     isDark={isDarkMode}
-                    maxHeight="calc(100vh - 280px)"
+                    autoHeight={true}
                     minWidth="1910px"
                     showTotals
                   />

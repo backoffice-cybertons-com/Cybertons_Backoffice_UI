@@ -607,6 +607,7 @@ export default function SalePurComparDatewise() {
                                             currentPage={currentPage}
                                             rowsPerPage={rowsPerPage}
                                             showTotals
+                                            autoHeight={true}
                                             minWidth="1800px"
                                         />
 

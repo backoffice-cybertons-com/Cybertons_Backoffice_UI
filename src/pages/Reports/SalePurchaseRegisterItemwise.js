@@ -363,7 +363,7 @@ const SalePurchaseRegisterItemwise = ({
                                 currentPage={currentPage}
                                 rowsPerPage={rowsPerPage}
                                 loading={loading}
-                                maxHeight="calc(100vh - 280px)"
+                                autoHeight={true}
                                 minWidth="1360px"
                                 showTotals
                             />

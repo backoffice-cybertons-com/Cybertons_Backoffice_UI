@@ -376,7 +376,7 @@ const PayebleReceivableReport = () => {
                   currentPage={currentPage}
                   rowsPerPage={rowsPerPage}
                   loading={loading}
-                  maxHeight="calc(100vh - 350px)"
+                  autoHeight={true}
                   minWidth="1600px"
                   showTotals
                 />

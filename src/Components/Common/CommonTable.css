@@ -5,11 +5,13 @@
 /* ── Wrapper / scroll container ────────────────────────────── */
 .ct-wrapper {
     position: relative;
+    background: #fff;
+    border: 1px solid #e3e6ea;
     border-radius: 10px;
     overflow: hidden;
-    border: 1px solid #e3e6ea;
     box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
 }
+
 
 .ct-scroll-container {
     overflow-x: auto;

@@ -331,3 +331,28 @@ $value in $theme-colors {
         }
     }
 }
+
+/* Report Viewport Consistency - Standardized dynamic height behavior */
+body.report-no-scroll {
+  overflow: hidden !important;
+}
+
+body.report-no-scroll #layout-wrapper {
+  height: 100vh !important;
+  overflow: hidden !important;
+}
+
+body.report-no-scroll .main-content {
+  height: 100vh !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+body.report-no-scroll .page-content {
+  height: 100vh !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+  padding-bottom: 0 !important;
+}

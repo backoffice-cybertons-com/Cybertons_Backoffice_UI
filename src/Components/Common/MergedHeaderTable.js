@@ -233,6 +233,7 @@ const MergedHeaderTable = ({
     data = [],
     loading = false,
     isDark = false,
+    autoHeight = false,
     maxHeight = "calc(100vh - 300px)",
     minWidth = "900px",
     showTotals = true,
@@ -249,12 +250,45 @@ const MergedHeaderTable = ({
     const [labelTop, setLabelTop] = useState(33);
     const [filterTop, setFilterTop] = useState(64);
 
+    const tableRef = useRef(null);
+    const [dynamicMaxHeight, setDynamicMaxHeight] = useState(maxHeight);
+
+    React.useEffect(() => {
+        if (autoHeight) {
+            document.body.classList.add("report-no-scroll");
+        }
+        return () => {
+            document.body.classList.remove("report-no-scroll");
+        };
+    }, [autoHeight]);
+
     useLayoutEffect(() => {
         const groupH = groupRowRef.current?.getBoundingClientRect().height ?? 33;
         const labelH = labelRowRef.current?.getBoundingClientRect().height ?? 31;
         setLabelTop(groupH);
         setFilterTop(groupH + labelH);
     });
+
+    React.useEffect(() => {
+        if (!autoHeight) {
+            setDynamicMaxHeight(maxHeight);
+            return;
+        }
+
+        const calculateHeight = () => {
+            if (tableRef.current) {
+                const rect = tableRef.current.getBoundingClientRect();
+                const windowHeight = window.innerHeight;
+                // Subtract current top position and leave some space for footer (e.g., 60px)
+                const availableHeight = windowHeight - rect.top - 60;
+                setDynamicMaxHeight(`${Math.max(availableHeight, 200)}px`);
+            }
+        };
+
+        calculateHeight();
+        window.addEventListener("resize", calculateHeight);
+        return () => window.removeEventListener("resize", calculateHeight);
+    }, [autoHeight, maxHeight]);
 
     const S = makeStyles(isDark);
 
@@ -342,8 +376,8 @@ const MergedHeaderTable = ({
 
     /* ── render ── */
     return (
-        <div style={S.wrapper}>
-            <div style={{ ...S.scrollContainer, maxHeight }}>
+        <div style={S.wrapper} ref={tableRef}>
+            <div style={{ ...S.scrollContainer, maxHeight: dynamicMaxHeight }}>
                 <table style={{ ...S.table, minWidth }}>
                     <colgroup>
                         {columns.map((col) => (

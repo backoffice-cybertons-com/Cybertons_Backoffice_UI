@@ -50,8 +50,7 @@ const calendarSlice = createSlice({
       state.loading = true;
       state.isEventUpdated = false;
     });
-    builder.addCase(addNewEvent.fulfilled, (state, action) => {
-      state.events.unshift(action.payload);
+    builder.addCase(addNewEvent.fulfilled, (state) => {
       state.isEventUpdated = true;
       state.loading = false;
     });
@@ -65,12 +64,7 @@ const calendarSlice = createSlice({
       state.loading = true;
       state.isEventUpdated = false;
     });
-    builder.addCase(updateEvent.fulfilled, (state, action) => {
-      state.events = (state.events || []).map((event) =>
-        event.id.toString() === action.payload.id.toString()
-          ? { ...event, ...action.payload }
-          : event
-      );
+    builder.addCase(updateEvent.fulfilled, (state) => {
       state.isEventUpdated = true;
       state.loading = false;
     });
@@ -84,10 +78,7 @@ const calendarSlice = createSlice({
       state.loading = true;
       state.isEventUpdated = false;
     });
-    builder.addCase(deleteEvent.fulfilled, (state, action) => {
-      state.events = state.events.filter(
-        (event) => event.id.toString() !== action.payload.toString()
-      );
+    builder.addCase(deleteEvent.fulfilled, (state) => {
       state.isEventUpdated = true;
       state.loading = false;
     });
