@@ -20,7 +20,7 @@ import { APIClient } from '../../helpers/api_helper';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import FeatherIcon from 'feather-icons-react';
-import { formatToTwoDecimals } from '../../utils/numberUtils';
+import { formatToFourDecimals, formatToTwoDecimals } from '../../utils/numberUtils';
 
 const apiClient = new APIClient();
 
@@ -63,14 +63,14 @@ const ProductForm = ({ isEdit = false, productId = null, onSuccess = null, onCan
         purchaseDescription: '',
         taxGroupId: '',
         preferredVendorId: '',
-        openingQuantity: "0.00",
+        openingQuantity: "0.0000",
         openingPrice: "0.00",
         openingAmount: "0.00",
         purchaseEffectedAccount: '',
         saleEffectedAccount: '',
-        minQuantity: "0.00",
-        maxQuantity: "0.00",
-        reOrderQuantity: "0.00",
+        minQuantity: "0.0000",
+        maxQuantity: "0.0000",
+        reOrderQuantity: "0.0000",
         taxExemptionId: ''
     };
 
@@ -200,6 +200,10 @@ const ProductForm = ({ isEdit = false, productId = null, onSuccess = null, onCan
                             ...response,
                             name: response.name || response.ProductName || "",
                             shortName: response.shortName || response.ShortName || "",
+                            openingQuantity: formatToFourDecimals(response.openingQuantity ?? response.OpeningQuantity ?? 0),
+                            minQuantity: formatToFourDecimals(response.minQuantity ?? response.MinQuantity ?? 0),
+                            maxQuantity: formatToFourDecimals(response.maxQuantity ?? response.MaxQuantity ?? 0),
+                            reOrderQuantity: formatToFourDecimals(response.reOrderQuantity ?? response.ReOrderQuantity ?? 0),
                             sellable: response.sellable ?? true,
                             purchasable: response.purchasable ?? true
                         };
@@ -856,10 +860,10 @@ const ProductForm = ({ isEdit = false, productId = null, onSuccess = null, onCan
                                                 id="openingQuantity"
                                                 name="openingQuantity"
                                                 type="number"
-                                                step="any"
+                                                step="0.0001"
                                                 onChange={formik.handleChange}
                                                 onBlur={(e) => {
-                                                    const val = formatToTwoDecimals(e.target.value);
+                                                    const val = formatToFourDecimals(e.target.value);
                                                     formik.setFieldValue('openingQuantity', val);
                                                     formik.handleBlur(e);
                                                 }}
@@ -927,9 +931,9 @@ const ProductForm = ({ isEdit = false, productId = null, onSuccess = null, onCan
                                                 id="minQuantity"
                                                 name="minQuantity"
                                                 type="number"
-                                                step="any"
+                                                step="0.0001"
                                                 onBlur={(e) => {
-                                                    const val = formatToTwoDecimals(e.target.value);
+                                                    const val = formatToFourDecimals(e.target.value);
                                                     formik.setFieldValue('minQuantity', val);
                                                     formik.handleBlur(e);
                                                 }}
@@ -944,9 +948,9 @@ const ProductForm = ({ isEdit = false, productId = null, onSuccess = null, onCan
                                                 id="maxQuantity"
                                                 name="maxQuantity"
                                                 type="number"
-                                                step="any"
+                                                step="0.0001"
                                                 onBlur={(e) => {
-                                                    const val = formatToTwoDecimals(e.target.value);
+                                                    const val = formatToFourDecimals(e.target.value);
                                                     formik.setFieldValue('maxQuantity', val);
                                                     formik.handleBlur(e);
                                                 }}
@@ -961,9 +965,9 @@ const ProductForm = ({ isEdit = false, productId = null, onSuccess = null, onCan
                                                 id="reOrderQuantity"
                                                 name="reOrderQuantity"
                                                 type="number"
-                                                step="any"
+                                                step="0.0001"
                                                 onBlur={(e) => {
-                                                    const val = formatToTwoDecimals(e.target.value);
+                                                    const val = formatToFourDecimals(e.target.value);
                                                     formik.setFieldValue('reOrderQuantity', val);
                                                     formik.handleBlur(e);
                                                 }}

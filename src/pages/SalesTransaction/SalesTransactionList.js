@@ -29,6 +29,7 @@ import Loader from "../../Components/Common/Loader";
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { createSelector } from "reselect";
+import { formatToFourDecimals } from "../../utils/numberUtils";
 
 const SalesTransactionList = () => {
     const dispatch = useDispatch();
@@ -192,10 +193,10 @@ const SalesTransactionList = () => {
                 enableColumnFilter: true,
                 right: true,
                 filterFn: (row, columnId, filterValue) => {
-                    const val = (row.getValue(columnId) || 0).toFixed(2);
+                    const val = formatToFourDecimals(row.getValue(columnId));
                     return String(val).toLowerCase().includes(String(filterValue).toLowerCase());
                 },
-                cell: (cell) => Number(cell.getValue() || 0).toFixed(2),
+                cell: (cell) => formatToFourDecimals(cell.getValue()),
             },
             {
                 header: "Grand Total",
@@ -231,7 +232,7 @@ const SalesTransactionList = () => {
                 invDate: row.invDate ? handleValidDate(row.invDate) : "",
                 customerName: customer ? customer.name : String(partyId || ""),
                 invType: row.invType || "",
-                totalQuantity: Number(row.totalQuantity || 0).toFixed(2),
+                totalQuantity: formatToFourDecimals(row.totalQuantity),
                 grandTotal: Number(row.grandTotal || 0).toFixed(2),
             };
         });
@@ -300,7 +301,7 @@ const SalesTransactionList = () => {
                                         <ToastContainer closeButton={false} limit={1} />
                                         <div className="mt-2 border rounded bg-light p-2">
                                             <div className="d-flex justify-content-end gap-4 fw-semibold">
-                                                <span>Total Quantity: {listTotals.totalQuantity.toFixed(2)}</span>
+                                                <span>Total Quantity: {formatToFourDecimals(listTotals.totalQuantity)}</span>
                                                 <span>Grand Total: {listTotals.grandTotal.toFixed(2)}</span>
                                             </div>
                                         </div>

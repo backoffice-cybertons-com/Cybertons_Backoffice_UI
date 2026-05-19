@@ -5,7 +5,7 @@ import {
 } from "reactstrap";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import Flatpickr from "react-flatpickr";
-import { formatToTwoDecimals } from "../../utils/numberUtils";
+import { formatToFourDecimals, formatToTwoDecimals } from "../../utils/numberUtils";
 import BreadCrumb from "../../Components/Common/BreadCrumb";
 import Select from "react-select";
 import { useFormik } from "formik";
@@ -1142,11 +1142,11 @@ const PurchaseTransactionCreate = () => {
                                                                     {showErr('unit') && <div className="text-danger" style={{ fontSize: '11px' }}>{lineErrors.unit}</div>}
                                                                 </td>
                                                                 <td>
-                                                                    <Input type="number" value={line.quantity}
+                                                                    <Input type="number" step="0.0001" value={line.quantity}
                                                                         disabled={isView}
                                                                         onChange={(e) => handleLineChange(index, "quantity", e.target.value)}
                                                                         onBlur={(e) => {
-                                                                            handleLineChange(index, "quantity", formatToTwoDecimals(e.target.value));
+                                                                            handleLineChange(index, "quantity", formatToFourDecimals(e.target.value));
                                                                             validation.setFieldTouched(`lines[${index}].quantity`, true);
                                                                         }}
                                                                         style={{ borderColor: showErr('quantity') ? '#f06548' : '' }} />
@@ -1166,7 +1166,7 @@ const PurchaseTransactionCreate = () => {
                                                                     {showErr('subUnit') && <div className="text-danger" style={{ fontSize: '11px' }}>{lineErrors.subUnit}</div>}
                                                                 </td>
                                                                 <td>
-                                                                    <Input readOnly value={formatToTwoDecimals(line.subUnitQuantity || 0)} className="bg-light" />
+                                                                    <Input readOnly value={formatToFourDecimals(line.subUnitQuantity || 0)} className="bg-light" />
                                                                 </td>
                                                                 <td>
                                                                     <Input type="number" value={line.rate}
@@ -1232,9 +1232,9 @@ const PurchaseTransactionCreate = () => {
                                                         <td style={stickyFooterCellStyle}></td>
                                                         <td style={stickyFooterCellStyle}></td>
                                                         <td style={stickyFooterCellStyle}></td>
-                                                        <td style={stickyFooterCellStyle}>{formatToTwoDecimals(itemTotals.quantity)}</td>
+                                                        <td style={stickyFooterCellStyle}>{formatToFourDecimals(itemTotals.quantity)}</td>
                                                         <td style={stickyFooterCellStyle}></td>
-                                                        <td style={stickyFooterCellStyle}>{formatToTwoDecimals(itemTotals.subUnitQuantity)}</td>
+                                                        <td style={stickyFooterCellStyle}>{formatToFourDecimals(itemTotals.subUnitQuantity)}</td>
                                                         <td style={stickyFooterCellStyle}>{formatToTwoDecimals(itemTotals.rate)}</td>
                                                         <td style={stickyFooterCellStyle}>{formatToTwoDecimals(itemTotals.mrp)}</td>
                                                         <td style={stickyFooterCellStyle}>{formatToTwoDecimals(itemTotals.cgstPercent)}</td>
@@ -1398,7 +1398,7 @@ const PurchaseTransactionCreate = () => {
                                                                     <tr key={idx}>
                                                                         <td>{inv.invNo || inv.InvNo}</td>
                                                                         <td>{new Date(inv.invDate || inv.InvDate).toLocaleDateString('en-GB')}</td>
-                                                                        <td className="text-end">{qtyByCode[code] !== undefined ? Number(qtyByCode[code]).toFixed(2) : <span className="text-muted small italic">Loading...</span>}</td>
+                                                                        <td className="text-end">{qtyByCode[code] !== undefined ? formatToFourDecimals(qtyByCode[code]) : <span className="text-muted small italic">Loading...</span>}</td>
                                                                         <td className="text-end">{formatToTwoDecimals(inv.grandTotal || inv.GrandTotal)}</td>
                                                                         <td className="text-center">
                                                                             <Button color="soft-info" size="sm" onClick={() => selectPreviousInvoice(code)}>

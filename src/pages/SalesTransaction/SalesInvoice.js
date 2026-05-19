@@ -7,6 +7,7 @@ import FooterForAllRpt from "../../Components/Common/FooterForAllRpt";
 
 /* ─── helpers ─────────────────────────────────────────────────────── */
 const fmt = (n) => Number(n || 0).toFixed(2);
+const fmtQty = (n) => Number(n || 0).toFixed(4);
 
 const toWords = (n) => {
     const a = ["", "One", "Two", "Three", "Four", "Five", "Six", "Seven",
@@ -375,7 +376,7 @@ const SalesInvoice = () => {
                                         <td className="w-sr">{i + 1}</td>
                                         <td className="w-desc">{ln.productDetails || ln.ProductDetails || ""}</td>
                                         <td className="w-hsn">{ln.hsnCode || ln.HsnCode || ""}</td>
-                                        <td className="w-crt">{fmt(ln.crt || ln.Crt)}</td>
+                                        <td className="w-crt">{fmtQty(ln.crt || ln.Crt)}</td>
                                         <td className="w-pack">{ln.packing || ln.Packing || ""}</td>
                                         <td className="w-rate si-col-divider">{fmt(ln.rate || ln.Rate)}</td>
                                         <td className="w-taxable">{fmt(ln.amount || ln.Amount)}</td>
@@ -403,7 +404,7 @@ const SalesInvoice = () => {
                         <tfoot>
                             <tr className="si-subtotal-row">
                                 <td colSpan={3} className="si-subtotal-lbl">Sub Total :</td>
-                                <td className="w-crt">{fmt(totCrt)}</td>
+                                <td className="w-crt">{fmtQty(totCrt)}</td>
                                 <td className="w-pack">{totPacking}</td>
                                 <td className="w-rate si-col-divider"></td>
                                 <td className="w-taxable">{fmt(totTaxable)}</td>
