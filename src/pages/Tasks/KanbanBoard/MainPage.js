@@ -1,873 +1,579 @@
-import React, { useState, useEffect} from "react"
+import React, { useEffect, useState } from "react";
 import {
   Card,
   CardBody,
   Col,
-  Row,
-  DropdownMenu,
   DropdownItem,
+  DropdownMenu,
   DropdownToggle,
-  UncontrolledDropdown,
+  Form,
+  FormFeedback,
+  Input,
+  Label,
   Modal,
   ModalBody,
   ModalHeader,
-  Form,
-  Label,
-  Input,
-  FormFeedback,
-} from "reactstrap"
-import { useFormik } from "formik"
-import * as Yup from "yup"
-import Select from "react-select";
+  Row,
+  UncontrolledDropdown,
+} from "reactstrap";
+import { DragDropContext, Draggable, Droppable } from "@hello-pangea/dnd";
+import { Link } from "react-router-dom";
+import { createSelector } from "reselect";
+import { useDispatch, useSelector } from "react-redux";
+import { useFormik } from "formik";
+import * as Yup from "yup";
+import SimpleBar from "simplebar-react";
 
-
-import {
-  getTasks as onGetTasks,
-  addCardData as onAddCardData,
-  updateCardData as onUpdateCardData,
-  deleteKanban as OnDeleteKanban,
-} from "../../../slices/thunks"
-
-//redux
-import { useSelector, useDispatch } from "react-redux"
-import { createSelector } from "reselect"
-import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd"
-import { Link } from "react-router-dom"
-import SimpleBar from "simplebar-react"
-// import moment from "moment"
-import { ToastContainer } from "react-toastify"
-import Spinners from "../../../Components/Common/Spinner";
-import { AddTeamMember, headData } from "../../../common/data"
 import DeleteModal from "../../../Components/Common/DeleteModal";
-import Flatpickr from "react-flatpickr";
-import moment from "moment";
+import Spinners from "../../../Components/Common/Spinner";
+import { api } from "../../../config";
+import {
+  addCardData as onAddCardData,
+  deleteKanban as onDeleteKanban,
+  getTasks as onGetTasks,
+  updateCardData as onUpdateCardData,
+  deleteKanbanColumn as onDeleteKanbanColumn,
+} from "../../../slices/thunks";
+import KanbanQuickAddCard from "./KanbanQuickAddCard";
+import KanbanTaskDetailsModal from "./KanbanTaskDetailsModal";
+import avatar1 from "../../../assets/images/users/avatar-1.jpg";
+import avatar2 from "../../../assets/images/users/avatar-2.jpg";
+import avatar3 from "../../../assets/images/users/avatar-3.jpg";
+import avatar4 from "../../../assets/images/users/avatar-4.jpg";
+import avatar5 from "../../../assets/images/users/avatar-5.jpg";
+import avatar6 from "../../../assets/images/users/avatar-6.jpg";
+import avatar7 from "../../../assets/images/users/avatar-7.jpg";
+import avatar8 from "../../../assets/images/users/avatar-8.jpg";
+import avatar9 from "../../../assets/images/users/avatar-9.jpg";
+import avatar10 from "../../../assets/images/users/avatar-10.jpg";
+
+const avatarMap = {
+  "avatar-1.jpg": avatar1,
+  "avatar-2.jpg": avatar2,
+  "avatar-3.jpg": avatar3,
+  "avatar-4.jpg": avatar4,
+  "avatar-5.jpg": avatar5,
+  "avatar-6.jpg": avatar6,
+  "avatar-7.jpg": avatar7,
+  "avatar-8.jpg": avatar8,
+  "avatar-9.jpg": avatar9,
+  "avatar-10.jpg": avatar10,
+};
+
+const getAvatarImage = (imgSrc) => {
+  if (!imgSrc) return "";
+  const parts = imgSrc.split("/");
+  const filename = parts[parts.length - 1]; // e.g. "avatar-1.jpg"
+  return avatarMap[filename] || imgSrc;
+};
+
+const getDueDate = (card) => card?.dueDate || card?.botId || "";
+
+const getAttachmentCount = (card) => {
+  if (!card?.attachmentPaths) return 0;
+  try {
+    if (card.attachmentPaths.trim().startsWith("[")) {
+      const parsed = JSON.parse(card.attachmentPaths);
+      return Array.isArray(parsed) ? parsed.filter(Boolean).length : 0;
+    } else {
+      return card.attachmentPaths.split(",").map(p => p.trim()).filter(Boolean).length;
+    }
+  } catch (e) {
+    return 0;
+  }
+};
+
+const priorityStyles = {
+  High: { backgroundColor: "#dc3545", color: "#fff" },
+  Medium: { backgroundColor: "#3577f1", color: "#fff" },
+  Low: { backgroundColor: "#6c757d", color: "#fff" },
+};
+
+const moduleStyles = {
+  Sales: { backgroundColor: "#0dcaf0", color: "#000" },
+  Purchase: { backgroundColor: "#6f42c1", color: "#fff" },
+  Accounts: { backgroundColor: "#405189", color: "#fff" },
+  Payment: { backgroundColor: "#0ab39c", color: "#fff" },
+  GST: { backgroundColor: "#d63384", color: "#fff" },
+  Inventory: { backgroundColor: "#20c997", color: "#000" },
+};
+
+const labelStyles = {
+  "Follow Up": { backgroundColor: "#f7b84b", color: "#000" },
+  "Pending Approval": { backgroundColor: "#f1c40f", color: "#000" },
+  "Need Review": { backgroundColor: "#6f42c1", color: "#fff" },
+  "Call Customer": { backgroundColor: "#3577f1", color: "#fff" },
+  "Verify Payment": { backgroundColor: "#0ab39c", color: "#fff" },
+  "Send Invoice": { backgroundColor: "#0dcaf0", color: "#000" },
+  "Waiting Customer": { backgroundColor: "#6c757d", color: "#fff" },
+  Recheck: { backgroundColor: "#dc3545", color: "#fff" },
+};
+
+const getLabels = (card) => {
+  const labels = card?.labels || [];
+  return Array.isArray(labels) ? labels.filter((label) => labelStyles[label]) : [];
+};
+
+const getCoverImageSrc = (coverImage) => {
+  if (!coverImage) return "";
+  if (coverImage.startsWith("data:") || coverImage.startsWith("http")) return coverImage;
+  return `${api.API_URL}${coverImage}`;
+};
 
 const TasksKanban = () => {
   const dispatch = useDispatch();
-  const [kanbanTasksCards, setKanbanTasksCards] = useState()
+  const [cards, setCards] = useState([]);
+  const [selectedColumnId, setSelectedColumnId] = useState("");
+  const [selectedCard, setSelectedCard] = useState(null);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const matchesSearch = (card) => {
+    if (!searchQuery) return true;
+    const query = searchQuery.toLowerCase();
+    
+    const title = (card.title || "").toLowerCase();
+    const description = (card.text || card.description || "").toLowerCase();
+    const module = (card.module || "").toLowerCase();
+    
+    const labels = Array.isArray(card.labels)
+      ? card.labels.map((l) => l.toLowerCase())
+      : Array.isArray(card.badge1)
+      ? card.badge1.map((l) => l.toLowerCase())
+      : [];
+
+    return (
+      title.includes(query) ||
+      description.includes(query) ||
+      module.includes(query) ||
+      labels.some((l) => l.includes(query))
+    );
+  };
+  const [columnModalOpen, setColumnModalOpen] = useState(false);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [deleteType, setDeleteType] = useState(""); // "card" or "column"
+  const [itemToDelete, setItemToDelete] = useState(null);
 
   const selectLayoutState = (state) => state.Tasks;
-  const TasksKanbanProperties = createSelector(
-    selectLayoutState,
-    (state) => ({
-      tasks: state.tasks,
-      loading: state.loading
-    }))
+  const tasksSelector = createSelector(selectLayoutState, (state) => ({
+    tasks: state.tasks,
+    loading: state.loading,
+  }));
 
-  const { tasks, loading } = useSelector(TasksKanbanProperties)
-
-  const [isLoading, setLoading] = useState(loading)
+  const { tasks, loading } = useSelector(tasksSelector);
+  const [isLoading, setLoading] = useState(loading);
 
   useEffect(() => {
-    dispatch(onGetTasks())
-  }, [dispatch])
-
-  const [cards, setCards] = useState([])
+    debugger;
+    dispatch(onGetTasks());
+  }, [dispatch]);
 
   useEffect(() => {
-    setCards(tasks)
-  }, [tasks])
+    debugger;
+    setCards(Array.isArray(tasks) ? tasks : []);
+  }, [tasks]);
 
+  const columnFormik = useFormik({
+    initialValues: {
+      name: "",
+    },
+    validationSchema: Yup.object({
+      name: Yup.string().required("Please enter a column name"),
+    }),
+    onSubmit: (values) => {
+      dispatch(
+        onAddCardData({
+          name: values.name.trim(),
+          color: "primary",
+          cards: [],
+        })
+      );
+      columnFormik.resetForm();
+      setColumnModalOpen(false);
+    },
+  });
 
+  const handleQuickAddCard = (card) => {
+    dispatch(
+      onAddCardData({
+        ...card,
+        priority: "Medium",
+        module: "",
+        labels: [],
+        userImages: [],
+        isPinned: false,
+      })
+    );
+  };
 
+  const handleOpenDetails = (card, column) => {
+    setSelectedCard(card);
+    setSelectedColumnId(column.id);
+    setDetailsOpen(true);
+  };
+
+  const handleSaveDetails = (updatedCard) => {
+    dispatch(onUpdateCardData(updatedCard));
+    setDetailsOpen(false);
+  };
+
+  const handleDeleteConfirm = () => {
+    if (!itemToDelete) return;
+
+    if (deleteType === "card") {
+      dispatch(onDeleteKanban(itemToDelete.id));
+    } else if (deleteType === "column") {
+      dispatch(onDeleteKanbanColumn(itemToDelete.id));
+    }
+    setDeleteModalOpen(false);
+    setItemToDelete(null);
+    setDeleteType("");
+  };
 
   const handleDragEnd = (result) => {
-    if (!result.destination) return // If dropped outside a valid drop area, do nothing
+    if (!result.destination) return;
 
-    const { source, destination } = result
-    // Reorder cards within the same card line
-    if (source.droppableId === destination.droppableId) {
-      const line = cards.find((line) => line.id === source.droppableId)
-      const reorderedCards = Array.from(line.cards)
-      const [movedCard] = reorderedCards.splice(source.index, 1)
-      reorderedCards.splice(destination.index, 0, movedCard)
+    const { source, destination } = result;
+    const sourceLine = cards.find((line) => line.id === source.droppableId);
+    const destinationLine = cards.find((line) => line.id === destination.droppableId);
 
-      const updatedLines = cards.map((line) => {
-        if (line.id === source.droppableId) {
-          return { ...line, cards: reorderedCards }
-        }
-        return line
-      })
+    if (!sourceLine || !destinationLine) return;
 
-      setCards(updatedLines)
-    } else {
-      // Move card between different card lines
-      const sourceLine = cards.find((line) => line.id === source.droppableId)
-      const destinationLine = cards.find(
-        (line) => line.id === destination.droppableId
-      )
-      const sourceCards = Array.from(sourceLine.cards)
-      const destinationCards = Array.from(destinationLine.cards)
-      const [movedCard] = sourceCards.splice(source.index, 1)
-      destinationCards.splice(destination.index, 0, movedCard)
+    const sourceCards = Array.from(sourceLine.cards || []);
+    const destinationCards =
+      source.droppableId === destination.droppableId
+        ? sourceCards
+        : Array.from(destinationLine.cards || []);
+    const [movedCard] = sourceCards.splice(source.index, 1);
 
-      const updatedLines = cards.map((line) => {
-        if (line.id === source.droppableId) {
-          return { ...line, cards: sourceCards }
-        } else if (line.id === destination.droppableId) {
-          return { ...line, cards: destinationCards }
-        }
-        return line
-      })
+    if (!movedCard) return;
 
-      setCards(updatedLines)
-    }
-  }
+    destinationCards.splice(destination.index, 0, movedCard);
 
-  // create Modal
-  const [modall, setModall] = useState(false)
-
-  const handleOpen = () => {
-    setModall(!modall);
-    setCardHead(null)
-  }
-
-  const [cardhead, setCardHead] = useState()
-
-
-  const formik = useFormik({
-    // enableReinitialize : use this flag when initial values needs to be changed
-    enableReinitialize: true,
-
-    initialValues: {
-      id: (cardhead && cardhead.id) || "",
-      name: (cardhead && cardhead.name) || "",
-    } ,
-    validationSchema: Yup.object({
-      name: Yup.string().required("Please Enter Your Card Title"),
-    }),
-    onSubmit: (values) => {
-
-      const newCardheaderData = {
-        id: (Math.floor(Math.random() * (30 - 20)) + 20).toString(),
-        name: values["name"],
-        cards: []
+    const updatedLines = cards.map((line) => {
+      if (line.id === source.droppableId) {
+        return { ...line, cards: sourceCards };
       }
-
-      dispatch(onAddCardData(newCardheaderData))
-      formik.resetForm()
-
-      handleOpen()
-    },
-  })
-
-
-  // badges
-  const [tag, setTag] = useState();
-  const [assignTag, setAssignTag] = useState([]);
-
-  const handlestag = (tags) => {
-    setTag(tags);
-    const assigned = tags.map((item) => item.value);
-    setAssignTag(assigned);
-  };
-
-  const tags = [
-    { label: "Admin", value: "Admin" },
-    { label: "Layout", value: "Layout" },
-    { label: "Dashboard", value: "Dashboard" },
-    { label: "Design", value: "Design" },
-    { label: "Website", value: "Website" },
-    { label: "Marketing", value: "Marketing" },
-    { label: "Business", value: "Business" },
-    { label: "Logo", value: "Logo" },
-    { label: "UI/UX", value: "UI/UX" },
-    { label: "Analysis", value: "Analysis" },
-    { label: "Product", value: "Product" },
-    { label: "Ecommerce", value: "Ecommerce" },
-    { label: "Graphic", value: "Graphic" },
-  ];
-
-  // Add Modal
-  const [modal, setModal] = useState(false)
-  const toggle = () => {
-    if (modal) {
-      setModal(false)
-      setImages([])
-      setCard(null)
-    } else {
-      setModal(true)
-      setAssignTag([]);
-    }
-  }
-
-
-  const [isEdit, setIsEdit] = useState(false)
-  const [card, setCard] = useState()
-  // validation
-  const validation = useFormik({
-    // enableReinitialize : use this flag when initial values needs to be changed
-    enableReinitialize: true,
-
-    initialValues: {
-      id: (card && card.cardId) || "",
-      title: (card && card.title) || "",
-      text: (card && card.text) || "",
-      badge1: (card && card.badge1) || [],
-      userImages: (card && card.userImages) || [],
-      botId: (card && card.botId) || "",
-      eye: (card && card.eye) || "",
-      que: (card && card.que) || "",
-      clip: (card && card.clip) || "",
-    } ,
-    validationSchema: Yup.object({
-      title: Yup.string().required("Please Enter Your Job Title"),
-      text: Yup.string().required("Please Enter Your Task Description"),
-      userImages: Yup.array().min(1, 'Please select at least one team member'),
-      botId: Yup.string().required("Please Enter the Dates"),
-      eye: Yup.number().required("Please Enter the Views"),
-      que: Yup.number().required("Please Enter the Comments Number"),
-      clip: Yup.number().required("Please Enter the Pinned Views Number"),
-    }),
-    onSubmit: (values) => {
-      if (isEdit) {
-        const updatedCards = {
-          id: card ? card.id : 0,
-          kanId: kanbanTasksCards,
-          cardId: values.id,
-          title: values.title,
-          text: values.text,
-          badge1: values.badge1,
-          botId: values.botId,
-          userImages: values.userImages,
-          eye: values.eye,
-          que: values.que,
-          clip: values.clip,
-        }
-
-        // update Job
-        dispatch(onUpdateCardData(updatedCards))
-        validation.resetForm()
-      } else {
-        const newCardData = {
-          id: (Math.floor(Math.random() * (30 - 20)) + 20).toString(),
-          kanId: kanbanTasksCards,
-          cardId: values["id"],
-          title: values["title"],
-          text: values["text"],
-          badge1: assignTag,
-          botId: values["botId"],
-          userImages: values["userImages"],
-          eye: values['eye'],
-          que: values["que"],
-          clip: values["clip"],
-        }
-
-        dispatch(onAddCardData(newCardData))
-        validation.resetForm()
+      if (line.id === destination.droppableId) {
+        return { ...line, cards: destinationCards };
       }
-      toggle()
-    },
-  })
+      return line;
+    });
 
-
-
-  const handleCardEdit = (arg, line) => {
-    setModal(true)
-    setCard(arg)
-
-    let card = arg
-    setCard({
-      id: card.id,
-      title: card.title,
-      text: card.text,
-      botId: card.botId,
-      userImages: card.userImages,
-      eye: card.eye,
-      que: card.que,
-      clip: card.clip,
-      badge1: card.badge1
-    })
-
-    setKanbanTasksCards(line.id)
-    setIsEdit(true)
-
-    toggle()
-  }
-
-  const handleAddNewCard = (line) => {
-    setCard("")
-    setIsEdit(false)
-    toggle()
-    setKanbanTasksCards(line.id)
+    setCards(updatedLines);
+    dispatch(
+      onUpdateCardData({
+        ...movedCard,
+        kanId: destination.droppableId,
+        position: destination.index + 1,
+      })
+    );
   };
-
-  const [images, setImages] = useState([])
-
-  const [deleteModal, setDeleteModal] = useState(false);
-
-  const onClickDelete = (card) => {
-    setCard(card);
-    setDeleteModal(true);
-  };
-
-  const handleDeleteCard = () => {
-    if (card) {
-      dispatch(OnDeleteKanban(card.id));
-      setDeleteModal(false);
-    }
-  };
-
-
-  const handleImage = (image) => {
-    const updatedImages = images.includes(image)
-      ? images.filter((item) => item !== image)
-      : [...images, image];
-
-    setImages(updatedImages);
-    validation.setFieldValue('userImages', updatedImages)
-  }
-  useEffect(() => {
-    if (card) {
-      setImages([...card?.userImages])
-    }
-  }, [card])
-
-
-
 
   return (
     <React.Fragment>
       <DeleteModal
-        show={deleteModal}
-        onDeleteClick={handleDeleteCard}
-        onCloseClick={() => setDeleteModal(false)}
+        show={deleteModalOpen}
+        onDeleteClick={handleDeleteConfirm}
+        onCloseClick={() => {
+          setDeleteModalOpen(false);
+          setItemToDelete(null);
+          setDeleteType("");
+        }}
       />
 
       <Card>
         <CardBody>
-          <Row className="g-2">
-            <div className="col-lg-auto">
-              <div className="hstack gap-2">
-                <button className="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createboardModal" onClick={handleOpen}>
-                  <i className="ri-add-line align-bottom me-1"></i> Create Board</button>
-              </div>
-            </div>
-            <div className="col-lg-3 col-auto">
+          <Row className="g-2 align-items-center">
+            <Col lg="auto">
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={() => setColumnModalOpen(true)}
+              >
+                <i className="ri-add-line align-bottom me-1"></i>
+                Add Column
+              </button>
+            </Col>
+            <Col lg={4}>
               <div className="search-box">
-                <input type="text" className="form-control search" id="search-task-options" placeholder="Search for project, tasks..." />
+                <Input
+                  type="text"
+                  className="form-control search"
+                  id="search-task-options"
+                  placeholder="Search project tasks..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
                 <i className="ri-search-line search-icon"></i>
               </div>
-            </div>
-            <div className="col-auto ms-sm-auto">
-              <div className="avatar-group" id="newMembar">
-                {(headData || []).map((item, key) => (<Link to="#" className="avatar-group-item" data-bs-toggle="tooltip" key={key} data-bs-trigger="hover" data-bs-placement="top" aria-label={item.name} data-bs-original-title={item.name}>
-                  <img src={item.picture} alt="" className="rounded-circle avatar-xs" />
-                </Link>))}
-                <Link to="#addmemberModal" data-bs-toggle="modal" className="avatar-group-item" >
-                  <div className="avatar-xs">
-                    <div className="avatar-title rounded-circle">
-                      +
-                    </div>
-                  </div>
-                </Link>
-              </div>
-            </div>
+            </Col>
           </Row>
         </CardBody>
       </Card>
 
       <div className="tasks-board mb-3 d-flex" id="kanbanboard">
-        {
-          isLoading ? <Spinners setLoading={setLoading} /> :
-            <DragDropContext onDragEnd={handleDragEnd}>
-              {(cards || []).map((line) => {
-                return (
-                  // header line
-                  <div className="tasks-list" key={line.id}>
-                    <div className="d-flex mb-3">
-                      <div className="flex-grow-1">
-                        <h6 className="fs-14 text-uppercase fw-semibold mb-0">{line.name} <small className={`badge bg-${line.color} align-bottom ms-1 totaltask-badge`}>{line.badge}</small></h6>
-                      </div>
-                      <div className="flex-shrink-0">
-                        <UncontrolledDropdown className="card-header-dropdown float-end">
-                          <DropdownToggle
-                            className="text-reset dropdown-btn"
-                            tag="a"
-                            color="white"
-                          >
-                            <span className="fw-medium text-muted fs-12">Priority<i className="mdi mdi-chevron-down ms-1"></i></span>
-                          </DropdownToggle>
-                          <DropdownMenu className="dropdown-menu-end">
-                            <DropdownItem>Priority</DropdownItem>
-                            <DropdownItem>Date Added</DropdownItem>
-                          </DropdownMenu>
-                        </UncontrolledDropdown>
-                      </div>
-                    </div>
-                    {/* data */}
-                    <SimpleBar className="tasks-wrapper px-3 mx-n3">
-                      <div id="unassigned-task" className={line.cards === "object" ? "tasks" : "tasks noTask"}>
-                        <Droppable droppableId={line.id}>
-                          {(provided) => (
-                            <div
-                              ref={provided.innerRef}
-                              {...provided.droppableProps}
-                            >
-                              {line.cards.map((card, index) => {
-                                return (
-                                  <Draggable
-                                    key={card.id}
-                                    draggableId={card.id}
-                                    index={index}
-                                  >
-                                    {(provided) => (
-                                      <div
-                                        ref={provided.innerRef}
-                                        {...provided.draggableProps}
-                                        {...provided.dragHandleProps}
-                                        // className="card task-list"
-                                        className="pb-1 task-list"
-                                        id={line.name + "-task"}
-                                      >
-                                        <div className="card task-box" id="uptask-1">
-                                          <CardBody>
-                                            <Link to="#" className="text-muted fw-medium fs-14 flex-grow-1 ">{card.cardId}</Link>
-                                            <UncontrolledDropdown className="float-end">
-                                              <DropdownToggle
-                                                className="arrow-none"
-                                                tag="a"
-                                                color="white"
-                                              >
-                                                <i className="ri-more-fill"></i>
-                                              </DropdownToggle>
-                                              <DropdownMenu className="dropdown-menu-end">
-                                                <DropdownItem
-                                                  className="edittask-details"
-                                                >
-                                                  View
-                                                </DropdownItem>
-                                                <DropdownItem
-                                                  className="edittask-details"
-                                                  onClick={() =>
-                                                    handleCardEdit(card, line)
-                                                  }
-                                                >
-                                                  Edit
-                                                </DropdownItem>
-                                                <DropdownItem
-                                                  className="deletetask"
-                                                  onClick={() =>
-                                                    onClickDelete(card)
-                                                  }
-                                                >
-                                                  Delete
-                                                </DropdownItem>
-                                              </DropdownMenu>
-                                            </UncontrolledDropdown>
-                                            <div className="mb-3">
-
-                                              <h6 className="fs-15 mb-0 flex-grow-1 text-truncate task-title">
-                                                <Link
-                                                  to="#"
-                                                  className="d-block"
-                                                  id="task-name"
-                                                >
-                                                  {card.title}
-                                                </Link>
-                                              </h6>
-                                            </div>
-                                            <p className="text-muted">
-                                              {card.text}
-                                            </p>
-
-                                            {card.picture ?
-                                              <div className="tasks-img rounded mb-2" style={{ backgroundImage: `url(${card.picture})`, height: "135px" }}>
-                                              </div> : ""}
-
-                                            {/* progress */}
-                                            {card.prowidth ?
-                                              <div className="mb-3">
-                                                <div className="d-flex mb-1">
-                                                  <div className="flex-grow-1">
-                                                    <h6 className="text-muted mb-0"><span className="text-secondary">{card.prowidth}</span> of 100%</h6>
-                                                  </div>
-                                                  <div className="flex-shrink-0">
-                                                    <span className="text-muted">03 Jan, 2022</span>
-                                                  </div>
-                                                </div>
-                                                <div className="progress rounded-3 progress-sm">
-                                                  <div className={`progress-bar bg-${card.procolor}`} role="progressbar" style={{ width: `${card.prowidth}` }}></div>
-                                                </div>
-                                              </div>
-                                              : ""
-                                            }
-                                            {/* badge & image */}
-                                            {
-                                              <div className="d-flex align-items-center">
-                                                <div className="flex-grow-1">
-                                                  {card.badge1.map((badgeText, index) => (
-                                                    <span key={index} className="badge bg-primary-subtle text-primary me-1">
-                                                      {badgeText}
-                                                    </span>
-                                                  ))}
-                                                </div>
-                                                <div className="flex-shrink-0">
-                                                  <div className="avatar-group">
-                                                    {card.userImages.map((picturedata, idx) => (
-                                                      <Link to="#" className="avatar-group-item" data-bs-toggle="tooltip" data-bs-trigger="hover" data-bs-placement="top" title="Alexis" key={idx}>
-                                                        <img src={picturedata.img} alt="" className="rounded-circle avatar-xxs" />
-                                                      </Link>
-                                                    ))}
-                                                  </div>
-                                                </div>
-                                              </div>
-                                            }
-
-                                          </CardBody>
-                                          {/* bottom */}
-                                          <div className="card-footer border-top-dashed">
-                                            <div className="d-flex">
-                                              <div className="flex-grow-1">
-                                                <span className="text-muted"><i className="ri-time-line align-bottom"></i>{card.botId}</span>
-                                              </div>
-                                              <div className="flex-shrink-0">
-                                                <ul className="link-inline mb-0">
-                                                  <li className="list-inline-item">
-                                                    <Link to="#" className="text-muted"><i className="ri-eye-line align-bottom"></i> {card.eye}</Link>
-                                                  </li>
-                                                  <li className="list-inline-item">
-                                                    <Link to="#" className="text-muted"><i className="ri-question-answer-line align-bottom"></i> {card.que}</Link>
-                                                  </li>
-                                                  <li className="list-inline-item">
-                                                    <Link to="#" className="text-muted"><i className="ri-attachment-2 align-bottom"></i> {card.clip}</Link>
-                                                  </li>
-                                                </ul>
-                                              </div>
-                                            </div>
-                                          </div>
-
-                                          {card.botpro ?
-                                            <div className="progress progress-sm">
-                                              <div className={`progress-bar bg-${card.botprocolor}`} role="progressbar" style={{ width: `${card.botpro}` }} ></div>
-                                            </div>
-                                            : ""
-                                          }
-
-                                        </div>
-                                      </div>
-                                    )}
-                                  </Draggable>
-                                )
-                              })}
-                            </div>
-                          )}
-                        </Droppable>
-                      </div>
-                    </SimpleBar>
-                    <div className="my-2 mt-0">
-                      <button className="btn btn-soft-info w-100" data-bs-toggle="modal" data-bs-target="#creatertaskModal" onClick={() => handleAddNewCard(line)}>Add More</button>
-                    </div>
+        {isLoading ? (
+          <Spinners setLoading={setLoading} />
+        ) : (
+          <DragDropContext onDragEnd={handleDragEnd}>
+            {(cards || []).map((line) => (
+              <div className="tasks-list" key={line.id}>
+                <div className="d-flex mb-3">
+                  <div className="flex-grow-1">
+                    <h6 className="fs-14 text-uppercase fw-semibold mb-0">
+                      {line.name}
+                      <small className={`badge bg-${line.color || "primary"} align-bottom ms-1`}>
+                        {searchQuery ? (line.cards || []).filter(matchesSearch).length : (line.cards || []).length}
+                      </small>
+                    </h6>
                   </div>
-                )
-              })}
-            </DragDropContext>
-        }
-      </div>
-
-
-      {/* Create Modal */}
-      <Modal isOpen={modall} toggle={handleOpen} centered={true}>
-        <div className="modal-content border-0" >
-          <ModalHeader className=" p-3 bg-info-subtle" toggle={handleOpen}>Add Board
-          </ModalHeader>
-          <ModalBody>
-            <Form onSubmit={(event) => {
-              event.preventDefault();
-              formik.handleSubmit();
-              return false
-            }}>
-              <Row>
-                <Col lg={12}>
-                  <Label htmlFor="boardName" className="form-label">Board Name</Label>
-                  <Input type="text" id="boardName" placeholder="Enter board name"
-                    // validaue={{ required: { value: true } }}
-                    name="name"
-                    onChange={formik.handleChange}
-                    onBlur={formik.handleBlur}
-                    value={formik.values.name}
-                    invalid={
-                      formik.touched.name && formik.errors.name
-                        ? true
-                        : false
-                    }
-                  />
-                  {formik.touched.name && formik.errors.name ? (
-                    <FormFeedback type="invalid">
-                      {formik.errors.name}
-                    </FormFeedback>
-                  ) : null}
-                </Col>
-                <div className="mt-4">
-                  <div className="hstack gap-2 justify-content-end">
-                    <button type="button" className="btn btn-light" data-bs-dismiss="modal">Close</button>
-                    <button type="submit" className="btn btn-success" id="addNewBoard">Add Board</button>
+                  <div className="flex-shrink-0">
+                    <UncontrolledDropdown className="card-header-dropdown float-end">
+                      <DropdownToggle className="text-reset dropdown-btn" tag="a" style={{ cursor: "pointer" }}>
+                        <i className="ri-more-fill fs-17"></i>
+                      </DropdownToggle>
+                      <DropdownMenu className="dropdown-menu-end">
+                        <DropdownItem
+                          className="text-danger"
+                          onClick={() => {
+                            setItemToDelete(line);
+                            setDeleteType("column");
+                            setDeleteModalOpen(true);
+                          }}
+                        >
+                          <i className="ri-delete-bin-line align-bottom me-1"></i> Delete Column
+                        </DropdownItem>
+                      </DropdownMenu>
+                    </UncontrolledDropdown>
                   </div>
                 </div>
-              </Row>
-            </Form>
-          </ModalBody>
-        </div>
 
-      </Modal>
+                <SimpleBar className="tasks-wrapper px-3 mx-n3">
+                  <Droppable droppableId={line.id}>
+                    {(provided) => (
+                      <div
+                        ref={provided.innerRef}
+                        {...provided.droppableProps}
+                        className={(line.cards || []).filter(matchesSearch).length ? "tasks" : "tasks noTask"}
+                      >
+                        {(line.cards || []).filter(matchesSearch).map((card, index) => {
+                          const labels = getLabels(card);
+                          const dueDate = getDueDate(card);
+                          const coverImageSrc = getCoverImageSrc(card.coverImage);
 
-      <Modal id="modalForm" isOpen={modal} toggle={toggle} centered={true} size="lg">
-        <ModalHeader toggle={toggle}>
-          {!!isEdit ? "Update Task" : "Add New Task"}
-        </ModalHeader>
+                          return (
+                            <Draggable key={card.id} draggableId={card.id} index={index}>
+                              {(provided) => (
+                                <div
+                                  ref={provided.innerRef}
+                                  {...provided.draggableProps}
+                                  {...provided.dragHandleProps}
+                                  className="pb-1 task-list"
+                                >
+                                  <Card className="task-box shadow-sm">
+                                    {coverImageSrc ? (
+                                      <img
+                                        src={coverImageSrc}
+                                        alt="Task cover"
+                                        className="card-img-top"
+                                        style={{ height: "120px", objectFit: "cover" }}
+                                      />
+                                    ) : null}
+                                    <CardBody
+                                      role="button"
+                                      onClick={() => handleOpenDetails(card, line)}
+                                    >
+                                      <div className="d-flex align-items-start mb-2">
+                                        <div className="flex-grow-1">
+                                          <h6 className="fs-15 mb-1 task-title">
+                                            <Link to="#" className="text-body">
+                                              {card.title || "Untitled task"}
+                                            </Link>
+                                          </h6>
+                                          {card.isPinned ? (
+                                            <span className="badge bg-warning-subtle text-warning">
+                                              <i className="ri-pushpin-line align-bottom me-1"></i>
+                                              Pinned
+                                            </span>
+                                          ) : null}
+                                        </div>
+                                        <UncontrolledDropdown
+                                          onClick={(event) => event.stopPropagation()}
+                                        >
+                                          <DropdownToggle className="arrow-none" tag="a">
+                                            <i className="ri-more-fill"></i>
+                                          </DropdownToggle>
+                                          <DropdownMenu className="dropdown-menu-end">
+                                            <DropdownItem
+                                              onClick={() => handleOpenDetails(card, line)}
+                                            >
+                                              Open Details
+                                            </DropdownItem>
+                                            <DropdownItem
+                                              className="text-danger"
+                                              onClick={() => {
+                                                setItemToDelete(card);
+                                                setDeleteType("card");
+                                                setDeleteModalOpen(true);
+                                              }}
+                                            >
+                                              Delete
+                                            </DropdownItem>
+                                          </DropdownMenu>
+                                        </UncontrolledDropdown>
+                                      </div>
+
+                                      {card.text ? (
+                                        <p className="text-muted mb-2">{card.text}</p>
+                                      ) : null}
+
+                                      <div className="d-flex flex-wrap gap-2 mb-2">
+                                        {labels.map((label) => {
+                                          const styleInfo = labelStyles[label] || labelStyles["Waiting Customer"];
+                                          return (
+                                            <span
+                                              key={label}
+                                              className="d-inline-flex align-items-center gap-1 text-muted fs-12 fw-medium"
+                                              style={{ background: "none", border: "none", padding: 0 }}
+                                            >
+                                              <span
+                                                className="rounded-circle"
+                                                style={{
+                                                  backgroundColor: styleInfo.backgroundColor,
+                                                  height: "8px",
+                                                  width: "8px",
+                                                  display: "inline-block",
+                                                  flexShrink: 0
+                                                }}
+                                              ></span>
+                                              {label}
+                                            </span>
+                                          );
+                                        })}
+                                      </div>
+
+                                      <div className="d-flex flex-wrap align-items-center gap-2 mb-2">
+                                        <span
+                                          className="badge"
+                                          style={priorityStyles[card.priority] || priorityStyles.Medium}
+                                        >
+                                          {card.priority || "Medium"}
+                                        </span>
+                                        {card.module ? (
+                                          <span
+                                            className="badge"
+                                            style={moduleStyles[card.module] || moduleStyles.Accounts}
+                                          >
+                                            {card.module}
+                                          </span>
+                                        ) : null}
+                                      </div>
+
+                                      <hr className="my-2" style={{ borderTop: "1px dashed var(--vz-border-color)" }} />
+
+                                      <div className="d-flex align-items-center gap-2 flex-wrap">
+                                        {dueDate ? (
+                                          <span className="text-muted small" title={`Due Date: ${dueDate}`}>
+                                            <i className="ri-calendar-line align-bottom me-1 text-primary"></i>
+                                            {dueDate}
+                                          </span>
+                                        ) : null}
+                                        {getAttachmentCount(card) > 0 ? (
+                                          <span className="text-muted small" title={`${getAttachmentCount(card)} attachment(s)`}>
+                                            <i className="ri-attachment-2 align-bottom me-1 text-info"></i>
+                                            {getAttachmentCount(card)}
+                                          </span>
+                                        ) : null}
+                                        {card.totalChecklistCount > 0 ? (
+                                          <span
+                                            className={`badge fs-11 d-flex align-items-center gap-1 ${
+                                              card.completedChecklistCount === card.totalChecklistCount
+                                                ? "bg-success-subtle text-success"
+                                                : "bg-light text-muted"
+                                            }`}
+                                            title={`${card.completedChecklistCount}/${card.totalChecklistCount} checklist items completed`}
+                                          >
+                                            <i className="ri-checkbox-circle-line align-bottom text-success"></i>
+                                            {card.completedChecklistCount}/{card.totalChecklistCount} ({Math.round((card.completedChecklistCount / card.totalChecklistCount) * 100)}%)
+                                          </span>
+                                        ) : null}
+                                      </div>
+                                    </CardBody>
+                                  </Card>
+                                </div>
+                              )}
+                            </Draggable>
+                          );
+                        })}
+                        {provided.placeholder}
+                        {(line.cards || []).filter(matchesSearch).length === 0 ? (
+                          <div className="text-muted small border rounded bg-light p-3 mb-2">
+                            {(line.cards || []).length > 0 ? "No matching tasks." : "No cards yet."}
+                          </div>
+                        ) : null}
+                      </div>
+                    )}
+                  </Droppable>
+                </SimpleBar>
+
+                <div className="my-2 mt-0">
+                  <KanbanQuickAddCard columnId={line.id} onAdd={handleQuickAddCard} />
+                </div>
+              </div>
+            ))}
+          </DragDropContext>
+        )}
+      </div>
+
+      <Modal isOpen={columnModalOpen} toggle={() => setColumnModalOpen(false)} centered>
+        <ModalHeader toggle={() => setColumnModalOpen(false)}>Add Column</ModalHeader>
         <ModalBody>
           <Form
-            onSubmit={e => {
-              e.preventDefault()
-              validation.handleSubmit()
-              return false
+            onSubmit={(event) => {
+              event.preventDefault();
+              columnFormik.handleSubmit();
             }}
           >
-            <div className="form-group mb-3">
-              <Label htmlFor="taskname" className="col-form-label">
-                Task Name<span className="text-danger">*</span>
-              </Label>
-              <Col lg={12}>
-                <Input
-                  id="taskname"
-                  name="title"
-                  type="text"
-                  className="form-control validate"
-                  placeholder="Enter Task Name..."
-                  validate={{ required: { value: true } }}
-                  onChange={validation.handleChange}
-                  onBlur={validation.handleBlur}
-                  value={validation.values.title || ""}
-                  invalid={
-                    validation.touched.title && validation.errors.title
-                      ? true
-                      : false
-                  }
-                />
-                {validation.touched.title && validation.errors.title ? (
-                  <FormFeedback type="invalid">
-                    {validation.errors.title}
-                  </FormFeedback>
-                ) : null}
-              </Col>
-            </div>
-            <div className="form-group mb-3">
-              <label className="col-form-label">Task Description</label>
-              <Col lg={12}>
-                <textarea
-                  id="text"
-                  className="form-control"
-                  placeholder="Enter Task Description"
-                  name="text"
-                  onChange={validation.handleChange}
-                  onBlur={validation.handleBlur}
-                  value={validation.values.text || ""}
-                ></textarea>
-                {validation.touched.text &&
-                  validation.errors.text ? (
-                  <FormFeedback type="invalid" className="d-block">
-                    {validation.errors.text}
-                  </FormFeedback>
-                ) : null}
-              </Col>
-            </div>
+            <Label htmlFor="boardName">Column Name</Label>
+            <Input
+              id="boardName"
+              name="name"
+              placeholder="Enter column name"
+              value={columnFormik.values.name}
+              invalid={Boolean(columnFormik.touched.name && columnFormik.errors.name)}
+              onBlur={columnFormik.handleBlur}
+              onChange={columnFormik.handleChange}
+            />
+            {columnFormik.touched.name && columnFormik.errors.name ? (
+              <FormFeedback>{columnFormik.errors.name}</FormFeedback>
+            ) : null}
 
-            <div className="form-group mb-3">
-              <label className="col-form-label">
-                Add Team Member<span className="text-danger">*</span>
-              </label>
-              <SimpleBar style={{ height: "200px" }}>
-                <ul
-                  className="list-unstyled user-list validate"
-                  id="taskassignee"
-                >
-                  {(AddTeamMember || []).map((image, index) => {
-                    const isChecked = images.some((item) => {
-                      return item.id === image.id
-                    });
-                    return (
-                      <li key={index}>
-                        <div className="form-check form-check-primary mb-2 d-flex align-items-center">
-                          <input
-                            className="form-check-input"
-                            type="checkbox"
-                            id={"member" + image.id}
-                            name="userImages"
-                            onBlur={validation.handleBlur}
-                            value={validation.values.userImages}
-                            onChange={() => handleImage(image)}
-                            checked={isChecked}
-                          />
-                          <label className="form-check-label ms-2" htmlFor={"member" + image.id}>
-                            {image.name}
-                          </label>
-                          <img
-                            src={image.img}
-                            className="rounded-circle avatar-xs m-1"
-                            alt=""
-                          />
-                        </div>
-                      </li>
-                    )
-                  })}
-                </ul>
-              </SimpleBar>
-              {validation.touched.userImages &&
-                validation.errors.userImages ? (
-                <FormFeedback type="invalid" className="d-block">
-                  {validation.errors.userImages}
-                </FormFeedback>
-              ) : null}
+            <div className="d-flex justify-content-end gap-2 mt-4">
+              <button
+                type="button"
+                className="btn btn-light"
+                onClick={() => setColumnModalOpen(false)}
+              >
+                Close
+              </button>
+              <button type="submit" className="btn btn-success">
+                Add Column
+              </button>
             </div>
-
-            <div className="form-group mb-4">
-              <Label htmlFor="date-field" className="form-label">
-                Date
-              </Label>
-              <Flatpickr
-                name="botId"
-                className="form-control"
-                id="datepicker-publish-input"
-                placeholder="Select a date"
-                options={{
-                  altInput: true,
-                  altFormat: "d M, Y",
-                  dateFormat: "d M, Y",
-                }}
-                onChange={(botId) => validation.setFieldValue("botId", moment(botId[0]).format("DD MMMM ,YYYY"))}
-                value={validation.values.botId || ''}
-              />
-              {validation.errors.botId && validation.touched.botId ? (
-                <FormFeedback type="invalid" className='d-block'>{validation.errors.botId}</FormFeedback>
-              ) : null}
-            </div>
-            {/* Bottom */}
-            <div className="form-group mb-4 d-flex">
-              <div>
-                <Label htmlFor="eyefor" className="col-form-label">
-                  View
-                </Label>
-                <Col lg={4}>
-                  <Input
-                    id="eyefor"
-                    name="eye"
-                    type="text"
-                    className="form-control validate"
-                    validate={{ required: { value: true } }}
-                    onChange={validation.handleChange}
-                    onBlur={validation.handleBlur}
-                    value={validation.values.eye || ""}
-                    invalid={
-                      validation.touched.eye && validation.errors.eye
-                        ? true
-                        : false
-                    }
-                  />
-                  {validation.touched.eye && validation.errors.eye ? (
-                    <FormFeedback type="invalid">
-                      {validation.errors.eye}
-                    </FormFeedback>
-                  ) : null}
-                </Col>
-              </div>
-              <div>
-                <Label htmlFor="quefor" className="col-form-label">
-                  Comment
-                </Label>
-                <Col lg={4}>
-                  <Input
-                    id="quefor"
-                    name="que"
-                    type="text"
-                    className="form-control validate"
-                    validate={{ required: { value: true } }}
-                    onChange={validation.handleChange}
-                    onBlur={validation.handleBlur}
-                    value={validation.values.que || ""}
-                    invalid={
-                      validation.touched.que && validation.errors.que
-                        ? true
-                        : false
-                    }
-                  />
-                  {validation.touched.que && validation.errors.que ? (
-                    <FormFeedback type="invalid">
-                      {validation.errors.que}
-                    </FormFeedback>
-                  ) : null}
-                </Col>
-              </div>
-              <div>
-                <Label htmlFor="clipfor" className="col-form-label">
-                  Pinned
-                </Label>
-                <Col lg={4}>
-                  <Input
-                    id="clipfor"
-                    name="clip"
-                    type="text"
-                    className="form-control validate"
-                    validate={{ required: { value: true } }}
-                    onChange={validation.handleChange}
-                    onBlur={validation.handleBlur}
-                    value={validation.values.clip || ""}
-                    invalid={
-                      validation.touched.clip && validation.errors.clip
-                        ? true
-                        : false
-                    }
-                  />
-                  {validation.touched.clip && validation.errors.clip ? (
-                    <FormFeedback type="invalid">
-                      {validation.errors.clip}
-                    </FormFeedback>
-                  ) : null}
-                </Col>
-              </div>
-            </div>
-
-            <div className="form-group mb-4">
-              <label className="col-form-label">
-                Status<span className="text-danger">*</span>
-              </label>
-              <div className="col-lg-12">
-                <Select
-                  isMulti
-                  value={tag}
-                  onChange={(e) => {
-                    handlestag(e);
-                  }}
-                  className="mb-0"
-                  options={tags}
-                  id="taginput-choices"
-                >
-                </Select>
-                {validation.touched.badge1 &&
-                  validation.errors.badge1 ? (
-                  <FormFeedback type="invalid" className="d-block">
-                    {validation.errors.badge1}
-                  </FormFeedback>
-                ) : null}
-              </div>
-            </div>
-
-            <Row>
-              <Col lg={10}>
-                <button
-                  type="submit"
-                  className="btn btn-primary"
-                  id="updatetaskdetail"
-                >
-                  {!!isEdit ? "Update Task" : "Create Task"}
-                </button>
-              </Col>
-            </Row>
           </Form>
         </ModalBody>
       </Modal>
-      <ToastContainer />
-    </React.Fragment>
-  )
-}
 
-export default TasksKanban
+      <KanbanTaskDetailsModal
+        isOpen={detailsOpen}
+        toggle={() => setDetailsOpen(false)}
+        card={selectedCard}
+        columnId={selectedColumnId}
+        onSave={handleSaveDetails}
+      />
+    </React.Fragment>
+  );
+};
+
+export default TasksKanban;

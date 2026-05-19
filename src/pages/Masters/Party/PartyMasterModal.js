@@ -435,7 +435,7 @@ const PartyMasterModal = ({ isOpen, toggle, partyId, isEdit, onSuccess, defaultT
     };
 
     return (
-        <Modal isOpen={isOpen} toggle={toggle} size="xl" centered>
+        <Modal isOpen={isOpen} toggle={toggle} size="xl" centered modalClassName="zoomIn">
             <ModalHeader toggle={toggle}>
                 {isEdit ? "Edit Party" : "New " + (defaultType || "Party")}
             </ModalHeader>

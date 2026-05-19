@@ -200,8 +200,8 @@ const GenericMasterModal = ({ isOpen, toggle, masterId, isEdit = false, selected
 
     return (
         <React.Fragment>
-            <Modal isOpen={isOpen} toggle={toggle} centered size={masterId === "products" ? "xl" : undefined}>
-                <ModalHeader toggle={toggle} className="bg-light p-3">
+            <Modal isOpen={isOpen} toggle={toggle} centered modalClassName="zoomIn" size={masterId === "products" ? "xl" : "lg"}>
+                <ModalHeader toggle={toggle} className="p-3 bg-light">
                     {isEdit ? "Edit " + masterLabel : "Add " + masterLabel}
                 </ModalHeader>
                 {masterId === "products" ? (

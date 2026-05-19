@@ -5,7 +5,7 @@ import { CSVLink } from "react-csv";
 
 const ExportCSVModal = ({ show, onCloseClick, data }) => {
   return (
-    <Modal isOpen={show} toggle={onCloseClick} centered={true}>
+    <Modal isOpen={show} toggle={onCloseClick} centered modalClassName="zoomIn">
         <ModalHeader toggle={onCloseClick}></ModalHeader>
           <ModalBody className="py-3 px-5">
           <div className="mt-2 text-center">

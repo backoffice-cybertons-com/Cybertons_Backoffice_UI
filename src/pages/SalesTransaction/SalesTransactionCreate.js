@@ -1371,7 +1371,7 @@ const SalesTransactionCreate = () => {
                                         </div>
                                     </Form>
 
-                                    <Modal isOpen={isCopyPreviousModalOpen} toggle={() => setIsCopyPreviousModalOpen(!isCopyPreviousModalOpen)} size="lg">
+                                    <Modal isOpen={isCopyPreviousModalOpen} toggle={() => setIsCopyPreviousModalOpen(!isCopyPreviousModalOpen)} size="lg" centered modalClassName="zoomIn">
                                         <ModalHeader toggle={() => setIsCopyPreviousModalOpen(false)}>Copy from Previous Invoice</ModalHeader>
                                         <ModalBody>
                                             <div className="table-responsive" style={{ maxHeight: '450px', overflowY: 'auto' }}>

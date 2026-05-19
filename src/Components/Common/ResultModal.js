@@ -12,7 +12,7 @@ const ResultModal = ({ show, onCloseClick, title, message, type = "error" }) => 
         : "primary:#f06548,secondary:#f7b84b";
 
     return (
-        <Modal fade={true} isOpen={show} toggle={onCloseClick} centered={true}>
+        <Modal fade={true} isOpen={show} toggle={onCloseClick} centered modalClassName="zoomIn">
             <ModalBody className="text-center p-5">
                 <lord-icon
                     src={iconSrc}

@@ -58,7 +58,7 @@ const parseManualTime = (timeStr, currentVal) => {
  */
 const TaskModal = ({
   isOpen,
-  toggle,
+  toggle = () => {},
   selectedTask,
   selectedDate,
   onSave,
@@ -297,7 +297,7 @@ const TaskModal = ({
 
   return (
     <>
-      <Modal isOpen={isOpen} toggle={toggle} id="event-modal" centered size="lg">
+      <Modal isOpen={isOpen} toggle={toggle} id="event-modal" centered size="lg" modalClassName="zoomIn">
         <div className="modal-header p-3 bg-info-subtle d-flex align-items-center justify-content-between">
           <h5 className="modal-title mb-0">
             {!!selectedTask?.id ? (isEditButton ? "Edit Task" : selectedTask.title) : "Add New Task"}
