@@ -901,7 +901,7 @@ const EmailToolbar = () => {
                 </Card>
             </div>
 
-            <Modal id="composemodal" className="modal-lg" isOpen={modal} toggle={toggle} centered>
+            <Modal id="composemodal" isOpen={modal} toggle={toggle} centered size="lg" modalClassName="zoomIn">
                 <ModalHeader className="p-3 bg-light" toggle={toggle}>
                     New Message
                 </ModalHeader>

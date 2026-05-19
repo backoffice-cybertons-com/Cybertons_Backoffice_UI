@@ -138,6 +138,12 @@ const Header = ({ onChangeLayoutMode, layoutModeType, headerClass }) => {
                                 </DropdownMenu>
                             </Dropdown>
                             <Link
+                                to="/apps-tasks-kanban"
+                                className="btn btn-icon rounded-circle header-item d-flex align-items-center justify-content-center"
+                            >
+                                <i className="ri-dashboard-line fs-20 text-muted"></i>
+                            </Link>
+                            <Link
                                 to="/apps-calendar-month-grid"
                                 className="btn btn-icon rounded-circle header-item d-flex align-items-center justify-content-center"
                             >

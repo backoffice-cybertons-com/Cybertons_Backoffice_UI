@@ -11,12 +11,14 @@ import {
     getTasks as getTasksApi,
     addNewTasks as addNewTasksApi,
     updateTasks as updateTasksApi,
-    deleteTasks as deleteTasksApi
+    deleteTasks as deleteTasksApi,
+    deleteKanbanColumn as deleteKanbanColumnApi
 } from "../../helpers/fakebackend_helper";
 
 export const getTaskList = createAsyncThunk("tasks/getTaskList", async () => {
     try {
-        const response = getTaskListApi();
+        const response = await getTaskListApi();
+        console.log(response);
         return response;
     } catch (error) {
         return error;
@@ -25,7 +27,7 @@ export const getTaskList = createAsyncThunk("tasks/getTaskList", async () => {
 
 export const addNewTask = createAsyncThunk("tasks/addNewTask", async (task) => {
     try {
-        const response = addNewTaskApi(task);
+        const response = await addNewTaskApi(task);
         toast.success("Task Added Successfully", { autoClose: 3000 });
         return response;
     } catch (error) {
@@ -36,7 +38,7 @@ export const addNewTask = createAsyncThunk("tasks/addNewTask", async (task) => {
 
 export const updateTask = createAsyncThunk("tasks/updateTask", async (task) => {
     try {
-        const response = updateTaskApi(task);
+        const response = await updateTaskApi(task);
         toast.success("Task Updated Successfully", { autoClose: 3000 });
         return response;
     } catch (error) {
@@ -47,7 +49,7 @@ export const updateTask = createAsyncThunk("tasks/updateTask", async (task) => {
 
 export const deleteTask = createAsyncThunk("tasks/deleteTask", async (task) => {
     try {
-        const response = deleteTaskApi(task);
+        const response = await deleteTaskApi(task);
         toast.success("Task Updated Successfully", { autoClose: 3000 });
         return { task, ...response };
     } catch (error) {
@@ -59,7 +61,7 @@ export const deleteTask = createAsyncThunk("tasks/deleteTask", async (task) => {
 // Kanban Board
 export const getTasks = createAsyncThunk("tasks/getTasks", async () => {
     try {
-        const response = getTasksApi();
+        const response = await getTasksApi();
         return response;
     } catch (error) {
         return error;
@@ -67,7 +69,7 @@ export const getTasks = createAsyncThunk("tasks/getTasks", async () => {
 });
 export const addCardData = createAsyncThunk("tasks/addCardData", async (card) => {
     try {
-        const response = addNewTasksApi(card);
+        const response = await addNewTasksApi(card);
         const data = await response;
         toast.success("Card Add Successfully", { autoClose: 2000 })
         return data;
@@ -78,7 +80,7 @@ export const addCardData = createAsyncThunk("tasks/addCardData", async (card) =>
 })
 export const updateCardData = createAsyncThunk("tasks/updateCardData", async (card) => {
     try {
-        const response = updateTasksApi(card);
+        const response = await updateTasksApi(card);
         const data = await response;
         toast.success("Card Update Successfully", { autoClose: 2000 })
         return data;
@@ -89,11 +91,23 @@ export const updateCardData = createAsyncThunk("tasks/updateCardData", async (ca
 })
 export const deleteKanban = createAsyncThunk("tasks/deleteKanban", async (card) => {
     try {
-        const response = deleteTasksApi(card);
+        const response = await deleteTasksApi(card);
+        const data = await response;
         toast.success("Card Delete Successfully", { autoClose: 2000 })
-        return response;
+        return data;
     } catch (error) {
         toast.error("Card Delete Failded", { autoClose: 2000 })
+        return error;
+    }
+})
+export const deleteKanbanColumn = createAsyncThunk("tasks/deleteKanbanColumn", async (columnId) => {
+    try {
+        const response = await deleteKanbanColumnApi(columnId);
+        const data = await response;
+        toast.success("Column Delete Successfully", { autoClose: 2000 })
+        return data;
+    } catch (error) {
+        toast.error("Column Delete Failed", { autoClose: 2000 })
         return error;
     }
 })

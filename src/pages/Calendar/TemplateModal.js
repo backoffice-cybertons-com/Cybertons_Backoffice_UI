@@ -74,7 +74,7 @@ const TemplateModal = ({ isOpen, toggle, users }) => {
   }));
 
   return (
-    <Modal isOpen={isOpen} toggle={toggle} centered>
+    <Modal isOpen={isOpen} toggle={toggle} centered modalClassName="zoomIn">
       <ModalHeader toggle={toggle} className="p-3 bg-info-subtle modal-title">
         Add Task Template
       </ModalHeader>

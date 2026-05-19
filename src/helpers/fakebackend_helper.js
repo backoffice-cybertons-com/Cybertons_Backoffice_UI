@@ -167,10 +167,18 @@ export const updateTask = task => api.update(url.UPDATE_TASK + '/' + task._id, t
 export const deleteTask = task => api.delete(url.DELETE_TASK + '/' + task);
 
 // Kanban Board
-export const getTasks = () => api.get(url.GET_TASKS);
-export const addNewTasks = (card) => api.create(url.ADD_TASKS, card)
+export const getTasks = () => {
+  return api.get(url.GET_TASKS);
+}; export const addNewTasks = (card) => api.create(url.ADD_TASKS, card)
 export const updateTasks = (card) => api.put(url.UPDATE_TASKS, card)
-export const deleteTasks = (card) => api.delete(url.DELETE_TASKS, { headers: {card} })
+export const deleteTasks = (card) => api.delete(url.DELETE_TASKS, { headers: { card } })
+export const deleteKanbanColumn = (columnId) => api.delete(`${url.DELETE_KANBAN_COLUMN}/${columnId}`)
+export const uploadKanbanCover = (formData) => api.create(url.UPLOAD_KANBAN_COVER, formData, { headers: { 'Content-Type': 'multipart/form-data' } })
+export const uploadKanbanAttachment = (formData) => api.create(url.UPLOAD_KANBAN_ATTACHMENT, formData, { headers: { 'Content-Type': 'multipart/form-data' } })
+export const getKanbanChecklist = (taskId) => api.get(`${url.GET_KANBAN_CHECKLIST}?taskId=${taskId}`)
+export const saveKanbanChecklistItem = (item) => api.create(url.POST_KANBAN_CHECKLIST, item)
+export const deleteKanbanChecklistItem = (itemId) => api.delete(`${url.DELETE_KANBAN_CHECKLIST}/${itemId}`)
+export const deleteKanbanChecklistGroup = (taskId, groupName) => api.delete(`${url.DELETE_KANBAN_CHECKLIST_GROUP}?taskId=${taskId}&groupName=${encodeURIComponent(groupName)}`)
 
 // CRM
 // get Contacts
@@ -442,11 +450,11 @@ export const deleteDirectJournal = (gCode) => api.delete(`${url.DELETE_DIRECT_JO
 //Report
 export const getTrialBalance = (companyId, date) => api.get(url.GET_TRIAL_BALANCE, { companyId, date });
 export const getLedgerSummaryDatewise = (companyId, accountCode, fromDate, toDate) =>
-    api.get(url.GET_LEDGER_SUMMARY_DATEWISE, { companyId, accountCode, fromDate, toDate });
+  api.get(url.GET_LEDGER_SUMMARY_DATEWISE, { companyId, accountCode, fromDate, toDate });
 
 export const getStockSummaryReport = (companyId, fromDate, toDate) =>
-    api.get(url.GET_STOCK_SUMMARY_REPORT, { companyId, fromDate, toDate });
+  api.get(url.GET_STOCK_SUMMARY_REPORT, { companyId, fromDate, toDate });
 
 // Developed by Hetak on 11-05-2026
 export const getStockLedgerDatewise = (companyId, fromDate, toDate) =>
-    api.get(url.GET_STOCK_LEDGER_DATEWISE, { companyId, fromDate, toDate });
+  api.get(url.GET_STOCK_LEDGER_DATEWISE, { companyId, fromDate, toDate });

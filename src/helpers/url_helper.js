@@ -215,10 +215,18 @@ export const UPDATE_TICKET = "/apps/ticket";
 export const DELETE_TICKET = "/apps/ticket";
 
 // kanban
-export const GET_TASKS = "/apps/tasks";
-export const ADD_TASKS = "/add/tasks";
-export const UPDATE_TASKS = "/update/tasks";
-export const DELETE_TASKS = "/delete/tasks";
+export const GET_TASKS = "/api/Kanban";
+export const ADD_TASKS = "/api/Kanban";
+export const UPDATE_TASKS = "/api/Kanban";
+export const DELETE_TASKS = "/api/Kanban";
+export const DELETE_KANBAN_COLUMN = "/api/Kanban/column";
+export const UPLOAD_KANBAN_COVER = "/api/Kanban/upload-cover";
+export const UPLOAD_KANBAN_ATTACHMENT = "/api/Kanban/upload-attachment";
+export const GET_KANBAN_CHECKLIST = "/api/Kanban/checklist";
+export const POST_KANBAN_CHECKLIST = "/api/Kanban/checklist";
+export const DELETE_KANBAN_CHECKLIST = "/api/Kanban/checklist";
+export const DELETE_KANBAN_CHECKLIST_GROUP = "/api/Kanban/checklist/group";
+
 
 // Dashboard
 export const POST_DASHBOARD_DATA = "/api/dashboard";

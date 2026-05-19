@@ -4,7 +4,7 @@ import { Modal, ModalBody } from "reactstrap";
 
 const DeleteModal = ({ show, onDeleteClick, onCloseClick }) => {
   return (
-    <Modal fade={true} isOpen={show} toggle={onCloseClick} centered={true}>
+    <Modal fade={true} isOpen={show} toggle={onCloseClick} centered modalClassName="zoomIn">
       <ModalBody className="py-3 px-5">
         <div className="mt-2 text-center">
           <lord-icon

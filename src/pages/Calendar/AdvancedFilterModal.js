@@ -33,7 +33,7 @@ const AdvancedFilterModal = ({ isOpen, toggle, filters, setFilters, users }) => 
   };
 
   return (
-    <Modal isOpen={isOpen} toggle={toggle} centered size="md">
+    <Modal isOpen={isOpen} toggle={toggle} centered modalClassName="zoomIn">
       <ModalHeader toggle={toggle}>
         <i className="ri-filter-2-line align-bottom me-1"></i> Advanced Task Filters
       </ModalHeader>
