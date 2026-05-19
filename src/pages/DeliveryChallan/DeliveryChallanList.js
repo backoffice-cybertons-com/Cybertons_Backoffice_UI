@@ -27,6 +27,7 @@ import {
 import { useSelector, useDispatch } from "react-redux";
 
 import Loader from "../../Components/Common/Loader";
+import { formatToFourDecimals } from "../../utils/numberUtils";
 
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -111,7 +112,7 @@ const DeliveryChallanList = () => {
                 header: "Rate",
                 accessorKey: "rate",
                 enableColumnFilter: true,
-                cell: (cell) => (cell.getValue() || 0).toFixed(2),
+                cell: (cell) => formatToFourDecimals(cell.getValue()),
             },
             {
                 header: "Action",

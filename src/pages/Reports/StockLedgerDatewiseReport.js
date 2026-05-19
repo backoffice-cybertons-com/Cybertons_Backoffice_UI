@@ -32,7 +32,7 @@ const StockLedgerDatewiseReport = () => {
     const companyName = secureStorage.getPlain('companyName') || secureStorage.getPlain('CompanyName') || 'SoftBook';
 
     const formatQty = (qty) =>
-        Number(qty || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        Number(qty || 0).toLocaleString('en-IN', { minimumFractionDigits: 4, maximumFractionDigits: 4 });
 
     const formatDate = (d) => {
         if (!d) return '';

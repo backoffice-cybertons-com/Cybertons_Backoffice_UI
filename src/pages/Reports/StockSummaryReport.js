@@ -35,8 +35,8 @@ const StockSummaryReport = () => {
 
     const formatQty = (qty) => {
         return Number(qty || 0).toLocaleString('en-IN', {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
+            minimumFractionDigits: 4,
+            maximumFractionDigits: 4
         });
     };
 
@@ -181,7 +181,7 @@ const StockSummaryReport = () => {
                     if (C >= 2) {
                         cell.t = "n";
                         cell.s.alignment = { horizontal: "right" };
-                        cell.z = "#,##0.00";
+                        cell.z = "#,##0.0000";
                     }
                 }
             }

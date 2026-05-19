@@ -8,7 +8,7 @@ import Flatpickr from "react-flatpickr";
 import BreadCrumb from "../../Components/Common/BreadCrumb";
 import Select from "react-select";
 import { useFormik } from "formik";
-import { formatToTwoDecimals } from "../../utils/numberUtils";
+import { formatToFourDecimals, formatToTwoDecimals } from "../../utils/numberUtils";
 import * as Yup from "yup";
 import secureStorage from "../../utils/secureStorage";
 import { useDispatch, useSelector } from "react-redux";
@@ -19,6 +19,32 @@ import {
 import { resetSalesTransactionCreated } from "../../slices/salesTransaction/reducer";
 import { getVendors, getPartyCustomers, getProductsForSales, getPartyDetails, getTransporters, getUnits, getSalesTransactionDetails, getDeliveryChallans, getSalesTransactions, getBanks, getCompanies, getPartyOutstanding, getVehicles } from "../../helpers/fakebackend_helper";
 import { getSelectedFiscalYearId } from "../../utils/fiscalYearStorage";
+
+const getNextSalesOrderNumber = (orders = []) => {
+    let latest = null;
+
+    orders.forEach(order => {
+        const rawInvNo = (order.invNo || order.InvNo || "").toString().trim();
+        const match = rawInvNo.match(/^(.*?)(\d+)$/);
+        if (!match) return;
+
+        const numberValue = parseInt(match[2], 10);
+        if (!Number.isFinite(numberValue)) return;
+
+        if (!latest || numberValue > latest.numberValue) {
+            latest = {
+                prefix: match[1],
+                numberValue,
+                width: match[2].length
+            };
+        }
+    });
+
+    if (!latest) return "";
+
+    const nextNumber = String(latest.numberValue + 1).padStart(latest.width, "0");
+    return `${latest.prefix}${nextNumber}`;
+};
 
 const SalesTransactionCreate = () => {
     const dispatch = useDispatch();
@@ -457,6 +483,15 @@ const SalesTransactionCreate = () => {
         if (isEdit || isView) return;
         checkDuplicateInvNo(validation.values.invNo);
     }, [validation.values.invNo, checkDuplicateInvNo, isEdit, isView]);
+
+    useEffect(() => {
+        if (isEdit || isView || validation.values.invNo || allSalesOrders.length === 0) return;
+
+        const nextInvNo = getNextSalesOrderNumber(allSalesOrders);
+        if (nextInvNo) {
+            validation.setFieldValue("invNo", nextInvNo, false);
+        }
+    }, [allSalesOrders, isEdit, isView, validation.values.invNo, validation.setFieldValue]);
 
     useEffect(() => {
         if (isSalesTransactionCreated) {
@@ -1174,21 +1209,21 @@ const SalesTransactionCreate = () => {
                                                                     {showErr('subUnit') && <div className="text-danger" style={{ fontSize: '11px' }}>{lineErrors.subUnit}</div>}
                                                                 </td>
                                                                 <td>
-                                                                    <Input readOnly value={formatToTwoDecimals(line.subUnitQuantity)} className="bg-light" />
+                                                                    <Input readOnly value={formatToFourDecimals(line.subUnitQuantity)} className="bg-light" />
                                                                 </td>
                                                                 <td>
-                                                                    <Input type="number" value={line.crt}
+                                                                    <Input type="number" step="0.0001" value={line.crt}
                                                                         className="no-spin-input"
                                                                         disabled={isView}
                                                                         onChange={(e) => handleLineChange(index, "crt", e.target.value)}
                                                                         onBlur={(e) => {
-                                                                            handleLineChange(index, "crt", formatToTwoDecimals(e.target.value));
+                                                                            handleLineChange(index, "crt", formatToFourDecimals(e.target.value));
                                                                             validation.setFieldTouched(`lines[${index}].crt`, true);
                                                                         }}
                                                                         style={{ borderColor: showErr('crt') ? '#f06548' : '' }} />
                                                                     {showErr('crt') && <div className="text-danger" style={{ fontSize: '11px' }}>{lineErrors.crt}</div>}
                                                                 </td>
-                                                                <td><Input type="number" value={formatToTwoDecimals(line.packing)} readOnly className="bg-light no-spin-input" /></td>
+                                                                <td><Input type="number" value={formatToFourDecimals(line.packing)} readOnly className="bg-light no-spin-input" /></td>
                                                                 <td>
                                                                     <Input 
                                                                         type="number" 
@@ -1276,9 +1311,9 @@ const SalesTransactionCreate = () => {
                                                         <td style={stickyFooterCellStyle}></td>
                                                         <td style={stickyFooterCellStyle}></td>
                                                         <td style={stickyFooterCellStyle}></td>
-                                                        <td style={stickyFooterCellStyle}>{formatToTwoDecimals(itemTotals.subUnitQuantity)}</td>
-                                                        <td style={stickyFooterCellStyle}>{formatToTwoDecimals(itemTotals.crt)}</td>
-                                                        <td style={stickyFooterCellStyle}>{formatToTwoDecimals(itemTotals.packing)}</td>
+                                                        <td style={stickyFooterCellStyle}>{formatToFourDecimals(itemTotals.subUnitQuantity)}</td>
+                                                        <td style={stickyFooterCellStyle}>{formatToFourDecimals(itemTotals.crt)}</td>
+                                                        <td style={stickyFooterCellStyle}>{formatToFourDecimals(itemTotals.packing)}</td>
                                                         <td style={stickyFooterCellStyle}>{formatToTwoDecimals(itemTotals.rateDiff)}</td>
                                                         <td style={stickyFooterCellStyle}>{formatToTwoDecimals(itemTotals.rate)}</td>
                                                         <td style={stickyFooterCellStyle}>{formatToTwoDecimals(itemTotals.mrp)}</td>
@@ -1393,7 +1428,7 @@ const SalesTransactionCreate = () => {
                                                                     <tr key={idx}>
                                                                         <td>{inv.invNo || inv.InvNo}</td>
                                                                         <td>{new Date(inv.invDate || inv.InvDate).toLocaleDateString('en-GB')}</td>
-                                                                        <td className="text-end">{qtyByCode[code] !== undefined ? Number(qtyByCode[code]).toFixed(2) : <span className="text-muted small italic">Loading...</span>}</td>
+                                                                        <td className="text-end">{qtyByCode[code] !== undefined ? formatToFourDecimals(qtyByCode[code]) : <span className="text-muted small italic">Loading...</span>}</td>
                                                                         <td className="text-end">{formatToTwoDecimals(inv.grandTotal || inv.GrandTotal)}</td>
                                                                         <td className="text-center">
                                                                             <Button color="soft-info" size="sm" onClick={() => selectPreviousInvoice(code)}>
