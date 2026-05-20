@@ -137,6 +137,15 @@ const Header = ({ onChangeLayoutMode, layoutModeType, headerClass }) => {
                                     </Form>
                                 </DropdownMenu>
                             </Dropdown>
+
+                            <Link
+                                to="/apps-chat"
+                                className="btn btn-icon rounded-circle header-item d-flex align-items-center justify-content-center"
+                            >
+                                <i class="ri-message-3-fill fs-20 text-muted"></i>
+                            </Link>
+
+
                             <Link
                                 to="/apps-tasks-kanban"
                                 className="btn btn-icon rounded-circle header-item d-flex align-items-center justify-content-center"

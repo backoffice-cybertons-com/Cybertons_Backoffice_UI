@@ -29,8 +29,6 @@ import { isEmpty, map } from "lodash";
 import FeatherIcon from "feather-icons-react";
 import PersonalInfo from "./PersonalInfo";
 
-import { chatContactData } from "../../common/data";
-
 //redux
 import { useSelector, useDispatch } from "react-redux";
 import {
@@ -48,6 +46,18 @@ import userDummayImage from "../../assets/images/users/user-dummy-img.jpg";
 import PerfectScrollbar from "react-perfect-scrollbar";
 import "react-perfect-scrollbar/dist/css/styles.css";
 import { createSelector } from "reselect";
+
+// ── SignalR real-time integration ─────────────────────────────────────────────
+import useSignalRChat from "../../Components/Hooks/useSignalRChat";
+import {
+  appendRealtimeMessage,  // eslint-disable-line no-unused-vars
+  updateChatLastMessage,  // eslint-disable-line no-unused-vars
+  setSignalRStatus,       // eslint-disable-line no-unused-vars
+  setMessagesData
+} from "../../slices/chat/reducer";
+
+import { APIClient, getLoggedinUser } from "../../helpers/api_helper";
+const api = new APIClient();
 
 const Chat = () => {
   const userChatShow = useRef();
@@ -69,11 +79,27 @@ const Chat = () => {
   const [settings_Menu, setsettings_Menu] = useState(false);
   const [reply, setreply] = useState("");
   const [emojiPicker, setemojiPicker] = useState(false);
-  const currentUser = {
-    name: "Anna Adame",
-    isActive: true,
-  };
 
+  const authUser = getLoggedinUser();
+  const loggedInUserId = authUser?.user?.id || 0;
+  const loggedInUserName = authUser?.user?.firstName || authUser?.user?.username || "User";
+
+  const [chatUsers, setChatUsers] = useState([]);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [isLoadingUsers, setIsLoadingUsers] = useState(false);
+  const [isLoadingMessages, setIsLoadingMessages] = useState(false);
+
+  // Group contacts by first letter
+  const groupedContacts = chatUsers.reduce((acc, user) => {
+    const name = user.FullName || user.full_name || user.firstName || user.name || user.Username || user.username || "U";
+    const title = name.charAt(0).toUpperCase();
+    if (!acc[title]) {
+      acc[title] = { title, contacts: [] };
+    }
+    acc[title].contacts.push(user);
+    return acc;
+  }, {});
+  const sortedGroupedContacts = Object.values(groupedContacts).sort((a, b) => a.title.localeCompare(b.title));
 
   const selectLayoutState = (state) => state.Chat;
   const chatProperties = createSelector(
@@ -82,12 +108,23 @@ const Chat = () => {
       chats: state.chats,
       messages: state.messages,
       channels: state.channels,
+      signalRStatus: state.signalRStatus,
     })
   );
   // Inside your component
   const {
-    chats, messages, channels
+    chats, messages, channels, signalRStatus
   } = useSelector(chatProperties);
+
+  // Layout theme handling
+  const selectLayoutProperties = createSelector(
+    (state) => state.Layout,
+    (layout) => ({
+      layoutModeType: layout?.layoutModeType,
+    })
+  );
+  const { layoutModeType } = useSelector(selectLayoutProperties);
+  const isDarkMode = layoutModeType === "dark";
 
 
   //Toggle Chat Box Menus
@@ -103,25 +140,60 @@ const Chat = () => {
   const toggleSettings = () => {
     setsettings_Menu(!settings_Menu);
   };
+
   useEffect(() => {
-    dispatch(onGetDirectContact());
-    dispatch(onGetChannels());
-    dispatch(getMessages(currentRoomId));
-  }, [dispatch, currentRoomId]);
+    const fetchUsers = async () => {
+      try {
+        setIsLoadingUsers(true);
+        const res = await api.get("/api/master/User");
+        if (res && res.data) {
+          const users = res.data.filter(u => (u.id || u.UserId) !== loggedInUserId);
+          setChatUsers(users);
+        } else if (Array.isArray(res)) {
+          const users = res.filter(u => (u.id || u.UserId) !== loggedInUserId);
+          setChatUsers(users);
+        }
+      } catch (error) {
+        console.error("Error fetching users:", error);
+      } finally {
+        setIsLoadingUsers(false);
+      }
+    };
+    fetchUsers();
+  }, [loggedInUserId]);
 
-  // useEffect(() => {
-  //   ref.current.recalculate();
-  // });
+  // Use For Chat Box
+  const userChatOpen = async (user) => {
+    const userId = user.id || user.UserId;
+    setSelectedUser(user);
+    setChat_Box_Username(user.FullName || user.full_name || user.firstName || user.name || user.Username || user.username || "Unknown User");
+    setChat_Box_Image(user.image);
 
-
-  //Use For Chat Box
-  const userChatOpen = (id, name, status, roomId, image) => {
-    setChat_Box_Username(name);
+    // Create a deterministic roomId based on both user IDs to use for SignalR auto-scroll tracking
+    const roomId = loggedInUserId < userId
+      ? `${loggedInUserId}-${userId}`
+      : `${userId}-${loggedInUserId}`;
     setCurrentRoomId(roomId);
-    setChat_Box_Image(image);
-    dispatch(getMessages(roomId));
+
     if (window.innerWidth < 892) {
       userChatShow.current.classList.add("user-chat-show");
+    }
+
+    try {
+      setIsLoadingMessages(true);
+      const res = await api.get(`/api/chat/conversation/${loggedInUserId}/${userId}`);
+      if (res && res.data) {
+        dispatch(setMessagesData(res.data));
+      } else if (Array.isArray(res)) {
+        dispatch(setMessagesData(res));
+      } else {
+        dispatch(setMessagesData([]));
+      }
+    } catch (error) {
+      console.error("Error fetching conversation:", error);
+      dispatch(setMessagesData([]));
+    } finally {
+      setIsLoadingMessages(false);
     }
   };
 
@@ -129,16 +201,27 @@ const Chat = () => {
     userChatShow.current.classList.remove("user-chat-show");
   }
 
-  const addMessage = (roomId, sender) => {
-    const message = {
-      id: Math.floor(Math.random() * 100),
-      roomId,
-      sender,
-      message: curMessage,
-      createdAt: new Date(),
-    };
-    setcurMessage("");
-    dispatch(onAddMessage(message));
+  const addMessage = async () => {
+    if (!curMessage.trim() || !selectedUser) return;
+
+    const messageText = curMessage;
+    setcurMessage(""); // clear immediately for UX
+
+    try {
+      const payload = {
+        senderId: loggedInUserId,
+        receiverId: selectedUser.id || selectedUser.UserId,
+        message: messageText
+      };
+
+      const res = await api.post("/api/chat/send", payload);
+
+      if (res && (res.data || res.id)) {
+        dispatch(appendRealtimeMessage(res.data || res));
+      }
+    } catch (error) {
+      console.error("Error sending message:", error);
+    }
   };
 
 
@@ -152,12 +235,22 @@ const Chat = () => {
     if (!isEmpty(messages)) scrollToBottom();
   }, [messages, scrollToBottom]);
 
+  // ── SignalR real-time integration ─────────────────────────────────────────
+  // Connects to chatHub, listens to ReceiveMessage, updates Redux + sidebar,
+  // handles reconnection states, and cleans up listeners on unmount.
+  // eslint-disable-next-line no-unused-vars
+  const { sendToHub } = useSignalRChat({
+    currentRoomId,
+    scrollToBottom,
+    getToken: () => localStorage.getItem("authToken"),
+  });
+
   const onKeyPress = (e) => {
     const { key, value } = e;
     if (key === "Enter") {
       e.preventDefault();
       setcurMessage(value);
-      addMessage(currentRoomId, currentUser.name);
+      addMessage();
     }
   };
 
@@ -252,7 +345,7 @@ const Chat = () => {
                     onKeyUp={searchUsers}
                     id="search-user"
                     type="text"
-                    className="form-control bg-light border-light"
+                    className={`form-control ${isDarkMode ? "bg-dark border-dark text-white" : "bg-light border-light text-body"}`}
                     placeholder="Search here..."
                   />
                   <i className="ri-search-2-line search-icon"></i>
@@ -321,58 +414,60 @@ const Chat = () => {
                     </div>
 
                     <div className="chat-message-list">
+                      {isLoadingUsers && <div className="p-3 text-center text-muted">Loading users...</div>}
+                      {!isLoadingUsers && chatUsers.length === 0 && <div className="p-3 text-center text-muted">No users found.</div>}
                       <ul
                         className="list-unstyled chat-list chat-user-list users-list"
                         id="userList"
                       >
-                        {(chats || []).map((chat) => (
+                        {(chatUsers || []).map((user) => (
                           <li
-                            key={chat.id + chat.status}
+                            key={user.id || user.UserId}
                             className={
-                              currentRoomId === chat.roomId ? "active" : ""
+                              (selectedUser?.id || selectedUser?.UserId) === (user.id || user.UserId) ? "active" : ""
                             }
                           >
                             <Link
                               to="#"
                               onClick={(e) => {
-                                userChatOpen(
-                                  chat.id,
-                                  chat.name,
-                                  chat.status,
-                                  chat.roomId,
-                                  chat.image
-                                );
+                                e.preventDefault();
+                                userChatOpen(user);
                               }}
                             >
                               <div className="d-flex align-items-center">
                                 <div className="flex-shrink-0 chat-user-img online align-self-center me-2 ms-0">
                                   <div className="avatar-xxs">
-                                    {chat.image ? (
+                                    {user.image ? (
                                       <img
-                                        src={chat.image}
+                                        src={user.image}
                                         className="rounded-circle img-fluid userprofile"
                                         alt=""
                                       />
                                     ) : (
                                       <div
                                         className={
-                                          "avatar-title rounded-circle bg-" +
-                                          chat.bgColor +
-                                          " userprofile"
+                                          "avatar-title rounded-circle bg-primary userprofile"
                                         }
                                       >
-                                        {chat.name.charAt(0)}
+                                        {(user.FullName || user.full_name || user.firstName || user.name || user.Username || user.username || "U").charAt(0).toUpperCase()}
                                       </div>
                                     )}
                                   </div>
                                   <span className="user-status"></span>
                                 </div>
                                 <div className="flex-grow-1 overflow-hidden">
-                                  <p className="text-truncate mb-0">{chat.name}</p>
+                                  <p className="text-truncate mb-0 fw-semibold text-body">
+                                    {user.FullName || user.full_name || user.firstName || user.name || "Unknown User"}
+                                  </p>
+                                  {(user.Username || user.username || user.Email || user.email) && (
+                                    <p className="text-truncate text-muted fs-12 mb-0">
+                                      {user.Username || user.username || user.Email || user.email}
+                                    </p>
+                                  )}
                                 </div>
-                                {chat.badge &&
+                                {user.badge &&
                                   <div className="flex-shrink-0">
-                                    <span className="badge bg-dark-subtle text-body rounded p-1">{chat.badge}</span>
+                                    <span className="badge bg-dark-subtle text-body rounded p-1">{user.badge}</span>
                                   </div>
                                 }
                               </div>
@@ -423,7 +518,7 @@ const Chat = () => {
                                     </div>
                                   </div>
                                   <div className="flex-grow-1 overflow-hidden">
-                                    <p className="text-truncate mb-0">
+                                    <p className="text-truncate mb-0 fw-semibold text-body">
                                       {channel.name}
                                     </p>
                                   </div>
@@ -447,29 +542,32 @@ const Chat = () => {
                 <TabPane tabId="2" id="contacts">
                   <SimpleBar className="chat-room-list pt-3" style={{ margin: "-16px 0px 0px" }}>
                     <div className="sort-contact">
-                      {(chatContactData || []).map((item, key) => (<div className="mt-3" key={key}>
+                      {(sortedGroupedContacts || []).map((item, key) => (<div className="mt-3" key={key}>
                         <div className="contact-list-title">{item.title}</div>
                         <ul id={"contact-sort-" + item.title} className="list-unstyled contact-list">
-                          {item.contacts.map((item, key) => (<li key={key}>
+                          {item.contacts.map((contact, idx) => (<li key={contact.id || contact.UserId || idx}>
                             <div className="d-flex align-items-center">
                               <div className="flex-shrink-0 me-2">
                                 <div className="avatar-xxs">
-                                  {item.image ? <img src={item.image} className="img-fluid rounded-circle" alt="" /> :
+                                  {contact.image ? <img src={contact.image} className="img-fluid rounded-circle" alt="" /> :
                                     <span className="avatar-title rounded-circle bg-primary fs-10">
-                                      {item.name.charAt(0) + item.name.split(" ").slice(-1).toString().charAt(0)}
+                                      {(contact.FullName || contact.full_name || contact.firstName || contact.name || contact.Username || contact.username || "U").charAt(0).toUpperCase()}
                                     </span>}
                                 </div>
                               </div>
                               <div className="flex-grow-1" onClick={(e) => {
-                                userChatOpen(
-                                  item.id,
-                                  item.name,
-                                  item.status,
-                                  item.roomId,
-                                  item.image
-                                );
-                              }}>
-                                <p className="text-truncate contactlist-name mb-0">{item.name}</p>
+                                e.preventDefault();
+                                userChatOpen(contact);
+                                setcustomActiveTab("1");
+                              }} style={{ cursor: "pointer" }}>
+                                <p className="text-truncate contactlist-name mb-0 fw-semibold text-body">
+                                  {contact.FullName || contact.full_name || contact.firstName || contact.name || "Unknown User"}
+                                </p>
+                                {(contact.Username || contact.username || contact.Email || contact.email) && (
+                                  <p className="text-truncate text-muted fs-12 mb-0">
+                                    {contact.Username || contact.username || contact.Email || contact.email}
+                                  </p>
+                                )}
                               </div>
                               <div className="flex-shrink-0">
                                 <UncontrolledDropdown>
@@ -532,7 +630,7 @@ const Chat = () => {
                                 <div className="flex-grow-1 overflow-hidden">
                                   <h5 className="text-truncate mb-0 fs-16">
                                     <a
-                                      className="text-reset username"
+                                      className="text-body fw-semibold username"
                                       data-bs-toggle="offcanvas"
                                       href="#userProfileCanvasExample"
                                       aria-controls="userProfileCanvasExample"
@@ -541,7 +639,21 @@ const Chat = () => {
                                     </a>
                                   </h5>
                                   <p className="text-truncate text-muted fs-14 mb-0 userStatus">
-                                    <small>Online</small>
+                                    <small
+                                      className={
+                                        signalRStatus === "Connected"
+                                          ? "text-success"
+                                          : signalRStatus === "Reconnecting"
+                                            ? "text-warning"
+                                            : "text-muted"
+                                      }
+                                    >
+                                      {signalRStatus === "Connected"
+                                        ? "Online"
+                                        : signalRStatus === "Reconnecting"
+                                          ? "Reconnecting…"
+                                          : "Offline"}
+                                    </small>
                                   </p>
                                 </div>
                               </div>
@@ -570,7 +682,7 @@ const Chat = () => {
                                       <Input
                                         onKeyUp={searchMessages}
                                         type="text"
-                                        className="form-control bg-light border-light"
+                                        className={`form-control ${isDarkMode ? "bg-dark border-dark text-white" : "bg-light border-light text-body"}`}
                                         placeholder="Search here..."
                                         id="searchMessage"
                                       />
@@ -643,18 +755,30 @@ const Chat = () => {
                             className="list-unstyled chat-conversation-list"
                             id="users-conversation"
                           >
-                            {messages &&
+                            {isLoadingMessages && (
+                              <div className="text-center p-4">
+                                <div className="spinner-border text-primary" role="status">
+                                  <span className="sr-only">Loading...</span>
+                                </div>
+                              </div>
+                            )}
+                            {!isLoadingMessages && messages && messages.length === 0 && (
+                              <div className="text-center p-4 text-muted">
+                                No messages in this conversation.
+                              </div>
+                            )}
+                            {!isLoadingMessages && messages &&
                               map(messages, (message, key) => (
                                 <li
                                   className={
-                                    message.sender === Chat_Box_Username
-                                      ? " chat-list left"
-                                      : "chat-list right"
+                                    message.senderId === loggedInUserId
+                                      ? "chat-list right"
+                                      : "chat-list left"
                                   }
                                   key={key}
                                 >
                                   <div className="conversation-list">
-                                    {message.sender === Chat_Box_Username && (
+                                    {message.senderId !== loggedInUserId && (
                                       <div className="chat-avatar">
                                         {Chat_Box_Image === undefined ?
                                           <img
@@ -673,8 +797,8 @@ const Chat = () => {
                                     <div className="user-chat-content">
                                       <div className="ctext-wrap">
                                         <div className="ctext-wrap-content">
-                                          <p className="mb-0 ctext-content">
-                                            {message.message}
+                                          <p className="mb-0 ctext-content text-body">
+                                            {message.message || message.text || message.content}
                                           </p>
                                         </div>
                                         <UncontrolledDropdown className="align-self-start message-box-drop">
@@ -711,7 +835,7 @@ const Chat = () => {
                                       </div>
                                       <div className="conversation-name">
                                         <small className="text-muted time">
-                                          09:07 am
+                                          {message.createdAt ? new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
                                         </small>{" "}
                                         <span className="text-success check-message-icon">
                                           <i className="ri-check-double-line align-bottom"></i>
@@ -763,7 +887,7 @@ const Chat = () => {
                               value={curMessage}
                               onKeyDown={onKeyPress}
                               onChange={e => setcurMessage(e.target.value)}
-                              className="form-control chat-input bg-light border-light"
+                              className={`form-control chat-input ${isDarkMode ? "bg-dark border-dark text-white" : "bg-light border-light text-body"}`}
                               id="chat-input"
                               placeholder="Type your message..."
                             />
