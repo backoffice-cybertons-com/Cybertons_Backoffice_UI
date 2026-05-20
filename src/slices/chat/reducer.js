@@ -32,9 +32,10 @@ const chatSlice = createSlice({
       const incoming = action.payload;
       const list = Array.isArray(state.messages) ? state.messages : [];
 
+      const incomingId = incoming.id !== undefined ? incoming.id : incoming.messageId;
       // Dedup: skip if a message with the same id already exists
-      if (incoming.id !== undefined) {
-        const alreadyExists = list.some((m) => m.id === incoming.id);
+      if (incomingId !== undefined) {
+        const alreadyExists = list.some((m) => (m.id !== undefined ? m.id : m.messageId) === incomingId);
         if (alreadyExists) return;
       }
 
@@ -107,7 +108,10 @@ const chatSlice = createSlice({
 
     builder.addCase(deleteMessage.fulfilled, (state, action) => {
       state.messages = (state.messages || []).filter(
-        (message) => message.id.toString() !== action.payload.toString()
+        (message) => {
+          const msgId = message.id !== undefined ? message.id : message.messageId;
+          return msgId.toString() !== action.payload.toString();
+        }
       );
     });
     builder.addCase(deleteMessage.rejected, (state, action) => {

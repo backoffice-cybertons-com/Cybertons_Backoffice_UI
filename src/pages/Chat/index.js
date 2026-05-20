@@ -771,14 +771,14 @@ const Chat = () => {
                               map(messages, (message, key) => (
                                 <li
                                   className={
-                                    message.senderId === loggedInUserId
+                                    (message.senderId || message.senderUserId) === loggedInUserId
                                       ? "chat-list right"
                                       : "chat-list left"
                                   }
                                   key={key}
                                 >
                                   <div className="conversation-list">
-                                    {message.senderId !== loggedInUserId && (
+                                    {(message.senderId || message.senderUserId) !== loggedInUserId && (
                                       <div className="chat-avatar">
                                         {Chat_Box_Image === undefined ?
                                           <img
@@ -798,7 +798,7 @@ const Chat = () => {
                                       <div className="ctext-wrap">
                                         <div className="ctext-wrap-content">
                                           <p className="mb-0 ctext-content text-body">
-                                            {message.message || message.text || message.content}
+                                            {message.message || message.text || message.content || message.messageText}
                                           </p>
                                         </div>
                                         <UncontrolledDropdown className="align-self-start message-box-drop">
@@ -826,7 +826,7 @@ const Chat = () => {
                                               <i className="ri-bookmark-line me-2 text-muted align-bottom"></i>
                                               Bookmark
                                             </DropdownItem>
-                                            <DropdownItem href="#" onClick={() => dispatch(onDeleteMessage(message.id))}>
+                                            <DropdownItem href="#" onClick={() => dispatch(onDeleteMessage(message.id || message.messageId))}>
                                               <i className="ri-delete-bin-5-line me-2 text-muted align-bottom"></i>
                                               Delete
                                             </DropdownItem>
@@ -835,7 +835,7 @@ const Chat = () => {
                                       </div>
                                       <div className="conversation-name">
                                         <small className="text-muted time">
-                                          {message.createdAt ? new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
+                                          {(message.createdAt || message.createdDate) ? new Date(message.createdAt || message.createdDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
                                         </small>{" "}
                                         <span className="text-success check-message-icon">
                                           <i className="ri-check-double-line align-bottom"></i>
@@ -898,7 +898,7 @@ const Chat = () => {
                                 <Button
                                   type="button"
                                   color="success"
-                                  onClick={() => { addMessage(currentRoomId, currentUser.name); setemojiPicker(false); setemojiArray(""); }}
+                                  onClick={() => { addMessage(); setemojiPicker(false); setemojiArray(""); }}
                                   className="chat-send waves-effect waves-light"
                                 >
                                   <i className="ri-send-plane-2-fill align-bottom"></i>
