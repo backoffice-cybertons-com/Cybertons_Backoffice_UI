@@ -1,8 +1,23 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { getTaskList, addNewTask, updateTask, deleteTask, updateCardData, deleteKanban, getTasks, addCardData, deleteKanbanColumn } from './thunk';
+import {
+    getTaskList,
+    addNewTask,
+    updateTask,
+    deleteTask,
+    updateCardData,
+    deleteKanban,
+    getTasks,
+    addCardData,
+    deleteKanbanColumn,
+    getBoards,
+    createBoard,
+} from './thunk';
+
 export const initialState = {
     taskList: [],
     tasks: [],
+    boards: [],
+    activeBoardId: null,
 };
 
 const TasksSlice = createSlice({
@@ -24,16 +39,20 @@ const TasksSlice = createSlice({
                     return card;
                 }),
             }));
-        }
+        },
+        setActiveBoardId(state, action) {
+            state.activeBoardId = action.payload;
+        },
     },
     extraReducers: (builder) => {
+        // ── Task List (non-kanban) ─────────────────────────────────────────────
         builder.addCase(getTaskList.fulfilled, (state, action) => {
             state.taskList = action.payload.data;
             state.isTaskCreated = false;
             state.isTaskSuccess = true;
         });
         builder.addCase(getTaskList.rejected, (state, action) => {
-            state.error = action.payload.error || null;
+            state.error = action.payload?.error || null;
             state.isTaskCreated = false;
             state.isTaskSuccess = true;
         });
@@ -44,7 +63,7 @@ const TasksSlice = createSlice({
             state.isTaskAddFail = false;
         });
         builder.addCase(addNewTask.rejected, (state, action) => {
-            state.error = action.payload.error || null;
+            state.error = action.payload?.error || null;
             state.isTaskAdd = false;
             state.isTaskAddFail = true;
         });
@@ -58,7 +77,7 @@ const TasksSlice = createSlice({
             state.isTaskUpdateFail = false;
         });
         builder.addCase(updateTask.rejected, (state, action) => {
-            state.error = action.payload.error || null;
+            state.error = action.payload?.error || null;
             state.isTaskUpdate = false;
             state.isTaskUpdateFail = true;
         });
@@ -68,13 +87,32 @@ const TasksSlice = createSlice({
             state.isTaskDeleteFail = false;
         });
         builder.addCase(deleteTask.rejected, (state, action) => {
-            state.error = action.payload.error || null;
+            state.error = action.payload?.error || null;
             state.isTaskDelete = false;
             state.isTaskDeleteFail = true;
         });
 
-         // Kanban Board
-         builder.addCase(getTasks.fulfilled, (state, action) => {
+        // ── Kanban Boards ─────────────────────────────────────────────────────
+        builder.addCase(getBoards.fulfilled, (state, action) => {
+            state.boards = Array.isArray(action.payload) ? action.payload : [];
+            // Auto-select: keep existing selection if still valid, else pick default
+            const boardIds = state.boards.map(b => b.boardId);
+            if (state.activeBoardId && boardIds.includes(state.activeBoardId)) {
+                // keep current selection
+            } else if (state.boards.length > 0) {
+                const def = state.boards.find(b => b.isDefault) || state.boards[0];
+                state.activeBoardId = def?.boardId ?? null;
+            }
+        });
+        builder.addCase(createBoard.fulfilled, (state, action) => {
+            if (action.payload?.boardId) {
+                state.boards = [...state.boards, action.payload];
+                state.activeBoardId = action.payload.boardId;
+            }
+        });
+
+        // ── Kanban Columns & Cards ─────────────────────────────────────────────
+        builder.addCase(getTasks.fulfilled, (state, action) => {
             state.tasks = Array.isArray(action.payload) ? action.payload : [];
         });
         builder.addCase(getTasks.rejected, (state, action) => {
@@ -110,13 +148,13 @@ const TasksSlice = createSlice({
             const cardIdStr = action.payload.id.toString();
             const targetKanIdStr = action.payload.kanId.toString();
 
-            // Clean the card out of all columns to avoid duplication
+            // Remove the card from every column first to avoid duplication
             const cleanedColumns = state.tasks.map((column) => ({
                 ...column,
                 cards: column.cards.filter((card) => card.id.toString() !== cardIdStr)
             }));
 
-            // Add the updated card to its proper target column
+            // Then add the updated card to its target column
             state.tasks = cleanedColumns.map((column) => {
                 if (column.id.toString() === targetKanIdStr) {
                     return {
@@ -127,20 +165,15 @@ const TasksSlice = createSlice({
                 return column;
             });
         });
-
         builder.addCase(updateCardData.rejected, (state, action) => {
             state.error = action.payload || null;
         });
         builder.addCase(deleteKanban.fulfilled, (state, action) => {
-            state.tasks = state.tasks.map((kanbanList) => {
-                const updatedTaskList = {
-                    ...kanbanList,
-                    cards: kanbanList.cards.filter((task) => {
-                        return task.id.toString() !== action.payload.toString();
-                    }),
-                };
-                return updatedTaskList;
-            });
+            const cardIdStr = action.payload?.toString?.() ?? "";
+            state.tasks = state.tasks.map((kanbanList) => ({
+                ...kanbanList,
+                cards: kanbanList.cards.filter((task) => task.id.toString() !== cardIdStr),
+            }));
         });
         builder.addCase(deleteKanban.rejected, (state, action) => {
             state.error = action.payload?.error || null;
@@ -157,6 +190,6 @@ const TasksSlice = createSlice({
     }
 });
 
-export const { updateCardChecklist } = TasksSlice.actions;
+export const { updateCardChecklist, setActiveBoardId } = TasksSlice.actions;
 
 export default TasksSlice.reducer;

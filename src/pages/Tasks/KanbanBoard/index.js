@@ -9,13 +9,13 @@ import TasksKanban from './MainPage'
 
 const Kanbanboard = () => {
 
-    document.title = "Kanban Board | SoftBook - React Admin & Dashboard Template";
+    document.title = "Sticky Notes | SoftBook - React Admin & Dashboard Template";
 
     return (
         <React.Fragment>
             <div className="page-content">
                 <Container fluid>
-                    <BreadCrumb title="Kanban Board" pageTitle="Tasks" />
+                    <BreadCrumb title="Sticky Notes" pageTitle="Tasks" />
                     <TasksKanban />
                 </Container>
             </div>

@@ -12,8 +12,12 @@ import {
     addNewTasks as addNewTasksApi,
     updateTasks as updateTasksApi,
     deleteTasks as deleteTasksApi,
-    deleteKanbanColumn as deleteKanbanColumnApi
+    deleteKanbanColumn as deleteKanbanColumnApi,
+    getKanbanBoards as getKanbanBoardsApi,
+    createKanbanBoard as createKanbanBoardApi,
 } from "../../helpers/fakebackend_helper";
+
+// ── Task List (non-kanban) ────────────────────────────────────────────────────
 
 export const getTaskList = createAsyncThunk("tasks/getTaskList", async () => {
     try {
@@ -58,56 +62,90 @@ export const deleteTask = createAsyncThunk("tasks/deleteTask", async (task) => {
     }
 });
 
-// Kanban Board
-export const getTasks = createAsyncThunk("tasks/getTasks", async () => {
+// ── Kanban Boards ─────────────────────────────────────────────────────────────
+
+/** Fetch all boards for the current user. Reducer auto-selects the default one. */
+export const getBoards = createAsyncThunk("tasks/getBoards", async () => {
     try {
-        const response = await getTasksApi();
+        const response = await getKanbanBoardsApi();
+        return Array.isArray(response) ? response : [];
+    } catch (error) {
+        return [];
+    }
+});
+
+/** Create a new board. Payload: string boardName */
+export const createBoard = createAsyncThunk("tasks/createBoard", async (boardName) => {
+    try {
+        const response = await createKanbanBoardApi({ boardName });
+        toast.success("Board created successfully", { autoClose: 2000 });
+        return response;
+    } catch (error) {
+        toast.error("Board creation failed", { autoClose: 2000 });
+        return error;
+    }
+});
+
+// ── Kanban Columns & Cards ────────────────────────────────────────────────────
+
+/** Load columns (with nested cards) for the given boardId */
+export const getTasks = createAsyncThunk("tasks/getTasks", async (boardId) => {
+    try {
+        const response = await getTasksApi(boardId);
         return response;
     } catch (error) {
         return error;
     }
 });
-export const addCardData = createAsyncThunk("tasks/addCardData", async (card) => {
+
+/** Add a column OR a card. Payload: { card, boardId } */
+export const addCardData = createAsyncThunk("tasks/addCardData", async ({ card, boardId }) => {
     try {
-        const response = await addNewTasksApi(card);
+        const response = await addNewTasksApi(card, boardId);
         const data = await response;
-        toast.success("Card Add Successfully", { autoClose: 2000 })
+        toast.success("Card Add Successfully", { autoClose: 2000 });
         return data;
     } catch (error) {
-        toast.error("Card Add Failded", { autoClose: 2000 })
+        toast.error("Card Add Failed", { autoClose: 2000 });
         return error;
     }
-})
-export const updateCardData = createAsyncThunk("tasks/updateCardData", async (card) => {
+});
+
+/** Update a card (or move between columns). Payload: { card, boardId } */
+export const updateCardData = createAsyncThunk("tasks/updateCardData", async ({ card, boardId }) => {
     try {
-        const response = await updateTasksApi(card);
+        const response = await updateTasksApi(card, boardId);
         const data = await response;
-        toast.success("Card Update Successfully", { autoClose: 2000 })
+        toast.success("Card Update Successfully", { autoClose: 2000 });
         return data;
     } catch (error) {
-        toast.error("Card Update Failded", { autoClose: 2000 })
-        return error
-    }
-})
-export const deleteKanban = createAsyncThunk("tasks/deleteKanban", async (card) => {
-    try {
-        const response = await deleteTasksApi(card);
-        const data = await response;
-        toast.success("Card Delete Successfully", { autoClose: 2000 })
-        return data;
-    } catch (error) {
-        toast.error("Card Delete Failded", { autoClose: 2000 })
+        toast.error("Card Update Failed", { autoClose: 2000 });
         return error;
     }
-})
-export const deleteKanbanColumn = createAsyncThunk("tasks/deleteKanbanColumn", async (columnId) => {
+});
+
+/** Delete a card. Payload: { cardId, boardId } */
+export const deleteKanban = createAsyncThunk("tasks/deleteKanban", async ({ cardId, boardId }) => {
     try {
-        const response = await deleteKanbanColumnApi(columnId);
-        const data = await response;
-        toast.success("Column Delete Successfully", { autoClose: 2000 })
-        return data;
+        await deleteTasksApi(cardId, boardId);
+        toast.success("Card Delete Successfully", { autoClose: 2000 });
+        // Return the cardId string so the reducer can filter it out
+        return cardId;
     } catch (error) {
-        toast.error("Column Delete Failed", { autoClose: 2000 })
+        toast.error("Card Delete Failed", { autoClose: 2000 });
         return error;
     }
-})
+});
+
+/** Delete an entire column. Payload: { columnId, boardId } */
+export const deleteKanbanColumn = createAsyncThunk("tasks/deleteKanbanColumn", async ({ columnId, boardId }) => {
+    try {
+        const response = await deleteKanbanColumnApi(columnId, boardId);
+        const data = await response;
+        toast.success("Column Delete Successfully", { autoClose: 2000 });
+        return data;
+    } catch (error) {
+        toast.error("Column Delete Failed", { autoClose: 2000 });
+        return error;
+    }
+});
