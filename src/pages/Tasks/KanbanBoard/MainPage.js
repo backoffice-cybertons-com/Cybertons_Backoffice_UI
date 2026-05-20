@@ -33,6 +33,7 @@ import {
   getTasks as onGetTasks,
   updateCardData as onUpdateCardData,
   deleteKanbanColumn as onDeleteKanbanColumn,
+  getBoards as onGetBoards,
 } from "../../../slices/thunks";
 import KanbanQuickAddCard from "./KanbanQuickAddCard";
 import KanbanTaskDetailsModal from "./KanbanTaskDetailsModal";
@@ -158,18 +159,26 @@ const TasksKanban = () => {
   const tasksSelector = createSelector(selectLayoutState, (state) => ({
     tasks: state.tasks,
     loading: state.loading,
+    boards: state.boards,
+    activeBoardId: state.activeBoardId,
   }));
 
-  const { tasks, loading } = useSelector(tasksSelector);
+  const { tasks, loading, boards, activeBoardId } = useSelector(tasksSelector);
   const [isLoading, setLoading] = useState(loading);
 
+  // On mount: load boards. The reducer will auto-select the default board.
   useEffect(() => {
-    debugger;
-    dispatch(onGetTasks());
+    dispatch(onGetBoards());
   }, [dispatch]);
 
+  // When the active board is known (or changes), load its columns + cards.
   useEffect(() => {
-    debugger;
+    if (activeBoardId) {
+      dispatch(onGetTasks(activeBoardId));
+    }
+  }, [activeBoardId, dispatch]);
+
+  useEffect(() => {
     setCards(Array.isArray(tasks) ? tasks : []);
   }, [tasks]);
 
@@ -183,9 +192,12 @@ const TasksKanban = () => {
     onSubmit: (values) => {
       dispatch(
         onAddCardData({
-          name: values.name.trim(),
-          color: "primary",
-          cards: [],
+          card: {
+            name: values.name.trim(),
+            color: "primary",
+            cards: [],
+          },
+          boardId: activeBoardId,
         })
       );
       columnFormik.resetForm();
@@ -196,12 +208,15 @@ const TasksKanban = () => {
   const handleQuickAddCard = (card) => {
     dispatch(
       onAddCardData({
-        ...card,
-        priority: "Medium",
-        module: "",
-        labels: [],
-        userImages: [],
-        isPinned: false,
+        card: {
+          ...card,
+          priority: "Medium",
+          module: "",
+          labels: [],
+          userImages: [],
+          isPinned: false,
+        },
+        boardId: activeBoardId,
       })
     );
   };
@@ -213,7 +228,7 @@ const TasksKanban = () => {
   };
 
   const handleSaveDetails = (updatedCard) => {
-    dispatch(onUpdateCardData(updatedCard));
+    dispatch(onUpdateCardData({ card: updatedCard, boardId: activeBoardId }));
     setDetailsOpen(false);
   };
 
@@ -221,9 +236,9 @@ const TasksKanban = () => {
     if (!itemToDelete) return;
 
     if (deleteType === "card") {
-      dispatch(onDeleteKanban(itemToDelete.id));
+      dispatch(onDeleteKanban({ cardId: itemToDelete.id, boardId: activeBoardId }));
     } else if (deleteType === "column") {
-      dispatch(onDeleteKanbanColumn(itemToDelete.id));
+      dispatch(onDeleteKanbanColumn({ columnId: itemToDelete.id, boardId: activeBoardId }));
     }
     setDeleteModalOpen(false);
     setItemToDelete(null);
@@ -263,9 +278,12 @@ const TasksKanban = () => {
     setCards(updatedLines);
     dispatch(
       onUpdateCardData({
-        ...movedCard,
-        kanId: destination.droppableId,
-        position: destination.index + 1,
+        card: {
+          ...movedCard,
+          kanId: destination.droppableId,
+          position: destination.index + 1,
+        },
+        boardId: activeBoardId,
       })
     );
   };

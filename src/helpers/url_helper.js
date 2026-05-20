@@ -215,6 +215,8 @@ export const UPDATE_TICKET = "/apps/ticket";
 export const DELETE_TICKET = "/apps/ticket";
 
 // kanban
+export const GET_KANBAN_BOARDS = "/api/Kanban/boards";
+export const CREATE_KANBAN_BOARD = "/api/Kanban/boards";
 export const GET_TASKS = "/api/Kanban";
 export const ADD_TASKS = "/api/Kanban";
 export const UPDATE_TASKS = "/api/Kanban";

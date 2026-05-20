@@ -167,18 +167,19 @@ export const updateTask = task => api.update(url.UPDATE_TASK + '/' + task._id, t
 export const deleteTask = task => api.delete(url.DELETE_TASK + '/' + task);
 
 // Kanban Board
-export const getTasks = () => {
-  return api.get(url.GET_TASKS);
-}; export const addNewTasks = (card) => api.create(url.ADD_TASKS, card)
-export const updateTasks = (card) => api.put(url.UPDATE_TASKS, card)
-export const deleteTasks = (card) => api.delete(url.DELETE_TASKS, { headers: { card } })
-export const deleteKanbanColumn = (columnId) => api.delete(`${url.DELETE_KANBAN_COLUMN}/${columnId}`)
-export const uploadKanbanCover = (formData) => api.create(url.UPLOAD_KANBAN_COVER, formData, { headers: { 'Content-Type': 'multipart/form-data' } })
-export const uploadKanbanAttachment = (formData) => api.create(url.UPLOAD_KANBAN_ATTACHMENT, formData, { headers: { 'Content-Type': 'multipart/form-data' } })
-export const getKanbanChecklist = (taskId) => api.get(`${url.GET_KANBAN_CHECKLIST}?taskId=${taskId}`)
-export const saveKanbanChecklistItem = (item) => api.create(url.POST_KANBAN_CHECKLIST, item)
-export const deleteKanbanChecklistItem = (itemId) => api.delete(`${url.DELETE_KANBAN_CHECKLIST}/${itemId}`)
-export const deleteKanbanChecklistGroup = (taskId, groupName) => api.delete(`${url.DELETE_KANBAN_CHECKLIST_GROUP}?taskId=${taskId}&groupName=${encodeURIComponent(groupName)}`)
+export const getKanbanBoards = () => api.get(url.GET_KANBAN_BOARDS);
+export const createKanbanBoard = (payload) => api.create(url.CREATE_KANBAN_BOARD, payload);
+export const getTasks = (boardId) => api.get(`${url.GET_TASKS}?boardId=${boardId}`);
+export const addNewTasks = (card, boardId) => api.create(`${url.ADD_TASKS}?boardId=${boardId}`, card);
+export const updateTasks = (card, boardId) => api.put(`${url.UPDATE_TASKS}?boardId=${boardId}`, card);
+export const deleteTasks = (cardId, boardId) => api.delete(`${url.DELETE_TASKS}?boardId=${boardId}`, { headers: { card: cardId } });
+export const deleteKanbanColumn = (columnId, boardId) => api.delete(`${url.DELETE_KANBAN_COLUMN}/${columnId}?boardId=${boardId}`);
+export const uploadKanbanCover = (formData) => api.create(url.UPLOAD_KANBAN_COVER, formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+export const uploadKanbanAttachment = (formData) => api.create(url.UPLOAD_KANBAN_ATTACHMENT, formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+export const getKanbanChecklist = (taskId) => api.get(`${url.GET_KANBAN_CHECKLIST}?taskId=${taskId}`);
+export const saveKanbanChecklistItem = (item) => api.create(url.POST_KANBAN_CHECKLIST, item);
+export const deleteKanbanChecklistItem = (itemId) => api.delete(`${url.DELETE_KANBAN_CHECKLIST}/${itemId}`);
+export const deleteKanbanChecklistGroup = (taskId, groupName) => api.delete(`${url.DELETE_KANBAN_CHECKLIST_GROUP}?taskId=${taskId}&groupName=${encodeURIComponent(groupName)}`);
 
 // CRM
 // get Contacts
