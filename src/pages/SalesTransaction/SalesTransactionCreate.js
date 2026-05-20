@@ -20,10 +20,17 @@ import { resetSalesTransactionCreated } from "../../slices/salesTransaction/redu
 import { getVendors, getPartyCustomers, getProductsForSales, getPartyDetails, getTransporters, getUnits, getSalesTransactionDetails, getDeliveryChallans, getSalesTransactions, getBanks, getCompanies, getPartyOutstanding, getVehicles } from "../../helpers/fakebackend_helper";
 import { getSelectedFiscalYearId } from "../../utils/fiscalYearStorage";
 
+const isSalesRecord = (order) => {
+    const invType = (order.invType || order.InvType || "").toString().trim().toLowerCase();
+    return !invType || invType === "sales";
+};
+
 const getNextSalesOrderNumber = (orders = []) => {
-    let latest = null;
+    const prefixStats = new Map();
 
     orders.forEach(order => {
+        if (!isSalesRecord(order)) return;
+
         const rawInvNo = (order.invNo || order.InvNo || "").toString().trim();
         const match = rawInvNo.match(/^(.*?)(\d+)$/);
         if (!match) return;
@@ -31,14 +38,26 @@ const getNextSalesOrderNumber = (orders = []) => {
         const numberValue = parseInt(match[2], 10);
         if (!Number.isFinite(numberValue)) return;
 
-        if (!latest || numberValue > latest.numberValue) {
-            latest = {
-                prefix: match[1],
-                numberValue,
-                width: match[2].length
-            };
+        const prefix = match[1];
+        const current = prefixStats.get(prefix) || {
+            prefix,
+            count: 0,
+            numberValue: 0,
+            width: match[2].length
+        };
+
+        current.count += 1;
+        if (numberValue > current.numberValue) {
+            current.numberValue = numberValue;
+            current.width = match[2].length;
         }
+        prefixStats.set(prefix, current);
     });
+
+    const latest = [...prefixStats.values()].sort((a, b) => {
+        if (b.count !== a.count) return b.count - a.count;
+        return b.numberValue - a.numberValue;
+    })[0];
 
     if (!latest) return "";
 
@@ -378,7 +397,7 @@ const SalesTransactionCreate = () => {
             // ---- Duplicate invNo check ----
             if (!isEdit) {
                 const duplicateSO = allSalesOrders.find(
-                    po => (po.invNo || po.InvNo || '').toString().trim().toLowerCase() === values.invNo.trim().toLowerCase()
+                    po => isSalesRecord(po) && (po.invNo || po.InvNo || '').toString().trim().toLowerCase() === values.invNo.trim().toLowerCase()
                 );
                 if (duplicateSO) {
                     validation.setFieldError('invNo', 'This Sales Order# already exists. Please use a unique number.');
@@ -387,7 +406,7 @@ const SalesTransactionCreate = () => {
 
                 // ---- Duplicate PO Order check ----
                 const duplicatePO = allSalesOrders.find(
-                    po => (po.poOrderNo || po.PoOrderNo || '').toString().trim().toLowerCase() === values.poOrderNo.trim().toLowerCase() && values.poOrderNo.trim() !== ''
+                    po => isSalesRecord(po) && (po.poOrderNo || po.PoOrderNo || '').toString().trim().toLowerCase() === values.poOrderNo.trim().toLowerCase() && values.poOrderNo.trim() !== ''
                 );
                 if (duplicatePO) {
                     validation.setFieldError('poOrderNo', 'This Purchase Order number already exists. Please use a unique number.');
@@ -467,6 +486,7 @@ const SalesTransactionCreate = () => {
         }
 
         const duplicateSO = (allSalesOrders || []).find((po) => {
+            if (!isSalesRecord(po)) return false;
             const poInvNo = (po.invNo || po.InvNo || "").toString().trim().toLowerCase();
             const sameCurrentRecord = id && String(po.spUniqueCode || po.SpUniqueCode || po.id || "") === String(id);
             return poInvNo === invNo && !sameCurrentRecord;

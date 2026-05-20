@@ -20,6 +20,51 @@ import { resetPurchaseTransactionCreated } from "../../slices/purchaseTransactio
 import { getVendors, getProductsForPurchase, getPartyDetails, getTransporters, getUnits, getPurchaseTransactionDetails, getDeliveryChallans, getPurchaseTransactions, getBanks, getVehicles } from "../../helpers/fakebackend_helper";
 import { getSelectedFiscalYearId } from "../../utils/fiscalYearStorage";
 
+const isPurchaseRecord = (order) => {
+    const invType = (order.invType || order.InvType || "").toString().trim().toLowerCase();
+    return !invType || invType === "purchase";
+};
+
+const getNextPurchaseOrderNumber = (orders = []) => {
+    const prefixStats = new Map();
+
+    orders.forEach(order => {
+        if (!isPurchaseRecord(order)) return;
+
+        const rawInvNo = (order.invNo || order.InvNo || "").toString().trim();
+        const match = rawInvNo.match(/^(.*?)(\d+)$/);
+        if (!match) return;
+
+        const numberValue = parseInt(match[2], 10);
+        if (!Number.isFinite(numberValue)) return;
+
+        const prefix = match[1];
+        const current = prefixStats.get(prefix) || {
+            prefix,
+            count: 0,
+            numberValue: 0,
+            width: match[2].length
+        };
+
+        current.count += 1;
+        if (numberValue > current.numberValue) {
+            current.numberValue = numberValue;
+            current.width = match[2].length;
+        }
+        prefixStats.set(prefix, current);
+    });
+
+    const latest = [...prefixStats.values()].sort((a, b) => {
+        if (b.count !== a.count) return b.count - a.count;
+        return b.numberValue - a.numberValue;
+    })[0];
+
+    if (!latest) return "";
+
+    const nextNumber = String(latest.numberValue + 1).padStart(latest.width, "0");
+    return `${latest.prefix}${nextNumber}`;
+};
+
 const PurchaseTransactionCreate = () => {
     const dispatch = useDispatch();
     const history = useNavigate();
@@ -310,7 +355,7 @@ const PurchaseTransactionCreate = () => {
             // ---- Duplicate invNo check ----
             if (!isEdit) {
                 const duplicate = allPurchaseOrders.find(
-                    po => (po.invNo || po.InvNo || '').toString().trim().toLowerCase() === values.invNo.trim().toLowerCase()
+                    po => isPurchaseRecord(po) && (po.invNo || po.InvNo || '').toString().trim().toLowerCase() === values.invNo.trim().toLowerCase()
                 );
                 if (duplicate) {
                     validation.setFieldError('invNo', 'This Purchase Order# already exists. Please use a unique number.');
@@ -394,6 +439,7 @@ const PurchaseTransactionCreate = () => {
         }
 
         const duplicate = (allPurchaseOrders || []).find((po) => {
+            if (!isPurchaseRecord(po)) return false;
             const poInvNo = (po.invNo || po.InvNo || "").toString().trim().toLowerCase();
             const sameCurrentRecord = id && String(po.spUniqueCode || po.SpUniqueCode || po.id || "") === String(id);
             return poInvNo === invNo && !sameCurrentRecord;
@@ -410,6 +456,15 @@ const PurchaseTransactionCreate = () => {
         if (isEdit || isView) return;
         checkDuplicateInvNo(validation.values.invNo);
     }, [validation.values.invNo, checkDuplicateInvNo, isEdit, isView]);
+
+    useEffect(() => {
+        if (isEdit || isView || validation.values.invNo || allPurchaseOrders.length === 0) return;
+
+        const nextInvNo = getNextPurchaseOrderNumber(allPurchaseOrders);
+        if (nextInvNo) {
+            validation.setFieldValue("invNo", nextInvNo, false);
+        }
+    }, [allPurchaseOrders, isEdit, isView, validation.values.invNo, validation.setFieldValue]);
 
     useEffect(() => {
         if (isPurchaseTransactionCreated) {
