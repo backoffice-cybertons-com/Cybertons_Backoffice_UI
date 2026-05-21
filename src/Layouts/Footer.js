@@ -8,7 +8,7 @@ const Footer = () => {
                 <Container fluid>
                     <Row>
                         <Col sm={6}>
-                            Powered by SoftSense 
+                            Powered by SoftOnCloud
                         </Col>
                         
                     </Row>

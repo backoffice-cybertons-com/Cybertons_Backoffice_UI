@@ -71,7 +71,7 @@ const Login = () => {
 
     // LIFECYCLE: Set document title
     useEffect(() => {
-        document.title = "Login | Books by SoftSense";
+        document.title = "Login | Books by SoftOnCloud";
     }, []);
 
     // FORMIK SETUP: Form handling and validation
@@ -124,7 +124,7 @@ const Login = () => {
                                             <img src={logoLight} alt="" className="auth-logo-img" />
                                         </Link>
                                     </div>
-                                    <p className="auth-tagline fs-15 fw-medium">Accounting Software by SoftSense</p>
+                                    <p className="auth-tagline fs-15 fw-medium">Accounting Software by SoftOnCloud</p>
                                 </div>
                             </Col>
                         </Row>
@@ -251,7 +251,7 @@ const Login = () => {
                                             </Form>
 
                                             <div className="text-center mt-4 text-muted fs-13">
-                                            Powered by SoftSense 
+                                            Powered by SoftOnCloud 
                                             </div>
 
                                         </div>

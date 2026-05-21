@@ -25,46 +25,6 @@ const isPurchaseRecord = (order) => {
     return !invType || invType === "purchase";
 };
 
-const getNextPurchaseOrderNumber = (orders = []) => {
-    const prefixStats = new Map();
-
-    orders.forEach(order => {
-        if (!isPurchaseRecord(order)) return;
-
-        const rawInvNo = (order.invNo || order.InvNo || "").toString().trim();
-        const match = rawInvNo.match(/^(.*?)(\d+)$/);
-        if (!match) return;
-
-        const numberValue = parseInt(match[2], 10);
-        if (!Number.isFinite(numberValue)) return;
-
-        const prefix = match[1];
-        const current = prefixStats.get(prefix) || {
-            prefix,
-            count: 0,
-            numberValue: 0,
-            width: match[2].length
-        };
-
-        current.count += 1;
-        if (numberValue > current.numberValue) {
-            current.numberValue = numberValue;
-            current.width = match[2].length;
-        }
-        prefixStats.set(prefix, current);
-    });
-
-    const latest = [...prefixStats.values()].sort((a, b) => {
-        if (b.count !== a.count) return b.count - a.count;
-        return b.numberValue - a.numberValue;
-    })[0];
-
-    if (!latest) return "";
-
-    const nextNumber = String(latest.numberValue + 1).padStart(latest.width, "0");
-    return `${latest.prefix}${nextNumber}`;
-};
-
 const PurchaseTransactionCreate = () => {
     const dispatch = useDispatch();
     const history = useNavigate();
@@ -276,7 +236,7 @@ const PurchaseTransactionCreate = () => {
         invType: "Purchase",
         invNo: "",
         invoiceSeries: "",
-        invoiceSeriesIncrementNumber: 1,
+        invoiceSeriesIncrementNumber: "",
         invDate: today,
         salesOrderNo: "",
         salesOrderDate: today,
@@ -335,7 +295,7 @@ const PurchaseTransactionCreate = () => {
         initialValues: initialValues,
         validationSchema: Yup.object({
             partyId: Yup.mixed().required("Vendor Name is required").test('not-empty', 'Vendor Name is required', v => !!v && v !== ''),
-            invNo: Yup.string().required("Purchase Order# is required"),
+            invNo: Yup.string().required("Vendor Bill No# is required"),
             salesOrderNo: Yup.string().required("Reference SO# is required"),
             deliveryNo: Yup.mixed().required("Delivery Challan No is required").test('not-empty', 'Delivery Challan No is required', v => !!v && v !== ''),
             transporterId: Yup.mixed().required("Transporter Name is required").test('not-empty', 'Transporter Name is required', v => !!v && v !== ''),
@@ -358,7 +318,7 @@ const PurchaseTransactionCreate = () => {
                     po => isPurchaseRecord(po) && (po.invNo || po.InvNo || '').toString().trim().toLowerCase() === values.invNo.trim().toLowerCase()
                 );
                 if (duplicate) {
-                    validation.setFieldError('invNo', 'This Purchase Order# already exists. Please use a unique number.');
+                    validation.setFieldError('invNo', 'This Vendor Bill No# already exists. Please use a unique number.');
                     return;
                 }
             }
@@ -446,7 +406,7 @@ const PurchaseTransactionCreate = () => {
         });
 
         if (duplicate) {
-            validation.setFieldError("invNo", "This Purchase Order# already exists. Please use a unique number.");
+            validation.setFieldError("invNo", "This Vendor Bill No# already exists. Please use a unique number.");
         } else if (validation.errors.invNo && validation.errors.invNo.includes("already exists")) {
             validation.setFieldError("invNo", undefined);
         }
@@ -456,15 +416,6 @@ const PurchaseTransactionCreate = () => {
         if (isEdit || isView) return;
         checkDuplicateInvNo(validation.values.invNo);
     }, [validation.values.invNo, checkDuplicateInvNo, isEdit, isView]);
-
-    useEffect(() => {
-        if (isEdit || isView || validation.values.invNo || allPurchaseOrders.length === 0) return;
-
-        const nextInvNo = getNextPurchaseOrderNumber(allPurchaseOrders);
-        if (nextInvNo) {
-            validation.setFieldValue("invNo", nextInvNo, false);
-        }
-    }, [allPurchaseOrders, isEdit, isView, validation.values.invNo, validation.setFieldValue]);
 
     useEffect(() => {
         if (isPurchaseTransactionCreated) {
@@ -953,7 +904,7 @@ const PurchaseTransactionCreate = () => {
                                             <Col md={6}>
                                                 <Row className="mb-3">
                                                     <Col md={6}>
-                                                        <Label className="text-danger fw-medium">Invoice No#*</Label>
+                                                        <Label className="text-danger fw-medium">Vendor Bill No#*</Label>
                                                         <Input
                                                             name="invNo"
                                                             value={validation.values.invNo}
@@ -966,7 +917,7 @@ const PurchaseTransactionCreate = () => {
                                                                 validation.handleBlur(e);
                                                                 checkDuplicateInvNo(e.target.value);
                                                             }}
-                                                            placeholder="PO-00001"
+                                                            placeholder="Enter vendor bill no"
                                                             disabled={isView}
                                                             invalid={(validation.touched.invNo || !!validation.values.invNo) && !!validation.errors.invNo}
                                                         />
@@ -978,28 +929,6 @@ const PurchaseTransactionCreate = () => {
                                                             disabled={isView}
                                                             invalid={validation.touched.salesOrderNo && !!validation.errors.salesOrderNo} />
                                                         {validation.touched.salesOrderNo && validation.errors.salesOrderNo && <div className="text-danger small mt-1">{validation.errors.salesOrderNo}</div>}
-                                                    </Col>
-                                                </Row>
-                                                <Row className="mb-3">
-                                                    <Col md={6}>
-                                                        <Label>Invoice Series</Label>
-                                                        <Input
-                                                            name="invoiceSeries"
-                                                            value={validation.values.invoiceSeries}
-                                                            onChange={validation.handleChange}
-                                                            placeholder="Series (e.g. GST)"
-                                                            disabled={isView}
-                                                        />
-                                                    </Col>
-                                                    <Col md={6}>
-                                                        <Label>Starting #</Label>
-                                                        <Input
-                                                            type="number"
-                                                            name="invoiceSeriesIncrementNumber"
-                                                            value={validation.values.invoiceSeriesIncrementNumber}
-                                                            onChange={validation.handleChange}
-                                                            disabled={isView}
-                                                        />
                                                     </Col>
                                                 </Row>
                                                 <Row className="mb-3">
