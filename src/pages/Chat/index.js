@@ -202,6 +202,7 @@ const Chat = () => {
   }
 
   const addMessage = async () => {
+    debugger;
     if (!curMessage.trim() || !selectedUser) return;
 
     const messageText = curMessage;
