@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Col, Dropdown, DropdownMenu, DropdownToggle, Nav, NavItem, NavLink, Row, TabContent, TabPane } from 'reactstrap';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import classnames from 'classnames';
 import { useSelector, useDispatch } from "react-redux";
 import moment from "moment";
@@ -11,12 +11,33 @@ import SimpleBar from "simplebar-react";
 
 // Import Thunks
 import { getUnreadNotifications, markNotificationRead, markToastShown } from "../../slices/notifications/thunk";
+import signalRService from "../../services/signalrService";
+
+const NOTIFICATION_HUB_KEY = "notifications";
+const POLL_INTERVAL_MS = 300000; // 5 minutes — fallback when SignalR is unavailable
 
 //import bell
 import bell from "../../assets/images/svg/bell.svg";
 
+const getNotificationIcon = (referenceType) => {
+    const type = (referenceType || "").toUpperCase();
+    switch (type) {
+        case "CHAT":
+            return "bx bx-chat";
+        case "TASK":
+            return "bx bx-task";
+        case "CALENDAR":
+            return "bx bx-calendar";
+        case "SYSTEM":
+            return "bx bx-cog";
+        default:
+            return "bx bx-bell";
+    }
+};
+
 const NotificationDropdown = () => {
     const dispatch = useDispatch();
+    const navigate = useNavigate();
     const { notifications, unreadCount } = useSelector((state) => state.Notifications);
 
     // Get Auth User
@@ -53,45 +74,85 @@ const NotificationDropdown = () => {
         }
     }, [authUser, dispatch]);
 
-    // Initial Fetch & Polling using Page Visibility API
+    // SignalR — instant bell updates
+    useEffect(() => {
+        let isMounted = true;
+
+        const handleReceiveNotification = () => {
+            if (isMounted) fetchNotifications();
+        };
+
+        signalRService.setLifecycleCallbacks(NOTIFICATION_HUB_KEY, {
+            onConnected: () => {
+                if (isMounted) fetchNotifications();
+            },
+            onDisconnected: () => {
+                if (isMounted && document.visibilityState === "visible") {
+                    fetchNotifications();
+                }
+            },
+            onReconnected: () => {
+                if (isMounted) fetchNotifications();
+            },
+        });
+
+        signalRService.on(
+            NOTIFICATION_HUB_KEY,
+            "ReceiveNotification",
+            handleReceiveNotification
+        );
+
+        signalRService
+            .startHub(NOTIFICATION_HUB_KEY, () => localStorage.getItem("authToken"))
+            .catch((err) => {
+                console.warn("[NotificationDropdown] SignalR hub failed to start:", err);
+            });
+
+        return () => {
+            isMounted = false;
+            signalRService.off(
+                NOTIFICATION_HUB_KEY,
+                "ReceiveNotification",
+                handleReceiveNotification
+            );
+        };
+    }, [fetchNotifications]);
+
+    // Polling fallback — visible tab only; 5 min safety refresh or when hub is down
     useEffect(() => {
         let intervalId = null;
 
+        const pollIfVisible = () => {
+            if (document.visibilityState !== "visible") return;
+            fetchNotifications();
+        };
+
         const startPolling = () => {
-            if (intervalId) {
-                clearInterval(intervalId);
-            }
-            if (document.visibilityState === 'visible') {
-                fetchNotifications();
-                intervalId = setInterval(() => {
-                    fetchNotifications();
-                }, 30000); // 30 seconds polling
+            if (intervalId) clearInterval(intervalId);
+            if (document.visibilityState === "visible") {
+                pollIfVisible();
+                intervalId = setInterval(pollIfVisible, POLL_INTERVAL_MS);
             }
         };
 
         const handleVisibilityChange = () => {
-            if (document.visibilityState === 'visible') {
+            if (document.visibilityState === "visible") {
                 startPolling();
-            } else {
-                if (intervalId) {
-                    clearInterval(intervalId);
-                    intervalId = null;
-                }
+            } else if (intervalId) {
+                clearInterval(intervalId);
+                intervalId = null;
             }
         };
 
-        // Start polling initially if visible
-        if (document.visibilityState === 'visible') {
+        if (document.visibilityState === "visible") {
             startPolling();
         }
 
-        document.addEventListener('visibilitychange', handleVisibilityChange);
+        document.addEventListener("visibilitychange", handleVisibilityChange);
 
         return () => {
-            if (intervalId) {
-                clearInterval(intervalId);
-            }
-            document.removeEventListener('visibilitychange', handleVisibilityChange);
+            if (intervalId) clearInterval(intervalId);
+            document.removeEventListener("visibilitychange", handleVisibilityChange);
         };
     }, [fetchNotifications]);
 
@@ -156,9 +217,14 @@ const NotificationDropdown = () => {
     };
 
     const handleNotificationClick = (notification) => {
+        const refType = (notification.referenceType || "").toUpperCase();
+        const senderUserId = notification.senderUserId ?? notification.SenderUserId;
+
         handleMarkAsRead(notification.notificationId);
-        // Navigation logic later based on referenceType/referenceId
-        console.log("Navigating to:", notification.referenceType, notification.referenceId);
+
+        if (refType === "CHAT" && senderUserId) {
+            navigate(`/apps-chat?openUserId=${senderUserId}`);
+        }
     };
 
 
@@ -219,11 +285,18 @@ const NotificationDropdown = () => {
                                             <div className="d-flex">
                                                 <div className="avatar-xs me-3">
                                                     <span className="avatar-title bg-info-subtle text-info rounded-circle fs-16">
-                                                        <i className={notification.referenceType === 'TASK' || notification.referenceType === 'Task' ? "bx bx-task" : "bx bx-bell"}></i>
+                                                        <i className={getNotificationIcon(notification.referenceType)}></i>
                                                     </span>
                                                 </div>
                                                 <div className="flex-grow-1">
-                                                    <h6 className="mt-0 mb-1 fs-13 fw-semibold">{notification.title}</h6>
+                                                    <h6 className="mt-0 mb-1 fs-13 fw-semibold">
+                                                        {notification.title}
+                                                        {(notification.notificationCount ?? notification.NotificationCount) > 1 && (
+                                                            <span className="badge bg-danger-subtle text-danger ms-1">
+                                                                {notification.notificationCount ?? notification.NotificationCount}
+                                                            </span>
+                                                        )}
+                                                    </h6>
                                                     <div className="fs-13 text-muted">
                                                         <p className="mb-1">{notification.message}</p>
                                                     </div>
