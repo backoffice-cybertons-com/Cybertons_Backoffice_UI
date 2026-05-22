@@ -40,11 +40,13 @@ export const MARK_TOAST_SHOWN = "/api/Notification/mark-toast-shown";
 export const GET_ALL_NOTIFICATIONS = "/api/Notification/all";
 
 // Chat
+export const GET_CHAT_ATTACHMENTS = "/chat/attachments";
 export const GET_DIRECT_CONTACT = "/chat";
 export const GET_MESSAGES = "/messages";
 export const ADD_MESSAGE = "add/message";
 export const GET_CHANNELS = "/channels";
-export const DELETE_MESSAGE = "delete/message";
+export const DELETE_MESSAGE = "/api/chat/message";
+export const MARK_CHAT_AS_READ = "/api/chat/mark-as-read";
 
 //Mailbox
 export const GET_MAIL_DETAILS = "/mail";
@@ -201,13 +203,7 @@ export const GET_SALE_PURCHASE_REGISTER_MONTHWISE =
 export const GET_SALE_PURCHASE_REGISTER_TRANSACTIONWISE =
   "/api/report/sale-purchase-register-transactionWise";
 
-
-
-export const GET_OUTSTANDING_COMPARISION =
-  "/api/Report/outstanding-comparison";
-
-
-
+export const GET_OUTSTANDING_COMPARISION = "/api/Report/outstanding-comparison";
 
 // TicketsList
 export const GET_TICKETS_LIST = "/apps/ticket";
@@ -229,7 +225,6 @@ export const GET_KANBAN_CHECKLIST = "/api/Kanban/checklist";
 export const POST_KANBAN_CHECKLIST = "/api/Kanban/checklist";
 export const DELETE_KANBAN_CHECKLIST = "/api/Kanban/checklist";
 export const DELETE_KANBAN_CHECKLIST_GROUP = "/api/Kanban/checklist/group";
-
 
 // Dashboard
 export const POST_DASHBOARD_DATA = "/api/dashboard";
