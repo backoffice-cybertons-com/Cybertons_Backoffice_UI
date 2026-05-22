@@ -1773,7 +1773,7 @@ const scrollToMessage = (replyMessageId) => {
         currentuser={Chat_Box_Username}
         cuurentiseImg={Chat_Box_Image}
       /> */}
-      console.log("chatAttachments state", chatAttachments);
+       
       <PersonalInfo
         show={isInfoDetails}
         onCloseClick={() => setIsInfoDetails(false)}
