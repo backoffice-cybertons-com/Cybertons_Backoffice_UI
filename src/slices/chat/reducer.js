@@ -50,13 +50,29 @@ const chatSlice = createSlice({
      * it may be a message for a conversation not yet loaded in the sidebar.
      */
     updateChatLastMessage(state, action) {
-      const { roomId, message, sender, createdAt } = action.payload;
-      const chat = (state.chats || []).find((c) => c.roomId === roomId);
+      const payload = action.payload || {};
+      const roomId = payload.roomId;
+      const message =
+        payload.message ||
+        payload.messageText ||
+        payload.text ||
+        payload.content ||
+        "";
+      const createdAt = payload.createdAt || payload.createdDate;
+      const senderId = payload.senderUserId ?? payload.senderId;
+      const receiverId = payload.receiverUserId ?? payload.receiverId;
+      const chat = (state.chats || []).find((c) => {
+        if (roomId && c.roomId === roomId) return true;
+        const chatUserId = c.userId ?? c.UserId ?? c.id;
+        return (
+          chatUserId?.toString() === senderId?.toString() ||
+          chatUserId?.toString() === receiverId?.toString()
+        );
+      });
       if (chat) {
         chat.lastMessage = message;
+        chat.lastMessageDate = createdAt;
         chat.lastMessageTime = createdAt;
-        // Optional: increment unread badge when not the active room
-        // (the component can clear it when the user opens the conversation)
       }
     },
 
@@ -72,6 +88,40 @@ const chatSlice = createSlice({
 
     setMessagesData(state, action) {
       state.messages = action.payload;
+    },
+
+    /**
+     * Mark outgoing messages as read (read receipt from recipient).
+     * Updates messages where sender = senderUserId and receiver = receiverUserId.
+     */
+    markMessagesAsRead(state, action) {
+      const { senderUserId, receiverUserId, readAt } = action.payload || {};
+      if (!senderUserId || !receiverUserId) return;
+
+      const readTimestamp = readAt || new Date().toISOString();
+
+      state.messages = (state.messages || []).map((message) => {
+        const senderId = message.senderUserId ?? message.senderId;
+        const receiverId = message.receiverUserId ?? message.receiverId;
+        const alreadyRead = message.readAt ?? message.read_at;
+        const isMatch =
+          senderId?.toString() === senderUserId?.toString() &&
+          receiverId?.toString() === receiverUserId?.toString() &&
+          !alreadyRead;
+
+        if (isMatch) {
+          return { ...message, readAt: readTimestamp, read_at: readTimestamp };
+        }
+        return message;
+      });
+    },
+
+    removeMessage(state, action) {
+      const deletedId = action.payload;
+      state.messages = (state.messages || []).filter((message) => {
+        const msgId = message.id !== undefined ? message.id : message.messageId;
+        return msgId?.toString() !== deletedId?.toString();
+      });
     }
   },
 
@@ -107,12 +157,11 @@ const chatSlice = createSlice({
     });
 
     builder.addCase(deleteMessage.fulfilled, (state, action) => {
-      state.messages = (state.messages || []).filter(
-        (message) => {
-          const msgId = message.id !== undefined ? message.id : message.messageId;
-          return msgId.toString() !== action.payload.toString();
-        }
-      );
+      const deletedId = action.payload;
+      state.messages = (state.messages || []).filter((message) => {
+        const msgId = message.id !== undefined ? message.id : message.messageId;
+        return msgId?.toString() !== deletedId?.toString();
+      });
     });
     builder.addCase(deleteMessage.rejected, (state, action) => {
       state.error = action.payload?.error || null;
@@ -125,6 +174,8 @@ export const {
   updateChatLastMessage,
   setSignalRStatus,
   setMessagesData,
+  markMessagesAsRead,
+  removeMessage,
 } = chatSlice.actions;
 
 export default chatSlice.reducer;

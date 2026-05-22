@@ -49,10 +49,9 @@ export const addMessage = createAsyncThunk("chat/addMessage" , async (message) =
 
 export const deleteMessage = createAsyncThunk("chat/deleteMessage" , async (message) => {
   try{
-    const response = deleteMessageApi(message);
-    const data = await response;
-    return data;
+    await deleteMessageApi(message);
+    return message;
   }catch (error) {
-    return error;
+    throw error;
   }
 });

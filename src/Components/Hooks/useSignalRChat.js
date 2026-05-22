@@ -1,23 +1,3 @@
-/**
- * useSignalRChat.js
- *
- * Production-ready React hook for SignalR real-time chat integration.
- *
- * Features:
- *  ✔ Starts the 'chat' hub ONCE on mount (singleton guard prevents duplicates).
- *  ✔ Registers ReceiveMessage listener with stable reference (no duplicate subs).
- *  ✔ Dispatches appendRealtimeMessage + updateChatLastMessage on every event.
- *  ✔ Deduplication is handled inside the reducer — hook stays clean.
- *  ✔ Auto-scrolls to latest message only for the active conversation.
- *  ✔ Tracks hub lifecycle: Connected / Reconnecting / Disconnected → Redux state.
- *  ✔ On unmount: removes only OUR listener, never stops the singleton hub.
- *
- * Extensibility stubs (commented):
- *   → UserTyping  (typing indicators)
- *   → UserOnline / UserOffline  (presence / online users)
- *   → ReceiveNotification  (cross-module notifications)
- */
-
 import { useEffect, useRef, useCallback } from "react";
 import { useDispatch } from "react-redux";
 import signalRService from "../../services/signalrService";
@@ -25,62 +5,104 @@ import {
   appendRealtimeMessage,
   updateChatLastMessage,
   setSignalRStatus,
+  removeMessage,
 } from "../../slices/chat/reducer";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Constants
-// ─────────────────────────────────────────────────────────────────────────────
 const HUB_KEY = "chat";
 
-/**
- * @param {object}   options
- * @param {number|string} [options.currentRoomId]  Active conversation/room ID.
- * @param {Function}      [options.scrollToBottom] Callback to scroll the message list.
- * @param {Function}      [options.getToken]       JWT factory. Defaults to localStorage.
- *
- * @returns {{ sendToHub: Function }}
- *   sendToHub(methodName, ...args) — invoke a server hub method.
- */
+const sameId = (left, right) =>
+  left !== undefined &&
+  left !== null &&
+  right !== undefined &&
+  right !== null &&
+  left.toString() === right.toString();
+
 const useSignalRChat = ({
   currentRoomId,
+  currentUserId,
+  activeChatUserId,
   scrollToBottom,
+  onMessageReceived,
   getToken = () => localStorage.getItem("authToken"),
 } = {}) => {
   const dispatch = useDispatch();
 
-  // ── Stable refs: keep latest values without causing effect re-runs ────────
-  const getTokenRef    = useRef(getToken);
-  const scrollRef      = useRef(scrollToBottom);
-  const roomRef        = useRef(currentRoomId);
+  const getTokenRef = useRef(getToken);
+  const scrollRef = useRef(scrollToBottom);
+  const roomRef = useRef(currentRoomId);
+  const currentUserRef = useRef(currentUserId);
+  const activeUserRef = useRef(activeChatUserId);
+  const onMessageRef = useRef(onMessageReceived);
 
-  useEffect(() => { getTokenRef.current = getToken;       }, [getToken]);
-  useEffect(() => { scrollRef.current   = scrollToBottom; }, [scrollToBottom]);
-  useEffect(() => { roomRef.current     = currentRoomId;  }, [currentRoomId]);
+  useEffect(() => {
+    getTokenRef.current = getToken;
+  }, [getToken]);
 
-  // ── ReceiveMessage handler ────────────────────────────────────────────────
-  // Created once (dispatch is stable). Same reference used for on() & off().
+  useEffect(() => {
+    scrollRef.current = scrollToBottom;
+  }, [scrollToBottom]);
+
+  useEffect(() => {
+    roomRef.current = currentRoomId;
+  }, [currentRoomId]);
+
+  useEffect(() => {
+    currentUserRef.current = currentUserId;
+  }, [currentUserId]);
+
+  useEffect(() => {
+    activeUserRef.current = activeChatUserId;
+  }, [activeChatUserId]);
+
+  useEffect(() => {
+    onMessageRef.current = onMessageReceived;
+  }, [onMessageReceived]);
+
   const handleReceiveMessage = useCallback(
     (incomingMessage) => {
-      // 1. Append to Redux state — reducer handles deduplication by id
-      dispatch(appendRealtimeMessage(incomingMessage));
+      const senderId = incomingMessage?.senderUserId ?? incomingMessage?.senderId;
+      const receiverId =
+        incomingMessage?.receiverUserId ?? incomingMessage?.receiverId;
+      const currentUserIdValue = currentUserRef.current;
+      const activeChatUserIdValue = activeUserRef.current;
 
-      // 2. Update sidebar chat list with latest message preview
+      const belongsToActiveChat =
+        (sameId(senderId, activeChatUserIdValue) &&
+          sameId(receiverId, currentUserIdValue)) ||
+        (sameId(senderId, currentUserIdValue) &&
+          sameId(receiverId, activeChatUserIdValue));
+
+      if (belongsToActiveChat) {
+        dispatch(appendRealtimeMessage(incomingMessage));
+      }
+
       dispatch(updateChatLastMessage(incomingMessage));
 
-      // 3. Auto-scroll only when the message belongs to the active room
-      if (incomingMessage.roomId === roomRef.current) {
-        // Small delay lets React flush the DOM before scrolling
+      if (belongsToActiveChat || incomingMessage?.roomId === roomRef.current) {
         setTimeout(() => scrollRef.current?.(), 50);
       }
+
+      onMessageRef.current?.(incomingMessage, {
+        isActiveChat: Boolean(belongsToActiveChat),
+        isIncomingForCurrentUser:
+          sameId(receiverId, currentUserIdValue) &&
+          !sameId(senderId, currentUserIdValue),
+      });
     },
-    [dispatch] // dispatch is referentially stable — handler is created once
+    [dispatch],
   );
 
-  // ── Hub lifecycle + subscription setup ───────────────────────────────────
+  const handleMessageDeleted = useCallback(
+    (payload) => {
+      const messageId = payload?.messageId ?? payload;
+      dispatch(removeMessage(messageId));
+    },
+    [dispatch],
+  );
+
   useEffect(() => {
     let isMounted = true;
 
-    // 1. Register lifecycle callbacks BEFORE startHub so they're ready
     signalRService.setLifecycleCallbacks(HUB_KEY, {
       onConnected: () => {
         if (isMounted) dispatch(setSignalRStatus("Connected"));
@@ -92,7 +114,7 @@ const useSignalRChat = ({
       },
       onReconnecting: (err) => {
         if (!isMounted) return;
-        console.warn("[Chat] Hub reconnecting…", err?.message ?? "");
+        console.warn("[Chat] Hub reconnecting...", err?.message ?? "");
         dispatch(setSignalRStatus("Reconnecting"));
       },
       onReconnected: (connectionId) => {
@@ -102,16 +124,9 @@ const useSignalRChat = ({
       },
     });
 
-    // 2. Subscribe BEFORE startHub — service queues listeners for reconnections
     signalRService.on(HUB_KEY, "ReceiveMessage", handleReceiveMessage);
+    signalRService.on(HUB_KEY, "MessageDeleted", handleMessageDeleted);
 
-    // ── Extensibility stubs ───────────────────────────────────────────────
-    // signalRService.on(HUB_KEY, "UserTyping",         handleUserTyping);
-    // signalRService.on(HUB_KEY, "UserOnline",          handleUserOnline);
-    // signalRService.on(HUB_KEY, "UserOffline",         handleUserOffline);
-    // signalRService.on(HUB_KEY, "ReceiveNotification", handleNotification);
-
-    // 3. Start hub — singleton guard prevents duplicate connections
     signalRService
       .startHub(HUB_KEY, () => getTokenRef.current?.())
       .then(() => {
@@ -122,29 +137,13 @@ const useSignalRChat = ({
         if (isMounted) dispatch(setSignalRStatus("Disconnected"));
       });
 
-    // ── Cleanup on unmount ────────────────────────────────────────────────
     return () => {
       isMounted = false;
-
-      // Remove only OUR listener — do NOT stop the hub.
-      // The singleton hub may be reused by notification badges or other components.
       signalRService.off(HUB_KEY, "ReceiveMessage", handleReceiveMessage);
-
-      // ── Remove extensibility stubs on cleanup ─────────────────────────
-      // signalRService.off(HUB_KEY, "UserTyping",         handleUserTyping);
-      // signalRService.off(HUB_KEY, "UserOnline",          handleUserOnline);
-      // signalRService.off(HUB_KEY, "UserOffline",         handleUserOffline);
-      // signalRService.off(HUB_KEY, "ReceiveNotification", handleNotification);
+      signalRService.off(HUB_KEY, "MessageDeleted", handleMessageDeleted);
     };
-  }, [handleReceiveMessage, dispatch]);
-  // ↑ handleReceiveMessage is created once (dispatch is stable), so this
-  //   effect runs exactly once on mount and cleans up once on unmount.
+  }, [handleReceiveMessage, handleMessageDeleted, dispatch]);
 
-  // ── Public API ────────────────────────────────────────────────────────────
-  /**
-   * Invoke a server-side hub method via SignalR.
-   * @example await sendToHub("SendMessage", { roomId, text, sender });
-   */
   const sendToHub = useCallback(async (methodName, ...args) => {
     return signalRService.invoke(HUB_KEY, methodName, ...args);
   }, []);

@@ -1,0 +1,258 @@
+/* src/pages/Chat/chat-styles.css */
+
+/* Chat layout overrides for WhatsApp style structure (using default theme colors) */
+.chat-leftsidebar {
+  min-width: 320px !important;
+  max-width: 320px !important;
+  border-right: 1px solid #e9ebec;
+}
+
+.chat-wrapper {
+  margin: -1.5rem !important;
+  height: calc(100vh - 70px) !important;
+}
+
+/* Adjust the content area */
+.user-chat {
+  position: relative;
+}
+
+/* Keep chat topbar (username header) pinned to the top of the chat area */
+.user-chat-topbar {
+  flex-shrink: 0;
+  z-index: 10;
+  background-color: var(--vz-card-bg, #fff) !important;
+  border-bottom: 1px solid var(--vz-border-color, #e9ebec);
+}
+
+/* Remove side/bottom padding but DO NOT touch padding-top —
+   the theme sets it to offset the fixed navbar (e.g. calc(70px + 1.5rem)).
+   Overriding it to 1.5rem was pushing the chat under the navbar. */
+.page-content {
+  padding-left: 1.5rem !important;
+  padding-right: 1.5rem !important;
+  padding-bottom: 0 !important;
+}
+
+/* WhatsApp-style centered date chips: Today / Yesterday / 24/6/2025 */
+.chat-conversation .chat-conversation-list > li.chat-day-title {
+  display: flex !important;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  max-width: 100%;
+  list-style: none;
+  margin: 16px 0;
+  padding: 0;
+}
+
+.chat-conversation .chat-conversation-list > li.chat-day-title::before {
+  display: none !important;
+}
+
+.chat-conversation .chat-conversation-list > li.chat-day-title .title {
+  display: inline-block;
+  margin: 0 auto;
+  padding: 5px 12px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  font-weight: 500;
+  line-height: 1.2;
+  text-align: center;
+  color: var(--vz-secondary-color, #878a99);
+  background-color: rgba(var(--vz-body-color-rgb, 33, 37, 41), 0.08);
+}
+
+[data-bs-theme="dark"] .chat-conversation .chat-conversation-list > li.chat-day-title .title,
+[data-layout-mode="dark"] .chat-conversation .chat-conversation-list > li.chat-day-title .title {
+  color: rgba(255, 255, 255, 0.7);
+  background-color: rgba(255, 255, 255, 0.12);
+}
+
+/* Message Bubbles now use default theme styles */
+
+/* Reply quote inside a chat bubble. Keep it on theme in light/dark modes. */
+.reply-quote-block {
+  max-width: 100%;
+  margin-bottom: 8px;
+  padding: 8px 10px;
+  border-left: 3px solid rgba(var(--vz-success-rgb), 1);
+  border-radius: 4px;
+  background: rgba(var(--vz-success-rgb), 0.1);
+  color: var(--vz-body-color);
+  text-align: left;
+  overflow: hidden;
+}
+
+.chat-list.right .reply-quote-block {
+  background: rgba(255, 255, 255, 0.55);
+  border-color: rgba(var(--vz-success-rgb), 1);
+}
+
+[data-bs-theme="dark"] .chat-list.right .reply-quote-block,
+[data-layout-mode="dark"] .chat-list.right .reply-quote-block,
+[data-layout-mode="dark"] .reply-quote-block {
+  background: rgba(var(--vz-success-rgb), 0.14);
+}
+
+.reply-quote-sender {
+  display: block;
+  margin-bottom: 2px;
+  color: rgba(var(--vz-success-rgb), 1);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.reply-quote-text {
+  display: -webkit-box;
+  max-width: 260px;
+  color: var(--vz-body-color);
+  font-size: 12px;
+  line-height: 1.35;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  word-break: break-word;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+/* Attachment Cards */
+.file-attachment-card {
+  display: flex;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 6px;
+  padding: 6px 10px;
+  margin-bottom: 5px;
+  text-decoration: none !important;
+  color: inherit !important;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  min-width: 160px;
+  max-width: 220px;
+  text-align: left;
+}
+
+.chat-list.right .file-attachment-card {
+  background: rgba(0, 0, 0, 0.03);
+}
+
+.file-attachment-icon {
+  font-size: 18px;
+  margin-right: 8px;
+  padding: 7px;
+  border-radius: 50%;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+}
+
+.file-attachment-info {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.file-attachment-name {
+  font-weight: 500;
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 130px;
+}
+
+.file-attachment-size {
+  font-size: 12px;
+  margin-top: 2px;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+
+.file-attachment-download {
+  font-size: 20px;
+  padding-left: 10px;
+  opacity: 0.7;
+}
+
+/* Image Thumbnails */
+.image-attachment-preview {
+  max-width: 280px;
+  max-height: 280px;
+  border-radius: 8px;
+  object-fit: cover;
+  cursor: pointer;
+  margin-bottom: 5px;
+  display: block;
+}
+
+/* Image modal */
+.image-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.85);
+  z-index: 9999;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.image-modal-content {
+  position: relative;
+  max-width: 90vw;
+  max-height: 90vh;
+}
+
+.image-modal-content img {
+  max-width: 100%;
+  max-height: 90vh;
+  object-fit: contain;
+}
+
+.image-modal-close {
+  position: absolute;
+  top: -40px;
+  right: -40px;
+  color: white;
+  font-size: 30px;
+  cursor: pointer;
+  background: none;
+  border: none;
+}
+
+@media (max-width: 768px) {
+  .image-modal-close {
+    top: 10px;
+    right: 10px;
+  }
+}
+
+/* Search highlight for matched message text */
+.highlight-message {
+  position: relative;
+  animation: messageHighlight 2.5s ease;
+  padding: 0px 5px;
+ }
+
+@keyframes messageHighlight {
+
+  0% {
+    background-color: rgba(10, 179, 156, 0.75);
+  }
+
+  30% {
+    background-color: rgba(10, 179, 156, 0.55);
+  }
+
+  100% {
+    background-color: transparent;
+  }
+}
