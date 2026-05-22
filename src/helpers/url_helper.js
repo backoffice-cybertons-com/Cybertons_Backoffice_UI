@@ -186,6 +186,7 @@ export const GET_SALE_PUR_COMPAR_DATEWISE =
   "/api/report/sale-purchase-datewise-comparison";
 
 export const GET_TRIAL_BALANCE = "/api/Report/trial-balance";
+export const GET_BALANCE_SHEET = "/api/Report/balance-sheet";
 export const GET_LEDGER_SUMMARY_DATEWISE = "/api/report/ledger-summary-datewise";
 
 export const GET_SALE_PUR_INVWISE = "/api/report/sale-pur-invwise";
