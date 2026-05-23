@@ -47,11 +47,10 @@ export const addMessage = createAsyncThunk("chat/addMessage" , async (message) =
   }
 });
 
-export const deleteMessage = createAsyncThunk("chat/deleteMessage" , async (message) => {
-  try{
-    await deleteMessageApi(message);
-    return message;
-  }catch (error) {
-    throw error;
-  }
-});
+export const deleteMessage = createAsyncThunk(
+  "chat/message",
+  async ({ messageId, senderUserId }) => {
+    await deleteMessageApi(messageId, senderUserId);
+    return messageId;
+  },
+);

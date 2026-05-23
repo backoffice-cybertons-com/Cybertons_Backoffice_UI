@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Col, Dropdown, DropdownMenu, DropdownToggle, Nav, NavItem, NavLink, Row, TabContent, TabPane } from 'reactstrap';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import classnames from 'classnames';
 import { useSelector, useDispatch } from "react-redux";
 import moment from "moment";
@@ -18,6 +18,12 @@ const POLL_INTERVAL_MS = 300000; // 5 minutes — fallback when SignalR is unava
 
 //import bell
 import bell from "../../assets/images/svg/bell.svg";
+
+const isChatNotification = (notification) =>
+    (notification?.referenceType || "").toUpperCase() === "CHAT";
+
+const isChatRoute = (pathname) =>
+    pathname === "/apps-chat" || pathname.startsWith("/apps-chat/");
 
 const getNotificationIcon = (referenceType) => {
     const type = (referenceType || "").toUpperCase();
@@ -38,7 +44,16 @@ const getNotificationIcon = (referenceType) => {
 const NotificationDropdown = () => {
     const dispatch = useDispatch();
     const navigate = useNavigate();
+    const location = useLocation();
+    const isChatPage = isChatRoute(location.pathname);
     const { notifications, unreadCount } = useSelector((state) => state.Notifications);
+
+    const visibleNotifications = Array.isArray(notifications)
+        ? isChatPage
+            ? notifications.filter((n) => !isChatNotification(n))
+            : notifications
+        : [];
+    const visibleUnreadCount = isChatPage ? visibleNotifications.length : unreadCount;
 
     // Get Auth User
     const [authUser, setAuthUser] = useState(null);
@@ -159,13 +174,36 @@ const NotificationDropdown = () => {
     // Track notifications that have already been toasted in this session
     const toastedIds = useRef(new Set());
 
+    // Suppress chat toasts while on the chat screen; mark them shown so they do not appear after leaving
+    useEffect(() => {
+        if (!isChatPage || !authUser || !Array.isArray(notifications)) return;
+
+        notifications
+            .filter(
+                (n) =>
+                    isChatNotification(n) &&
+                    (n.toastShown === false || n.ToastShown === false) &&
+                    !toastedIds.current.has(n.notificationId)
+            )
+            .forEach((n) => {
+                toastedIds.current.add(n.notificationId);
+                dispatch(
+                    markToastShown({
+                        notificationId: n.notificationId,
+                        companyId: authUser.companyId,
+                    })
+                );
+            });
+    }, [notifications, authUser, dispatch, isChatPage]);
+
     // Toast for new notifications
     useEffect(() => {
         if (Array.isArray(notifications) && notifications.length > 0 && authUser) {
             // Only show toast for notifications where toastShown is false AND we haven't toasted it in this session
             const unshownNotifications = notifications.filter(n => 
                 (n.toastShown === false || n.ToastShown === false) && 
-                !toastedIds.current.has(n.notificationId)
+                !toastedIds.current.has(n.notificationId) &&
+                !(isChatPage && isChatNotification(n))
             );
             
             if (unshownNotifications.length > 0) {
@@ -191,7 +229,7 @@ const NotificationDropdown = () => {
                 });
             }
         }
-    }, [notifications, authUser, dispatch]);
+    }, [notifications, authUser, dispatch, isChatPage]);
 
     //Dropdown Toggle
     const [isNotificationDropdown, setIsNotificationDropdown] = useState(false);
@@ -234,10 +272,10 @@ const NotificationDropdown = () => {
             <Dropdown isOpen={isNotificationDropdown} toggle={toggleNotificationDropdown} className="topbar-head-dropdown ms-1 header-item">
                 <DropdownToggle type="button" tag="button" className="btn btn-icon btn-topbar btn-ghost-secondary rounded-circle">
                     <i className='bx bx-bell fs-22'></i>
-                    {unreadCount > 0 && (
+                    {visibleUnreadCount > 0 && (
                         <span
                             className="position-absolute topbar-badge fs-10 translate-middle badge rounded-pill bg-danger">
-                            {unreadCount}
+                            {visibleUnreadCount}
                             <span className="visually-hidden">unread messages</span>
                         </span>
                     )}
@@ -250,7 +288,7 @@ const NotificationDropdown = () => {
                                     <h6 className="m-0 fs-16 fw-semibold text-white"> Notifications </h6>
                                 </Col>
                                 <div className="col-auto dropdown-tabs">
-                                    <span className="badge bg-light-subtle text-body fs-13"> {unreadCount || 0} New</span>
+                                    <span className="badge bg-light-subtle text-body fs-13"> {visibleUnreadCount || 0} New</span>
                                 </div>
                             </Row>
                         </div>
@@ -263,7 +301,7 @@ const NotificationDropdown = () => {
                                         className={classnames({ active: activeTab === '1' })}
                                         onClick={() => { toggleTab('1'); }}
                                     >
-                                        All ({Array.isArray(notifications) ? notifications.length : 0})
+                                        All ({visibleNotifications.length})
                                     </NavLink>
                                 </NavItem>
 
@@ -274,8 +312,8 @@ const NotificationDropdown = () => {
                     <TabContent activeTab={activeTab}>
                         <TabPane tabId="1" className="py-2 ps-2">
                             <SimpleBar style={{ maxHeight: "300px" }} className="pe-2">
-                                {Array.isArray(notifications) && notifications.length > 0 ? (
-                                    notifications.map((notification, index) => (
+                                {visibleNotifications.length > 0 ? (
+                                    visibleNotifications.map((notification, index) => (
                                         <div 
                                             key={index} 
                                             className="text-reset notification-item d-block dropdown-item position-relative"

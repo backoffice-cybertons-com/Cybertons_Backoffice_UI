@@ -32,10 +32,18 @@ const chatSlice = createSlice({
       const incoming = action.payload;
       const list = Array.isArray(state.messages) ? state.messages : [];
 
-      const incomingId = incoming.id !== undefined ? incoming.id : incoming.messageId;
+      const incomingId =
+        incoming.messageId ??
+        incoming.MessageId ??
+        incoming.id ??
+        incoming.message_id;
       // Dedup: skip if a message with the same id already exists
       if (incomingId !== undefined) {
-        const alreadyExists = list.some((m) => (m.id !== undefined ? m.id : m.messageId) === incomingId);
+        const alreadyExists = list.some((m) => {
+          const existingId =
+            m.messageId ?? m.MessageId ?? m.id ?? m.message_id;
+          return existingId?.toString() === incomingId?.toString();
+        });
         if (alreadyExists) return;
       }
 
@@ -119,7 +127,11 @@ const chatSlice = createSlice({
     removeMessage(state, action) {
       const deletedId = action.payload;
       state.messages = (state.messages || []).filter((message) => {
-        const msgId = message.id !== undefined ? message.id : message.messageId;
+        const msgId =
+          message.messageId ??
+          message.MessageId ??
+          message.id ??
+          message.message_id;
         return msgId?.toString() !== deletedId?.toString();
       });
     }
@@ -159,7 +171,11 @@ const chatSlice = createSlice({
     builder.addCase(deleteMessage.fulfilled, (state, action) => {
       const deletedId = action.payload;
       state.messages = (state.messages || []).filter((message) => {
-        const msgId = message.id !== undefined ? message.id : message.messageId;
+        const msgId =
+          message.messageId ??
+          message.MessageId ??
+          message.id ??
+          message.message_id;
         return msgId?.toString() !== deletedId?.toString();
       });
     });
