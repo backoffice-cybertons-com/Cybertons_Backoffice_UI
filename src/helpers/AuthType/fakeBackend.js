@@ -331,18 +331,14 @@ const fakeBackend = () => {
     });
   });
 
-  mock.onDelete(url.DELETE_MESSAGE).reply(config => {
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        if (config && config.headers) {
-          // Passing fake JSON data as response
-          resolve([200, config.headers.message]);
-        } else {
-          reject([400, "Cannot delete message"]);
-        }
-      });
-    });
-  });
+  // Real chat delete: DELETE /api/chat/message/{id}?senderUserId=...
+  mock
+    .onDelete(
+      new RegExp(
+        `${url.DELETE_MESSAGE.replace(/\//g, "\\/")}\\/\\d+`,
+      ),
+    )
+    .passThrough();
 
   mock.onGet(url.GET_CHANNELS).reply(() => {
     return new Promise((resolve, reject) => {
