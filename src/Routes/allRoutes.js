@@ -61,6 +61,8 @@ import SalesInvoice from "../pages/SalesTransaction/SalesInvoice";
 // Reports
 import LedgerReport from "../pages/Reports/LedgerReport";
 import GSTR3BReport from "../pages/Reports/GSTR3BReport";
+import DailyOSReport from "../pages/Reports/DailyOSReport";
+
 
 import PayebleReceivableReport from "../pages/Reports/PayebleReceivableReport";
 import SalePurComparDatewise from "../pages/Reports/SalePurComparDatewise";
@@ -381,6 +383,7 @@ const authProtectedRoutes = [
 
 
   { path: "/reports/payeble-receivable", component: <PayebleReceivableReport /> },
+  { path: "/report/daily-outstanding-report", component: <DailyOSReport /> },
   { path: "/reports/sale-purchase-datewise-comparison", component: <SalePurComparDatewise /> },
 
   { path: "/reports/TrialBalanceReport", component: <TrialBalanceReport /> },

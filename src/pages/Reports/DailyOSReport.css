@@ -1,0 +1,508 @@
+/* DailyOSReport.css — Daily Outstanding Report */
+
+.dos-page-subtitle {
+  font-size: 13px;
+  color: #64748b;
+  margin-top: -0.35rem;
+  margin-bottom: 0;
+}
+
+.dos-filter-card .card-body {
+  padding: 1rem 1.25rem;
+}
+
+.dos-date-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.dos-date-presets .btn {
+  font-size: 11px;
+  padding: 0.2rem 0.55rem;
+}
+
+.dos-table-wrap {
+  border: 1px solid #e9ebec;
+  border-radius: 0.25rem;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.dos-table-container {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  max-height: min(58vh, 640px);
+}
+
+.dos-table {
+  margin-bottom: 0 !important;
+}
+
+.dos-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  background-color: #f3f6f9 !important;
+  border-bottom: 2px solid #eff2f7 !important;
+  padding: 11px 12px !important;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #495057;
+  white-space: nowrap;
+}
+
+.dos-table tbody td {
+  padding: 9px 12px !important;
+  font-size: 13px;
+  border-bottom: 1px solid #eff2f7;
+  vertical-align: middle;
+}
+
+.dos-table tbody tr:hover td:not(.dos-os-cell) {
+  background-color: #f8fafc;
+}
+
+.dos-os-cell {
+  text-align: right;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  border-radius: 4px;
+}
+
+.dos-os-cell-empty {
+  color: #94a3b8;
+  font-weight: 500;
+  background: transparent !important;
+}
+
+.dos-heatmap-increase {
+  background-color: #ffebee !important;
+  color: #334155;
+}
+
+.dos-heatmap-decrease {
+  background-color: #e8f5e9 !important;
+  color: #334155;
+}
+
+.dos-heatmap-baseline,
+.dos-os-cell:not(.dos-os-cell-empty):not(.dos-heatmap-increase):not(.dos-heatmap-decrease) {
+  color: #334155;
+}
+
+.dos-cell-inner {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.35rem;
+  width: 100%;
+}
+
+.dos-cell-amount {
+  flex: 0 1 auto;
+}
+
+.dos-trend-icon {
+  flex-shrink: 0;
+  font-size: 11px;
+  line-height: 1;
+  font-weight: 700;
+  opacity: 0.55;
+}
+
+.dos-trend-increase {
+  color: #c62828;
+}
+
+.dos-trend-decrease {
+  color: #2e7d32;
+}
+
+.dos-trend-unchanged {
+  color: #9e9e9e;
+  opacity: 0.45;
+}
+
+.dos-heatmap-legend .dos-legend-swatch {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  border: 1px solid #e0e0e0;
+  vertical-align: middle;
+  margin-right: 0.35rem;
+}
+
+.dos-legend-increase {
+  background: #ffebee;
+  border: 2px solid rgb(210, 160, 167) !important;
+}
+
+.dos-legend-decrease {
+  background: #e8f5e9;
+  border: 2px solid rgb(25, 183, 37) !important;
+}
+
+.dos-party-name-col,
+.dos-party-name-cell {
+  max-width: 200px;
+  width: 200px;
+}
+
+.dos-party-name {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dos-pivot-table thead th.dos-pivot-date {
+  text-align: right;
+  min-width: 88px;
+  font-size: 11px;
+}
+
+.dos-pivot-table tbody td.dos-os-cell {
+  min-width: 88px;
+}
+
+.dos-skeleton {
+  animation: dos-pulse 1.4s ease-in-out infinite;
+  background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+  background-size: 200% 100%;
+  border-radius: 6px;
+}
+
+@keyframes dos-pulse {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.dos-skeleton-row {
+  height: 38px;
+  margin-bottom: 6px;
+}
+
+.dos-empty-state {
+  text-align: center;
+  padding: 3rem 1.5rem;
+  color: #94a3b8;
+}
+
+.dos-empty-state i {
+  font-size: 48px;
+  display: block;
+  margin-bottom: 0.75rem;
+  opacity: 0.6;
+}
+
+.dos-table-container::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.dos-table-container::-webkit-scrollbar-thumb {
+  background: #ced4da;
+  border-radius: 10px;
+}
+
+@media (max-width: 767.98px) {
+  .dos-filter-actions {
+    width: 100%;
+    justify-content: flex-end !important;
+    margin-top: 0.5rem;
+  }
+
+  .dos-filter-actions .btn:not(.dos-excel-btn) {
+    flex: 1;
+  }
+
+  .dos-filter-actions .dos-excel-btn {
+    flex: 0 0 auto;
+  }
+
+  .dos-table-container {
+    max-height: 50vh;
+  }
+}
+
+/* ── Dark theme (Bootstrap data-bs-theme on <html>) ── */
+[data-bs-theme="dark"] .dos-page-subtitle {
+  color: #878a99;
+}
+
+[data-bs-theme="dark"] .dos-table-wrap {
+  border-color: #32383e;
+  background: #212529;
+}
+
+[data-bs-theme="dark"] .dos-table thead th {
+  background-color: #2a2f34 !important;
+  border-bottom-color: #32383e !important;
+  color: #ced4da;
+}
+
+[data-bs-theme="dark"] .dos-table tbody td {
+  border-bottom-color: #32383e;
+  color: #ced4da;
+}
+
+[data-bs-theme="dark"] .dos-table tbody tr:hover td:not(.dos-os-cell) {
+  background-color: #262a2f;
+}
+
+[data-bs-theme="dark"] .dos-os-cell-empty {
+  color: #6c757d;
+}
+
+[data-bs-theme="dark"] .dos-heatmap-increase {
+  background-color: rgba(244, 67, 54, 0.22) !important;
+  color: #f8d7da;
+}
+
+[data-bs-theme="dark"] .dos-heatmap-decrease {
+  background-color: rgba(76, 175, 80, 0.2) !important;
+  color: #d4edda;
+}
+
+[data-bs-theme="dark"] .dos-heatmap-baseline,
+[data-bs-theme="dark"]
+  .dos-os-cell:not(.dos-os-cell-empty):not(.dos-heatmap-increase):not(.dos-heatmap-decrease) {
+  color: #ced4da;
+}
+
+[data-bs-theme="dark"] .dos-trend-increase {
+  color: #ef9a9a;
+}
+
+[data-bs-theme="dark"] .dos-trend-decrease {
+  color: #81c784;
+}
+
+[data-bs-theme="dark"] .dos-trend-unchanged {
+  color: #878a99;
+}
+
+[data-bs-theme="dark"] .dos-legend-increase {
+  background: rgba(244, 67, 54, 0.22);
+  border-color: rgba(239, 154, 154, 0.65) !important;
+}
+
+[data-bs-theme="dark"] .dos-legend-decrease {
+  background: rgba(76, 175, 80, 0.2);
+  border-color: rgba(129, 199, 132, 0.65) !important;
+}
+
+[data-bs-theme="dark"] .dos-heatmap-legend {
+  color: #878a99 !important;
+}
+
+[data-bs-theme="dark"] .dos-skeleton {
+  background: linear-gradient(90deg, #2a2f34 25%, #32383e 50%, #2a2f34 75%);
+  background-size: 200% 100%;
+}
+
+[data-bs-theme="dark"] .dos-empty-state {
+  color: #878a99;
+}
+
+[data-bs-theme="dark"] .dos-table-container::-webkit-scrollbar-thumb {
+  background: #495057;
+}
+
+[data-bs-theme="dark"] .dos-day-totals {
+  background: #2a2f34;
+  border-top-color: #3a4047;
+}
+
+[data-bs-theme="dark"] .dos-day-totals-table td {
+  color: #e9ecef;
+  border-right-color: #3a4047;
+}
+
+[data-bs-theme="dark"] .dos-day-totals-count {
+  color: #adb5bd;
+}
+
+/* react-select (Party filter) */
+[data-bs-theme="dark"] .dos-select__control {
+  background-color: #262a2f;
+  border-color: #2a2f34;
+  color: #ced4da;
+}
+
+[data-bs-theme="dark"] .dos-select__control:hover {
+  border-color: #3d4449;
+}
+
+[data-bs-theme="dark"] .dos-select__single-value,
+[data-bs-theme="dark"] .dos-select__input-container {
+  color: #ced4da;
+}
+
+[data-bs-theme="dark"] .dos-select__menu {
+  background-color: #292e33;
+  border: 1px solid #32383e;
+}
+
+[data-bs-theme="dark"] .dos-select__option {
+  color: #adb5bd;
+}
+
+[data-bs-theme="dark"] .dos-select__option--is-focused {
+  background-color: #2f343a;
+  color: #b9bfc4;
+}
+
+[data-bs-theme="dark"] .dos-select__option--is-selected {
+  background-color: #405189;
+  color: #fff;
+}
+
+[data-bs-theme="dark"] .dos-select__indicator,
+[data-bs-theme="dark"] .dos-select__placeholder {
+  color: #878a99;
+}
+
+/* CommonTable scroll (like Payable Receivable) + fixed Day Total row below */
+.dos-common-table-wrap {
+  display: flex;
+  flex-direction: column;
+}
+
+.dos-table-panel {
+  display: flex;
+  flex-direction: column;
+}
+
+.dos-table-scroll-area .ct-dark-wrapper,
+.dos-table-scroll-area .ct-wrapper {
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.dos-table-scroll-area .ct-scroll-container {
+  overflow-x: auto !important;
+  overflow-y: auto !important;
+}
+
+.dos-table-scroll-area .ct-scroll-container::-webkit-scrollbar {
+  width: 8px;
+  height: 10px;
+}
+
+.dos-table-scroll-area .ct-scroll-container::-webkit-scrollbar-thumb {
+  background: #94a3b8;
+  border-radius: 6px;
+}
+
+.dos-table-scroll-area .ct-scroll-container::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
+}
+
+/* Day Total — always visible; no extra horizontal scrollbar */
+.dos-day-totals {
+  flex-shrink: 0;
+  overflow-x: hidden;
+  overflow-y: hidden;
+  border-top: 2px solid #c8cfe0;
+  background: #f0f3fb;
+}
+
+.dos-day-totals-table {
+  table-layout: fixed;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.dos-day-totals-table td {
+  padding: 8px 10px;
+  white-space: nowrap;
+  border-right: 1px solid #d0d4e0;
+  font-weight: 700;
+  color: #1e2540;
+}
+
+.dos-day-totals-table td:last-child {
+  border-right: none;
+}
+
+.dos-day-totals-label {
+  text-align: left;
+}
+
+.dos-day-totals-value {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.dos-day-totals-badge {
+  display: inline-flex;
+  align-items: center;
+  background: #4d7ef7;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  border-radius: 20px;
+  padding: 1px 7px;
+  margin-right: 6px;
+}
+
+.dos-day-totals-count {
+  font-size: 11px;
+  color: #5c6880;
+  font-weight: 600;
+}
+
+.dos-common-table-wrap .ct-table td.dos-os-cell {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.dos-common-table-wrap .ct-table td.dos-party-name {
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.dos-common-table-wrap .ct-table tbody tr:hover td:not(.dos-os-cell) {
+  background-color: #f8fafc;
+}
+
+@media print {
+  .d-print-none {
+    display: none !important;
+  }
+  .dos-common-table-wrap .ct-scroll-container {
+    max-height: none !important;
+    overflow: visible !important;
+  }
+  .dos-table-container {
+    max-height: none !important;
+    overflow: visible !important;
+  }
+  .dos-party-name-col,
+  .dos-party-name-cell {
+    max-width: none;
+    width: auto;
+  }
+  .dos-party-name {
+    overflow: visible;
+    text-overflow: clip;
+    white-space: normal;
+  }
+}

@@ -205,6 +205,12 @@ export const GET_SALE_PURCHASE_REGISTER_TRANSACTIONWISE =
 
 export const GET_OUTSTANDING_COMPARISION = "/api/Report/outstanding-comparison";
 
+
+export const GET_DAILY_REPORT = "/api/report/daily-outstanding-report";
+
+
+
+
 // TicketsList
 export const GET_TICKETS_LIST = "/apps/ticket";
 export const ADD_NEW_TICKET = "/apps/ticket";
