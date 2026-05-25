@@ -320,6 +320,11 @@
   background: #495057;
 }
 
+[data-bs-theme="dark"] .dos-table-scroll-area .ct-scroll-container::-webkit-scrollbar-thumb,
+[data-bs-theme="dark"] .dos-table-hscroll::-webkit-scrollbar-thumb {
+  background: #495057;
+}
+
 [data-bs-theme="dark"] .dos-day-totals {
   background: #2a2f34;
   border-top-color: #3a4047;
@@ -383,6 +388,12 @@
 .dos-table-panel {
   display: flex;
   flex-direction: column;
+  min-height: 0;
+}
+
+.dos-table-scroll-area {
+  flex: 1;
+  min-height: 0;
 }
 
 .dos-table-scroll-area .ct-dark-wrapper,
@@ -397,9 +408,10 @@
   overflow-y: auto !important;
 }
 
+/* Vertical scrollbar only on table body; horizontal bar sits below Overall Total */
 .dos-table-scroll-area .ct-scroll-container::-webkit-scrollbar {
   width: 8px;
-  height: 10px;
+  height: 0;
 }
 
 .dos-table-scroll-area .ct-scroll-container::-webkit-scrollbar-thumb {
@@ -408,6 +420,26 @@
 }
 
 .dos-table-scroll-area .ct-scroll-container::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
+}
+
+.dos-table-hscroll {
+  flex-shrink: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.dos-table-hscroll::-webkit-scrollbar {
+  width: 0;
+  height: 10px;
+}
+
+.dos-table-hscroll::-webkit-scrollbar-thumb {
+  background: #94a3b8;
+  border-radius: 6px;
+}
+
+.dos-table-hscroll::-webkit-scrollbar-thumb:hover {
   background: #64748b;
 }
 
@@ -485,6 +517,9 @@
 
 @media print {
   .d-print-none {
+    display: none !important;
+  }
+  .dos-table-hscroll {
     display: none !important;
   }
   .dos-common-table-wrap .ct-scroll-container {

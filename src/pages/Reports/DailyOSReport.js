@@ -18,6 +18,7 @@ import {
   Spinner,
 } from "reactstrap";
 import Select from "react-select";
+import { useLocation } from "react-router-dom";
 import * as XLSX from "xlsx-js-style";
 import { saveAs } from "file-saver";
 import { toast } from "react-toastify";
@@ -30,6 +31,7 @@ import { APIClient } from "../../helpers/api_helper";
 import * as url from "../../helpers/url_helper";
 import secureStorage from "../../utils/secureStorage";
 
+import DailyOSCalendarPanel from "./DailyOSCalendarPanel";
 import "./DailyOSReport.css";
 
 const api = new APIClient();
@@ -198,6 +200,9 @@ const selectMenuStyles = {
 const DailyOSReport = () => {
   document.title = "Daily Outstanding Report | SoftBook";
 
+  const location = useLocation();
+  const routeState = location.state || {};
+
   const today = useMemo(() => new Date(), []);
   const firstOfMonth = useMemo(
     () => new Date(today.getFullYear(), today.getMonth(), 1),
@@ -209,16 +214,32 @@ const DailyOSReport = () => {
   const [partyOptions, setPartyOptions] = useState([ALL_PARTIES_OPTION]);
   const [selectedParty, setSelectedParty] = useState(ALL_PARTIES_OPTION);
 
+  const [viewMode, setViewMode] = useState(
+    routeState.viewMode === "calendar" ? "calendar" : "table",
+  );
   const [reportData, setReportData] = useState([]);
+  const [calendarData, setCalendarData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [searched, setSearched] = useState(false);
   /** Rows after CommonTable column filters + sort (null = use full tableData). */
   const [visibleTableRows, setVisibleTableRows] = useState(null);
   const tableRef = useRef(null);
+  const calendarPanelRef = useRef(null);
+  const didAutoFetchCalendar = useRef(false);
+  const [calendarPdfExporting, setCalendarPdfExporting] = useState(false);
 
   const companyId =
     secureStorage.getPlain("companyId") || localStorage.getItem("companyId");
+
+  useEffect(() => {
+    if (routeState.fromDate) {
+      setFromDate(toLocalYMD(routeState.fromDate));
+    }
+    if (routeState.toDate) {
+      setToDate(toLocalYMD(routeState.toDate));
+    }
+   }, []);
 
   useEffect(() => {
     const loadParties = async () => {
@@ -460,61 +481,113 @@ const DailyOSReport = () => {
     setToDate(toLocalYMD(today));
     setSelectedParty(ALL_PARTIES_OPTION);
     setReportData([]);
+    setCalendarData([]);
     setError("");
     setSearched(false);
     setVisibleTableRows(null);
   }, [firstOfMonth, today]);
 
-  const handleSearch = useCallback(async () => {
-    if (!fromDate || !toDate) {
-      setError("Please select both From Date and To Date.");
-      return;
-    }
-    if (new Date(fromDate) > new Date(toDate)) {
-      setError("From Date cannot be after To Date.");
-      return;
-    }
-    if (!companyId) {
-      setError("Company context not found. Please sign in again.");
-      return;
+  const fetchTableReport = useCallback(async () => {
+    const params = { companyId, fromDate, toDate };
+    if (selectedParty?.value) {
+      params.partyId = selectedParty.value;
     }
 
-    setLoading(true);
-    setError("");
-    setSearched(true);
-
-    try {
-      const params = { companyId, fromDate, toDate };
-      if (selectedParty?.value) {
-        params.partyId = selectedParty.value;
-      }
-
-      const response = await api.get(url.GET_DAILY_REPORT, params);
-      const rows = Array.isArray(response) ? response : response?.data || [];
-      setReportData(rows);
-      if (!rows.length) {
-        toast.info("No records found for the selected filters.");
-      }
-    } catch (err) {
-      console.error("DailyOSReport fetch error:", err);
-      const msg =
-        typeof err === "string"
-          ? err
-          : err?.message || "Failed to load Daily Outstanding Report.";
-      setError(msg);
-      setReportData([]);
-      toast.error(msg);
-    } finally {
-      setLoading(false);
+    const response = await api.get(url.GET_DAILY_REPORT, params);
+    const rows = Array.isArray(response) ? response : response?.data || [];
+    setReportData(rows);
+    if (!rows.length) {
+      toast.info("No records found for the selected filters.");
     }
   }, [companyId, fromDate, toDate, selectedParty]);
+
+  const fetchCalendarReport = useCallback(async () => {
+    const params = {
+      company_id: Number(companyId) || companyId,
+      from_date: fromDate,
+      to_date: toDate,
+    };
+    if (selectedParty?.value) {
+      params.party_id = selectedParty.value;
+    }
+
+    const response = await api.get(url.GET_CALENDAR_SUMMARY, params);
+    const rows = Array.isArray(response) ? response : response?.data || [];
+    setCalendarData(rows);
+    if (!rows.length) {
+      toast.info("No records found for the selected date range.");
+    }
+  }, [companyId, fromDate, toDate, selectedParty]);
+
+  const runReport = useCallback(
+    async (mode) => {
+      if (!fromDate || !toDate) {
+        setError("Please select both From Date and To Date.");
+        return;
+      }
+      if (new Date(fromDate) > new Date(toDate)) {
+        setError("From Date cannot be after To Date.");
+        return;
+      }
+      if (!companyId) {
+        setError("Company context not found. Please sign in again.");
+        return;
+      }
+
+      setViewMode(mode);
+      setLoading(true);
+      setError("");
+      setSearched(true);
+
+      try {
+        if (mode === "calendar") {
+          await fetchCalendarReport();
+        } else {
+          await fetchTableReport();
+        }
+      } catch (err) {
+        console.error("DailyOSReport fetch error:", err);
+        const msg =
+          typeof err === "string"
+            ? err
+            : err?.message ||
+              (mode === "calendar"
+                ? "Failed to load calendar summary."
+                : "Failed to load Daily Outstanding Report.");
+        setError(msg);
+        if (mode === "calendar") {
+          setCalendarData([]);
+        } else {
+          setReportData([]);
+        }
+        toast.error(msg);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [companyId, fromDate, toDate, fetchCalendarReport, fetchTableReport],
+  );
+
+  useEffect(() => {
+    if (
+      didAutoFetchCalendar.current ||
+      !routeState.fromDate ||
+      !routeState.toDate
+    ) {
+      return;
+    }
+    didAutoFetchCalendar.current = true;
+    const mode =
+      routeState.viewMode === "calendar" ? "calendar" : "table";
+    runReport(mode);
+   }, []);
 
   const handleExportExcel = useCallback(() => {
     const exportRows =
       tableRef.current?.getSortedData() ?? visibleTableRows ?? tableData;
 
     if (!exportRows.length) {
-      toast.warn("No data to export. Run Search first.");
+      toast.warn("No data to export. Open Table View first.");
       return;
     }
 
@@ -700,20 +773,52 @@ const DailyOSReport = () => {
     toDate,
   ]);
 
+  const handleCalendarPdf = useCallback(async () => {
+    setCalendarPdfExporting(true);
+    try {
+      await calendarPanelRef.current?.exportPdf?.();
+    } finally {
+      setCalendarPdfExporting(false);
+    }
+  }, []);
+
+  const calendarExportReady =
+    viewMode === "calendar" && searched && !loading && calendarData.length > 0;
+
   const dayTotalsRef = useRef(null);
+  const hScrollRef = useRef(null);
 
   useEffect(() => {
     const scrollEl = document.querySelector(
       ".dos-table-scroll-area .ct-scroll-container",
     );
     const totalsEl = dayTotalsRef.current;
-    if (!scrollEl || !totalsEl) return undefined;
+    const hScrollEl = hScrollRef.current;
+    if (!scrollEl || !totalsEl || !hScrollEl) return undefined;
 
-    const onScroll = () => {
-      totalsEl.scrollLeft = scrollEl.scrollLeft;
+    let syncing = false;
+    const syncScrollLeft = (source, left) => {
+      if (syncing) return;
+      syncing = true;
+      if (source !== scrollEl) scrollEl.scrollLeft = left;
+      if (source !== totalsEl) totalsEl.scrollLeft = left;
+      if (source !== hScrollEl) hScrollEl.scrollLeft = left;
+      syncing = false;
     };
-    scrollEl.addEventListener("scroll", onScroll);
-    return () => scrollEl.removeEventListener("scroll", onScroll);
+
+    const onMainScroll = () => syncScrollLeft(scrollEl, scrollEl.scrollLeft);
+    const onTotalsScroll = () => syncScrollLeft(totalsEl, totalsEl.scrollLeft);
+    const onHScroll = () => syncScrollLeft(hScrollEl, hScrollEl.scrollLeft);
+
+    scrollEl.addEventListener("scroll", onMainScroll);
+    totalsEl.addEventListener("scroll", onTotalsScroll);
+    hScrollEl.addEventListener("scroll", onHScroll);
+
+    return () => {
+      scrollEl.removeEventListener("scroll", onMainScroll);
+      totalsEl.removeEventListener("scroll", onTotalsScroll);
+      hScrollEl.removeEventListener("scroll", onHScroll);
+    };
   }, [searched, pivotData.dates.length, tableData.length]);
 
   const renderReportTable = () => {
@@ -775,7 +880,6 @@ const DailyOSReport = () => {
                 ))}
               </colgroup>
               <tbody>
-                <tr></tr>
                 <tr>
                   <td className="dos-day-totals-label">
                     <span className="dos-day-totals-badge">Overall Total</span>
@@ -791,6 +895,13 @@ const DailyOSReport = () => {
                 </tr>
               </tbody>
             </table>
+          </div>
+          <div
+            ref={hScrollRef}
+            className="dos-table-hscroll d-print-none"
+            aria-hidden="true"
+          >
+            <div style={{ minWidth, width: minWidth, height: 1 }} />
           </div>
         </div>
       </div>
@@ -884,33 +995,69 @@ const DailyOSReport = () => {
                 </Col>
                 <Col
                   md={4}
-                  className="d-flex justify-content-end gap-2 text-end dos-filter-actions"
+                  className="d-flex justify-content-end gap-2 text-end dos-filter-actions flex-wrap"
                 >
                   <Button color="soft-secondary" onClick={handleClear}>
                     Clear
                   </Button>
                   <Button
-                    color="primary"
-                    onClick={handleSearch}
+                    color={viewMode === "table" ? "primary" : "soft-primary"}
+                    className="d-print-none"
+                    onClick={() => runReport("table")}
                     disabled={loading}
                   >
-                    {loading ? <Spinner size="sm" /> : "Generate"}
+                    {loading && viewMode === "table" ? (
+                      <Spinner size="sm" className="me-1" />
+                    ) : (
+                      <i className="ri-table-2 me-1" />
+                    )}
+                    Table View
                   </Button>
                   <Button
-                    color="link"
-                    className="dos-excel-btn border-0 shadow-none text-success d-inline-flex align-items-center justify-content-center"
-                    onClick={handleExportExcel}
-                    disabled={!normalizedRows.length}
-                    title="Export Excel"
-                    style={{
-                      fontSize: "2.4rem",
-                      height: "40px",
-                      width: "40px",
-                      padding: 0,
-                    }}
+                    color={viewMode === "calendar" ? "info" : "soft-info"}
+                    className="d-print-none"
+                    onClick={() => runReport("calendar")}
+                    disabled={loading}
                   >
-                    <i className="ri-file-excel-2-fill align-bottom" />
+                    {loading && viewMode === "calendar" ? (
+                      <Spinner size="sm" className="me-1" />
+                    ) : (
+                      <i className="ri-calendar-2-line me-1" />
+                    )}
+                    Calendar View
                   </Button>
+                  {viewMode === "table" ? (
+                    <Button
+                      color="link"
+                      className="dos-excel-btn border-0 shadow-none text-success d-inline-flex align-items-center justify-content-center"
+                      onClick={handleExportExcel}
+                      disabled={!normalizedRows.length}
+                      title="Export Excel"
+                      style={{
+                        fontSize: "2.4rem",
+                        height: "40px",
+                        width: "40px",
+                        padding: 0,
+                      }}
+                    >
+                      <i className="ri-file-excel-2-fill align-bottom" />
+                    </Button>
+                  ) : (
+                    <Button
+                      color="danger"
+                      outline
+                      size="sm"
+                      onClick={handleCalendarPdf}
+                      disabled={!calendarExportReady || calendarPdfExporting}
+                      title="Download PDF"
+                    >
+                      {calendarPdfExporting ? (
+                        <Spinner size="sm" />
+                      ) : (
+                        <i className="ri-file-pdf-line" />
+                      )}
+                    </Button>
+                  )}
                 </Col>
               </Row>
 
@@ -923,7 +1070,18 @@ const DailyOSReport = () => {
             </CardBody>
           </Card>
 
-          {(searched || loading) && (
+          {viewMode === "calendar" && (searched || loading) && (
+            <DailyOSCalendarPanel
+              ref={calendarPanelRef}
+              fromDate={fromDate}
+              toDate={toDate}
+              calendarData={calendarData}
+              loading={loading}
+              generated={searched && !loading}
+            />
+          )}
+
+          {viewMode === "table" && (searched || loading) && (
             <Card>
               <div className="text-start">
                 <HeaderForAllReport reportName="Daily Outstanding Report" />

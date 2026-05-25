@@ -207,6 +207,7 @@ export const GET_OUTSTANDING_COMPARISION = "/api/Report/outstanding-comparison";
 
 
 export const GET_DAILY_REPORT = "/api/report/daily-outstanding-report";
+export const GET_CALENDAR_SUMMARY = "/api/Report/calendar-summary";
 
 
 
