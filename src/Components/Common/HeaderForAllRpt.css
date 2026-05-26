@@ -1,0 +1,50 @@
+/* HeaderForAllRpt — theme-aware report header */
+
+.header-for-all-rpt .rpt-header-badge h4 {
+  line-height: 1.25;
+}
+
+/* Dark theme (Bootstrap data-bs-theme + component class) */
+[data-bs-theme="dark"] .header-for-all-rpt,
+.header-for-all-rpt--dark {
+  background: var(--vz-card-bg, #212529) !important;
+  border-bottom-color: var(--vz-border-color, #32383e) !important;
+}
+
+[data-bs-theme="dark"] .header-for-all-rpt .rpt-header-badge,
+.header-for-all-rpt--dark .rpt-header-badge {
+  background: rgba(64, 81, 137, 0.22) !important;
+  border-color: var(--vz-border-color, #3d4449) !important;
+}
+
+[data-bs-theme="dark"] .header-for-all-rpt .rpt-header-badge h4,
+.header-for-all-rpt--dark .rpt-header-badge h4 {
+  color: #a8b4f0 !important;
+}
+
+[data-bs-theme="dark"] .header-for-all-rpt h5,
+.header-for-all-rpt--dark h5 {
+  color: var(--vz-heading-color, #e9ecef) !important;
+}
+
+[data-bs-theme="dark"] .header-for-all-rpt .rpt-company-meta,
+.header-for-all-rpt--dark .rpt-company-meta {
+  color: var(--vz-secondary-color, #adb5bd) !important;
+}
+
+@media print {
+  .header-for-all-rpt,
+  .header-for-all-rpt--dark {
+    background: #fff !important;
+    border-bottom: 1px solid #e9ebec !important;
+  }
+
+  .rpt-header-badge {
+    background: #eff6ff !important;
+    border: 1px solid #bfdbfe !important;
+  }
+
+  .rpt-header-badge h4 {
+    color: #1e3a8a !important;
+  }
+}

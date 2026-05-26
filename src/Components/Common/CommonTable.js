@@ -73,6 +73,7 @@ const CommonTable = forwardRef(({
     isDark = false,
     maxHeight = "calc(100vh - 280px)",
     autoHeight = false,
+    autoHeightOffset = 60,
     minWidth = "100%",
     showTotals = true,
     paginatedData, // Deprecated: use data=fullData and currentPage/rowsPerPage instead
@@ -107,9 +108,7 @@ const CommonTable = forwardRef(({
             if (containerRef.current) {
                 const rect = containerRef.current.getBoundingClientRect();
                 const vh = window.innerHeight;
-                // Leave some space at bottom for footer (e.g. 60px)
-                const margin = 60;
-                const available = vh - rect.top - margin;
+                const available = vh - rect.top - autoHeightOffset;
 
                 // Ensure at least 200px height
                 setDynamicMaxHeight(`${Math.max(available, 200)}px`);
@@ -125,7 +124,7 @@ const CommonTable = forwardRef(({
             window.removeEventListener("resize", calculateHeight);
             clearTimeout(timer);
         };
-    }, [autoHeight, maxHeight]);
+    }, [autoHeight, maxHeight, autoHeightOffset]);
 
 
     /* ── filter handler ── */

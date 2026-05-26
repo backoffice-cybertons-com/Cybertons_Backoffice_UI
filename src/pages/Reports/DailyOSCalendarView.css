@@ -1,0 +1,665 @@
+/* DailyOSCalendarView — modern SaaS finance dashboard calendar */
+
+.dos-calendar-wrap,
+.dos-cal-legend,
+.dos-cal-detail-modal {
+  --dos-border: #eef1f5;
+  --dos-surface: #ffffff;
+  --dos-muted: #94a3b8;
+  --dos-text: #1e293b;
+  --dos-text-secondary: #64748b;
+  --dos-hover: #f8fafc;
+  --dos-today-ring: #3b82f6;
+  --dos-selected: #eff6ff;
+  --dos-selected-border: #93c5fd;
+  --dos-sale: #2563eb;
+  --dos-sale-bg: #eff6ff;
+  --dos-receipt: #16a34a;
+  --dos-receipt-bg: #f0fdf4;
+  --dos-os: #dc2626;
+  --dos-os-bg: #fef2f2;
+  --dos-term: #ea580c;
+  --dos-term-bg: #fff7ed;
+  --dos-radius: 10px;
+  --dos-radius-sm: 6px;
+  --dos-shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04);
+  --dos-shadow-md: 0 4px 12px rgba(15, 23, 42, 0.06);
+}
+
+.dos-calendar-wrap {
+  min-height: 480px;
+  border-radius: var(--dos-radius);
+  background: var(--dos-surface);
+  overflow: hidden;
+}
+
+/* Loading indicator */
+.dos-calendar-loading {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.875rem;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--dos-text-secondary);
+  background: rgba(255, 255, 255, 0.96);
+  padding: 0.375rem 0.625rem;
+  border-radius: 999px;
+  border: 1px solid var(--dos-border);
+  box-shadow: var(--dos-shadow-sm);
+  backdrop-filter: blur(4px);
+}
+
+/* ── FullCalendar base overrides ── */
+.dos-calendar-wrap .fc {
+  font-family: inherit;
+  font-size: 0.8125rem;
+  color: var(--dos-text);
+}
+
+.dos-calendar-wrap .fc-scrollgrid {
+  border: none !important;
+  border-radius: 0;
+}
+
+.dos-calendar-wrap .fc-scrollgrid-section > * {
+  border-color: var(--dos-border) !important;
+  border-width: 1px !important;
+}
+
+.dos-calendar-wrap .fc td,
+.dos-calendar-wrap .fc th {
+  border-color: var(--dos-border) !important;
+}
+
+/* ── Sticky header toolbar ── */
+.dos-calendar-wrap .fc-header-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 6;
+  margin: 0 !important;
+  padding: 1rem 1.125rem 0.875rem;
+  background: var(--dos-surface);
+  border-bottom: 1px solid var(--dos-border);
+  gap: 0.75rem;
+}
+
+.dos-calendar-wrap .fc-toolbar-chunk {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.dos-calendar-wrap .fc-toolbar-title {
+  font-size: 1.25rem !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.02em;
+  color: var(--dos-text);
+  line-height: 1.3;
+  text-transform: none !important;
+}
+
+/* Navigation buttons */
+.dos-calendar-wrap .fc .fc-button {
+  padding: 0.375rem 0.75rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  line-height: 1.4;
+  border-radius: var(--dos-radius-sm) !important;
+  border: 1px solid var(--dos-border) !important;
+  background: var(--dos-surface) !important;
+  color: var(--dos-text-secondary) !important;
+  box-shadow: none !important;
+  text-transform: none !important;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.dos-calendar-wrap .fc .fc-button:hover {
+  background: var(--dos-hover) !important;
+  border-color: #e2e8f0 !important;
+  color: var(--dos-text) !important;
+}
+
+.dos-calendar-wrap .fc .fc-button:focus {
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2) !important;
+}
+
+.dos-calendar-wrap .fc .fc-button-primary:not(:disabled).fc-button-active,
+.dos-calendar-wrap .fc .fc-button-primary:not(:disabled):active {
+  background: var(--dos-hover) !important;
+  border-color: #e2e8f0 !important;
+  color: var(--dos-text) !important;
+}
+
+.dos-calendar-wrap .fc .fc-today-button {
+  padding: 0.375rem 0.875rem !important;
+  font-weight: 600 !important;
+  color: var(--dos-today-ring) !important;
+  border-color: #bfdbfe !important;
+  background: #eff6ff !important;
+}
+
+.dos-calendar-wrap .fc .fc-today-button:hover {
+  background: #dbeafe !important;
+  border-color: #93c5fd !important;
+  color: #1d4ed8 !important;
+}
+
+.dos-calendar-wrap .fc .fc-prev-button,
+.dos-calendar-wrap .fc .fc-next-button {
+  padding: 0.375rem 0.5rem !important;
+}
+
+/* Column headers (weekdays) */
+.dos-calendar-wrap .fc-col-header-cell {
+  background: #f8fafc !important;
+  border-color: var(--dos-border) !important;
+}
+
+.dos-calendar-wrap .fc-col-header-cell-cushion {
+  padding: 0.625rem 0.5rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--dos-text-secondary);
+}
+
+/* ── Day cells ── */
+.dos-calendar-wrap .fc-daygrid-day {
+  cursor: pointer;
+  vertical-align: top;
+  background: var(--dos-surface);
+  transition: background 0.18s ease, box-shadow 0.18s ease;
+}
+
+.dos-calendar-wrap .fc-daygrid-day:hover {
+  background: var(--dos-hover);
+  z-index: 1;
+}
+
+.dos-calendar-wrap .fc-daygrid-day-frame {
+  min-height: 96px !important;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+/* Date number — top left */
+.dos-calendar-wrap .fc-daygrid-day-top {
+  justify-content: flex-start;
+  padding: 6px 8px 2px;
+  flex-shrink: 0;
+}
+
+.dos-calendar-wrap .fc-daygrid-day-number {
+  width: auto !important;
+  height: auto !important;
+  margin: 0 !important;
+  margin-right: auto !important;
+  padding: 2px 4px !important;
+  display: inline-block !important;
+  float: none !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  text-align: left;
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--dos-text);
+  transition: color 0.15s ease;
+}
+
+.dos-calendar-wrap .fc-day-other .fc-daygrid-day-number {
+  color: var(--dos-muted);
+  font-weight: 500;
+}
+
+/* Today highlight */
+.dos-calendar-wrap .fc-day-today {
+  background: #fafbff !important;
+}
+
+.dos-calendar-wrap .fc-day-today .fc-daygrid-day-number {
+  color: var(--dos-today-ring) !important;
+  background: transparent !important;
+  box-shadow: 0 0 0 2px var(--dos-today-ring);
+  border-radius: 50% !important;
+  width: 1.625rem !important;
+  height: 1.625rem !important;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  padding: 0 !important;
+  font-weight: 700;
+}
+
+.dos-calendar-wrap .fc-day-today:hover {
+  background: #f0f4ff !important;
+}
+
+/* Selected day */
+.dos-calendar-wrap .fc-daygrid-day.dos-day-selected {
+  background: var(--dos-selected) !important;
+  box-shadow: inset 0 0 0 1px var(--dos-selected-border);
+  z-index: 2;
+}
+
+.dos-calendar-wrap .fc-daygrid-day.dos-day-selected .fc-daygrid-day-number {
+  color: #1d4ed8;
+}
+
+/* Metrics container — keys left, values right */
+.dos-calendar-wrap .calendar-metrics-host {
+  flex: 1;
+  width: 100%;
+  min-height: 0;
+  padding: 0 6px 8px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: flex-start;
+}
+
+.dos-calendar-wrap .calendar-metrics {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+}
+
+.dos-calendar-wrap .metric-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 16px;
+  line-height: 1.25;
+}
+
+.dos-calendar-wrap .metric-key {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  font-size: 0.5625rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0;
+}
+
+.dos-calendar-wrap .metric-key--sale {
+  color: var(--dos-sale);
+  background: var(--dos-sale-bg);
+}
+
+.dos-calendar-wrap .metric-key--receipt {
+  color: var(--dos-receipt);
+  background: var(--dos-receipt-bg);
+}
+
+.dos-calendar-wrap .metric-key--os {
+  color: var(--dos-os);
+  background: var(--dos-os-bg);
+}
+
+.dos-calendar-wrap .metric-key--term {
+  color: var(--dos-term);
+  background: var(--dos-term-bg);
+}
+
+.dos-calendar-wrap .metric-val {
+  flex: 1;
+  min-width: 0;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.8rem;
+   
+  text-align: right;
+  color: var(--dos-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dos-calendar-wrap .metric-val--empty {
+  color: var(--dos-muted);
+  font-weight: 500;
+}
+
+.dos-calendar-wrap .metric-val--sale {
+  color: var(--dos-text);
+}
+
+.dos-calendar-wrap .metric-val--receipt {
+  color: var(--dos-receipt);
+}
+
+.dos-calendar-wrap .metric-val--os {
+  color: var(--dos-text);
+}
+
+.dos-calendar-wrap .metric-val--term {
+  color: var(--dos-term);
+}
+
+/* Hide default event area */
+.dos-calendar-wrap .fc-daygrid-day-events {
+  display: none !important;
+  min-height: 0 !important;
+}
+
+.dos-calendar-wrap .fc-daygrid-day-bottom {
+  display: none;
+}
+
+/* ── Legend ── */
+.dos-cal-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 1rem;
+  margin-top: 1rem;
+  padding-top: 0.875rem;
+  border-top: 1px solid var(--dos-border);
+}
+
+.dos-cal-legend-pills {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+}
+
+.dos-legend-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--dos-text-secondary);
+  padding: 0.25rem 0.5rem 0.25rem 0.375rem;
+  border-radius: 999px;
+  background: #f8fafc;
+  border: 1px solid var(--dos-border);
+}
+
+.dos-legend-pill__key {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.125rem;
+  height: 1.125rem;
+  border-radius: 50%;
+  font-size: 0.625rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.dos-legend-pill--sale .dos-legend-pill__key {
+  color: var(--dos-sale);
+  background: var(--dos-sale-bg);
+}
+
+.dos-legend-pill--receipt .dos-legend-pill__key {
+  color: var(--dos-receipt);
+  background: var(--dos-receipt-bg);
+}
+
+.dos-legend-pill--os .dos-legend-pill__key {
+  color: var(--dos-os);
+  background: var(--dos-os-bg);
+}
+
+.dos-legend-pill--term .dos-legend-pill__key {
+  color: var(--dos-term);
+  background: var(--dos-term-bg);
+}
+
+.dos-cal-legend-hint {
+  font-size: 0.75rem;
+  color: var(--dos-muted);
+  font-weight: 400;
+}
+
+/* ── Detail modal ── */
+.dos-cal-detail-modal .modal-title {
+  font-size: 1.0625rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.dos-cal-detail-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.dos-cal-detail-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.625rem 0;
+  border-bottom: 1px solid var(--dos-border);
+  font-size: 0.9375rem;
+}
+
+.dos-cal-detail-list li span {
+  color: var(--dos-text-secondary);
+  font-weight: 500;
+  font-size: 0.875rem;
+}
+
+.dos-cal-detail-list li strong {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  font-size: 0.9375rem;
+}
+
+.dos-cal-detail-list li:last-child {
+  border-bottom: none;
+}
+/* 
+.dos-detail-sale strong {
+   
+} */
+
+.dos-detail-receipt strong {
+  color: var(--dos-receipt);
+}
+
+/* .dos-detail-os strong {
+  color: var(--dos-os);
+} */
+
+.dos-detail-terms strong {
+  color: var(--dos-term);
+}
+
+/* ── Responsive ── */
+@media (max-width: 767.98px) {
+  .dos-calendar-wrap .fc-header-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 0.75rem;
+  }
+
+  .dos-calendar-wrap .fc-toolbar-chunk {
+    justify-content: center;
+  }
+
+  .dos-calendar-wrap .fc-toolbar-title {
+    font-size: 1.0625rem !important;
+    text-align: center;
+  }
+
+  .dos-calendar-wrap .fc-daygrid-day-frame {
+    min-height: 80px !important;
+  }
+
+  .dos-calendar-wrap .metric-val {
+    font-size: 0.5625rem;
+  }
+
+  .dos-cal-legend {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .dos-calendar-wrap .fc .fc-today-button {
+    display: inline-block !important;
+  }
+
+  .dos-calendar-wrap .calendar-metrics-host {
+    padding: 2px 4px 6px;
+  }
+
+  .dos-calendar-wrap .metric-key {
+    width: 14px;
+    height: 14px;
+    font-size: 0.5rem;
+  }
+}
+
+/* ── Dark theme (Bootstrap data-bs-theme on <html>) ── */
+[data-bs-theme="dark"] .dos-calendar-wrap,
+[data-bs-theme="dark"] .dos-cal-legend,
+[data-bs-theme="dark"] .dos-cal-detail-modal {
+  --dos-border: #32383e;
+  --dos-surface: #212529;
+  --dos-muted: #6c757d;
+  --dos-text: #ced4da;
+  --dos-text-secondary: #878a99;
+  --dos-hover: #262a2f;
+  --dos-today-ring: #6ea8fe;
+  --dos-selected: rgba(59, 130, 246, 0.14);
+  --dos-selected-border: rgba(110, 168, 254, 0.4);
+  --dos-sale: #6ea8fe;
+  --dos-sale-bg: rgba(59, 130, 246, 0.22);
+  --dos-receipt: #81c784;
+  --dos-receipt-bg: rgba(76, 175, 80, 0.2);
+  --dos-os: #ef9a9a;
+  --dos-os-bg: rgba(244, 67, 54, 0.2);
+  --dos-term: #ffb74d;
+  --dos-term-bg: rgba(255, 152, 0, 0.18);
+  --dos-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.28);
+  --dos-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.35);
+}
+
+[data-bs-theme="dark"] .dos-calendar-loading {
+  background: rgba(33, 37, 41, 0.96);
+  color: var(--dos-text-secondary);
+  border-color: var(--dos-border);
+}
+
+[data-bs-theme="dark"] .dos-calendar-wrap .fc .fc-button:hover,
+[data-bs-theme="dark"] .dos-calendar-wrap .fc .fc-button-primary:not(:disabled).fc-button-active,
+[data-bs-theme="dark"] .dos-calendar-wrap .fc .fc-button-primary:not(:disabled):active {
+  border-color: #3d4449 !important;
+}
+
+[data-bs-theme="dark"] .dos-calendar-wrap .fc .fc-today-button {
+  color: var(--dos-today-ring) !important;
+  border-color: rgba(110, 168, 254, 0.45) !important;
+  background: rgba(59, 130, 246, 0.18) !important;
+}
+
+[data-bs-theme="dark"] .dos-calendar-wrap .fc .fc-today-button:hover {
+  background: rgba(59, 130, 246, 0.28) !important;
+  border-color: rgba(110, 168, 254, 0.55) !important;
+  color: #9ec5fe !important;
+}
+
+[data-bs-theme="dark"] .dos-calendar-wrap .fc-col-header-cell {
+  background: #2a2f34 !important;
+}
+
+[data-bs-theme="dark"] .dos-calendar-wrap .fc-day-today {
+  background: rgba(59, 130, 246, 0.08) !important;
+}
+
+[data-bs-theme="dark"] .dos-calendar-wrap .fc-day-today:hover {
+  background: rgba(59, 130, 246, 0.14) !important;
+}
+
+[data-bs-theme="dark"] .dos-calendar-wrap .fc-daygrid-day.dos-day-selected .fc-daygrid-day-number {
+  color: var(--dos-today-ring);
+}
+
+[data-bs-theme="dark"] .dos-legend-pill {
+  background: #2a2f34;
+  border-color: var(--dos-border);
+  color: var(--dos-text-secondary);
+}
+
+[data-bs-theme="dark"] .dos-cal-detail-list li {
+  border-bottom-color: var(--dos-border);
+}
+
+[data-bs-theme="dark"] .dos-cal-detail-list li span {
+  color: var(--dos-text-secondary);
+}
+
+[data-bs-theme="dark"] .dos-cal-detail-list li strong {
+  color: var(--dos-text);
+}
+
+[data-bs-theme="dark"] .dos-detail-receipt strong {
+  color: var(--dos-receipt);
+}
+
+[data-bs-theme="dark"] .dos-detail-terms strong {
+  color: var(--dos-term);
+}
+
+/* FullCalendar bootstrap theme defaults fight dark surfaces */
+[data-bs-theme="dark"] .dos-calendar-wrap .fc-theme-bootstrap .fc-scrollgrid,
+[data-bs-theme="dark"] .dos-calendar-wrap .fc-scrollgrid {
+  background: var(--dos-surface);
+}
+
+[data-bs-theme="dark"] .dos-calendar-wrap .fc-daygrid-day.fc-day-other {
+  background: #1a1d21;
+}
+
+[data-bs-theme="dark"] .dos-calendar-wrap .fc-day-other .fc-daygrid-day-number {
+  color: #495057;
+}
+
+@media print {
+  #dosCalendarPrintArea {
+    min-height: auto !important;
+    height: auto !important;
+    display: block !important;
+    page-break-inside: auto !important;
+  }
+
+  #dosCalendarPrintArea .card-body {
+    flex: none !important;
+  }
+
+  #dosCalendarPrintArea .dos-calendar-wrap {
+    min-height: auto !important;
+  }
+
+  #dosCalendarPrintArea .footer-print-sticky {
+    margin-top: 0.35rem !important;
+    padding: 4px 0 !important;
+    page-break-before: avoid !important;
+    break-before: avoid-page !important;
+  }
+
+  #dosCalendarPrintArea .fc-prev-button,
+  #dosCalendarPrintArea .fc-next-button,
+  #dosCalendarPrintArea .fc-today-button,
+  #dosCalendarPrintArea .dos-cal-legend-hint {
+    display: none !important;
+  }
+}

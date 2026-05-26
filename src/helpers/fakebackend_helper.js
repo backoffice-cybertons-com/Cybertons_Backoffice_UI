@@ -97,7 +97,8 @@ export const getMessages = roomId => api.get(`${url.GET_MESSAGES}/${roomId}`, { 
 export const addMessage = message => api.create(url.ADD_MESSAGE, message);
 
 // delete Message
-export const deleteMessage = message => api.delete(`${url.DELETE_MESSAGE}/${message}`);
+export const deleteMessage = (messageId, senderUserId) =>
+  api.delete(`${url.DELETE_MESSAGE}/${messageId}?senderUserId=${senderUserId}`);
 
 // get Channels
 export const getChannels = () => api.get(url.GET_CHANNELS);

@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Card, CardHeader, CardBody, Col, Container, Row, Input, Button, Label, Table, Spinner, Badge } from 'reactstrap';
 import Select from 'react-select';
+import { useSelector } from 'react-redux';
+import { createSelector } from 'reselect';
 import { Link } from 'react-router-dom';
 import * as XLSX from 'xlsx-js-style';
 import { saveAs } from 'file-saver';
@@ -39,19 +41,52 @@ const balClass = (bal) => {
     return bal >= 0 ? 'bal-dr text-success' : 'bal-cr text-danger';
 };
 
-/* Keep menu in the filter card DOM (no body portal): filter card z-index is above the report,
-   so the list stacks over the table. Portaling to body was still losing to sticky thead in some layouts. */
-const ledgerSelectProps = {
-    classNamePrefix: 'lsd-select',
-    menuPlacement: 'auto',
-    menuShouldScrollIntoView: false,
-    styles: {
-        menu: (base) => ({ ...base, zIndex: 50 }),
-        menuList: (base) => ({ ...base, maxHeight: 280 }),
-    },
-};
+const selectLayoutState = (state) => state.Layout;
+const selectLayoutProperties = createSelector(selectLayoutState, (layout) => ({
+    layoutModeType: layout.layoutModeType,
+}));
+
+const buildLedgerSelectStyles = (isDark) => ({
+    menuPortal: (base) => ({ ...base, zIndex: 999999 }),
+    control: (base, state) => ({
+        ...base,
+        backgroundColor: isDark ? '#262a2f' : base.backgroundColor,
+        borderColor: state.isFocused ? (isDark ? '#5a6acf' : base.borderColor) : (isDark ? '#2a2f34' : base.borderColor),
+        color: isDark ? '#ced4da' : base.color,
+    }),
+    singleValue: (base) => ({ ...base, color: isDark ? '#ced4da' : base.color }),
+    input: (base) => ({ ...base, color: isDark ? '#ced4da' : base.color }),
+    menu: (base) => ({
+        ...base,
+        zIndex: 50,
+        backgroundColor: isDark ? '#292e33' : base.backgroundColor,
+        border: isDark ? '1px solid #32383e' : base.border,
+    }),
+    menuList: (base) => ({ ...base, maxHeight: 280 }),
+    option: (base, state) => ({
+        ...base,
+        backgroundColor: state.isSelected
+            ? '#405189'
+            : state.isFocused
+                ? (isDark ? '#2f343a' : base.backgroundColor)
+                : (isDark ? '#292e33' : base.backgroundColor),
+        color: state.isSelected ? '#fff' : (isDark ? '#ced4da' : base.color),
+    }),
+    placeholder: (base) => ({ ...base, color: isDark ? '#adb5bd' : base.color }),
+    indicatorSeparator: (base) => ({ ...base, backgroundColor: isDark ? '#3d4449' : base.backgroundColor }),
+    dropdownIndicator: (base) => ({ ...base, color: isDark ? '#adb5bd' : base.color }),
+    clearIndicator: (base) => ({ ...base, color: isDark ? '#adb5bd' : base.color }),
+});
 
 const LedgerReport = () => {
+    const { layoutModeType } = useSelector(selectLayoutProperties);
+    const isDarkMode = layoutModeType === 'dark';
+    const ledgerSelectProps = useMemo(() => ({
+        classNamePrefix: 'lsd-select',
+        menuPlacement: 'auto',
+        menuShouldScrollIntoView: false,
+        styles: buildLedgerSelectStyles(isDarkMode),
+    }), [isDarkMode]);
     document.title = 'Ledger Report | SoftBook';
     const api = new APIClient();
 
@@ -354,7 +389,7 @@ const LedgerReport = () => {
 
     return (
         <React.Fragment>
-            <div className="page-content ledger-report-page">
+            <div className={`page-content ledger-report-page${isDarkMode ? ' ledger-report-page--dark' : ''}`}>
                 <Container fluid>
                     <BreadCrumb title="Ledger Report" pageTitle="Reports" />
                     <Card className="mb-2 lsd-filter-card">

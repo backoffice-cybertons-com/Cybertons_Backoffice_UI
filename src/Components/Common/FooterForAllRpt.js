@@ -47,6 +47,13 @@ const FooterForAllRpt = () => {
                         page-break-inside: avoid !important;
                         width: 100% !important;
                     }
+                    .footer-print-sticky .text-muted,
+                    .footer-print-sticky div {
+                        color: #6c757d !important;
+                    }
+                    .footer-print-sticky strong {
+                        color: #405189 !important;
+                    }
                 }
                 `}
             </style>
@@ -54,20 +61,20 @@ const FooterForAllRpt = () => {
                 className="footer-print-sticky py-2 px-3"
                 style={{
                     fontSize: "11px",
-                    borderTop: "1px solid #e9ebec",
-                    background: "#fff"
+                    borderTop: "1px solid var(--vz-border-color, #e9ebec)",
+                    background: "var(--vz-card-bg, #fff)"
                 }}
             >
                 <div className="d-flex justify-content-between align-items-center flex-wrap gap-2">
 
                     {/* Left Side */}
-                    <div style={{ fontWeight: "500", color: "#6c757d" }}>
-                        Powered by <strong style={{ color: "#405189" }}>SoftOnCloud</strong>
+                    <div style={{ fontWeight: "500", color: "var(--vz-muted-color, #6c757d)" }}>
+                        Powered by <strong style={{ color: "var(--vz-primary, #405189)" }}>SoftOnCloud</strong>
                     </div>
 
                     {/* Right Side */}
                     <div className="text-muted">
-                        Generated On : <strong className="text-dark">{generatedOn}</strong>
+                        Generated On : <strong style={{ color: "var(--vz-body-color)" }}>{generatedOn}</strong>
                     </div>
 
                 </div>

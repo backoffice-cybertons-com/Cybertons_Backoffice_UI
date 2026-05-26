@@ -65,14 +65,14 @@ const buildGroupSpans = (columns) => {
 };
 
 /* ── sort icon ───────────────────────────────────────────── */
-const SortArrow = ({ colKey, sortConfig }) => {
+const SortArrow = ({ colKey, sortConfig, isDark }) => {
     const active = sortConfig.key === colKey;
     return (
         <span style={{
             marginLeft: 4,
             fontSize: 10,
-            opacity: active ? 1 : 0.35,
-            color: active ? "#4f8ef7" : "inherit",
+            opacity: active ? 1 : 0.45,
+            color: active ? (isDark ? "#8ab4ff" : "#4f8ef7") : (isDark ? "#adb5bd" : "inherit"),
             userSelect: "none",
         }}>
             {active ? (sortConfig.direction === "asc" ? "▲" : "▼") : "⇅"}
@@ -82,26 +82,23 @@ const SortArrow = ({ colKey, sortConfig }) => {
 
 /* ── styles ──────────────────────────────────────────────── */
 const makeStyles = (isDark) => {
-    // Professional blue-slate palette
-    const bg = isDark ? "#0f172a" : "#f4f6f9";
+    // Match Galaxy / DailyOS dark surfaces for readable contrast
+    const bg = isDark ? "#212529" : "#f4f6f9";
 
-    /*   STRONG HEADER (anchor) */
-    const bgGroup = isDark ? "#1e293b" : "#465e80ff";
+    const bgGroup = isDark ? "#405189" : "#465e80ff";
 
-    /* medium header */
-    const bgLabel = isDark ? "#334155" : "rgb(238, 242, 247)";
+    const bgLabel = isDark ? "#2a2f34" : "rgb(238, 242, 247)";
 
-    /* clean areas */
-    const bgFilter = isDark ? "#020617" : "#ffffff";
-    const bgFoot = isDark ? "#1e293b" : "#eef2f7";
+    const bgFilter = isDark ? "#262a2f" : "#ffffff";
+    const bgFoot = isDark ? "#2a2f34" : "#eef2f7";
 
-    /* structure */
-    const border = isDark ? "#334155" : "#d6deeb";
-    const text = isDark ? "#e2e8f0" : "#1f2937";
+    const border = isDark ? "#32383e" : "#d6deeb";
+    const text = isDark ? "#ced4da" : "#1f2937";
+    const textMuted = isDark ? "#878a99" : "#8898aa";
 
-    /* rows */
-    const altRow = isDark ? "#020617" : "#fafbfd";
-    const hoverRow = isDark ? "#1e293b" : "#eef3ff";
+    const rowEven = isDark ? "#212529" : "#ffffff";
+    const altRow = isDark ? "#262a2f" : "#fafbfd";
+    const hoverRow = isDark ? "#2f343a" : "#eef3ff";
     return {
         wrapper: {
             fontFamily: "'DM Sans', 'Segoe UI', sans-serif",
@@ -162,12 +159,14 @@ const makeStyles = (isDark) => {
         // Label row — slightly lighter navy
         thLabel: {
             background: bgLabel,
-            color: "rgb(30, 58, 110)",
+            color: isDark ? "#e9ecef" : "rgb(30, 58, 110)",
             fontWeight: 600,
             fontSize: 14,
             padding: "7px 10px",
             border: "none",
-            borderRight: `1px solid rgba(255,255,255,0.12)`,
+            borderRight: isDark
+                ? `1px solid ${border}`
+                : `1px solid rgba(255,255,255,0.12)`,
             // bottom shadow acts as the divider line between label row and filter row
             boxShadow: `inset 0 -1px 0 rgba(255,255,255,0.08)`,
             cursor: "pointer",
@@ -191,11 +190,11 @@ const makeStyles = (isDark) => {
         },
         filterInput: {
             width: "100%",
-            border: `1px solid ${isDark ? "#2e3d6a" : "#b8c8e8"}`,
+            border: `1px solid ${isDark ? "#3d4449" : "#b8c8e8"}`,
             borderRadius: 4,
             padding: "3px 7px",
             fontSize: 11,
-            background: isDark ? "#1e2840" : "#ffffff",
+            background: isDark ? "#212529" : "#ffffff",
             color: text,
             outline: "none",
             boxSizing: "border-box",
@@ -208,6 +207,7 @@ const makeStyles = (isDark) => {
             whiteSpace: "nowrap",
             overflow: "hidden",
             textOverflow: "ellipsis",
+            color: text,
         },
         tfootTd: {
             background: bgFoot,
@@ -219,11 +219,13 @@ const makeStyles = (isDark) => {
             bottom: 0,
             zIndex: 3,
             whiteSpace: "nowrap",
-            color: isDark ? "#dde4f5" : "#1e3a6e",
+            color: isDark ? "#e9ecef" : "#1e3a6e",
         },
+        rowEven,
         altRow,
         hoverRow,
         border,
+        textMuted,
     };
 };
 
@@ -376,7 +378,11 @@ const MergedHeaderTable = ({
 
     /* ── render ── */
     return (
-        <div style={S.wrapper} ref={tableRef}>
+        <div
+            className={isDark ? "mht-root mht-root--dark" : "mht-root"}
+            style={S.wrapper}
+            ref={tableRef}
+        >
             <div style={{ ...S.scrollContainer, maxHeight: dynamicMaxHeight }}>
                 <table style={{ ...S.table, minWidth }}>
                     <colgroup>
@@ -418,7 +424,13 @@ const MergedHeaderTable = ({
                                     onClick={() => col.sortType && handleSort(col.key)}
                                 >
                                     {col.label}
-                                    {col.sortType && <SortArrow colKey={col.key} sortConfig={sortConfig} />}
+                                    {col.sortType && (
+                                        <SortArrow
+                                            colKey={col.key}
+                                            sortConfig={sortConfig}
+                                            isDark={isDark}
+                                        />
+                                    )}
                                 </th>
                             ))}
                         </tr>
@@ -445,7 +457,7 @@ const MergedHeaderTable = ({
                         {loading ? (
                             <tr>
                                 <td colSpan={columns.length} style={{ ...S.tdBase, textAlign: "center", padding: 32 }}>
-                                    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, color: "#8898aa" }}>
+                                    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, color: S.textMuted }}>
                                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                             <path d="M21 12a9 9 0 1 1-6.219-8.56" strokeLinecap="round">
                                                 <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="0.9s" repeatCount="indefinite" />
@@ -457,7 +469,7 @@ const MergedHeaderTable = ({
                             </tr>
                         ) : sorted.length === 0 ? (
                             <tr>
-                                <td colSpan={columns.length} style={{ ...S.tdBase, textAlign: "center", padding: 32, color: "#8898aa" }}>
+                                <td colSpan={columns.length} style={{ ...S.tdBase, textAlign: "center", padding: 32, color: S.textMuted }}>
                                     📋 No data matching filters
                                 </td>
                             </tr>
@@ -467,7 +479,7 @@ const MergedHeaderTable = ({
                                 const isHovered = hoveredRow === idx;
                                 const rowBg = isHovered
                                     ? S.hoverRow
-                                    : idx % 2 === 1 ? S.altRow : "#ffffff";
+                                    : idx % 2 === 1 ? S.altRow : S.rowEven;
                                 return (
                                     <tr
                                         key={key}

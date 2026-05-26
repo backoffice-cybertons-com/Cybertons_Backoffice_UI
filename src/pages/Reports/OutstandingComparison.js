@@ -11,17 +11,21 @@ import {
   Spinner,
 } from "reactstrap";
 import Select from "react-select";
-import Flatpickr from "react-flatpickr";
+import { useSelector } from "react-redux";
+import { createSelector } from "reselect";
 import { APIClient } from "../../helpers/api_helper";
 import * as url from "../../helpers/url_helper";
-import CommonTable from "../../Components/Common/CommonTable";
 import MergedHeaderTable from "../../Components/Common/MergedHeaderTable";
 import ExportOutstandingExcel from "../../Components/Common/ExportOutstandingExcel";
-
-import ExportButton from "../../Components/Common/ExportButton";
 import "../../Components/Common/CommonTable.css";
 import HeaderForAllReport from "../../Components/Common/HeaderForAllRpt";
 import FooterForAllRpt from "../../Components/Common/FooterForAllRpt";
+import "./OutstandingComparison.css";
+
+const selectLayoutState = (state) => state.Layout;
+const selectLayoutProperties = createSelector(selectLayoutState, (layout) => ({
+  layoutModeType: layout.layoutModeType,
+}));
 
 const formatDateForApi = (date) => {
   if (!date) return null;
@@ -43,119 +47,65 @@ const fmt = (v, dec = 2) =>
       maximumFractionDigits: dec,
     });
 
+const plClass = (val) =>
+  val >= 0 ? "oc-summary-pl oc-pl-profit" : "oc-summary-pl oc-pl-loss";
+
 /* ── Summary vertical table ─────────────────────────────── */
 const SummaryTable = ({ data }) => {
-  console.log("data", data);
-
   if (!data || data.length === 0) return null;
   const safeDiv = (a, b) => (b ? a / b : 0);
   const d = Array.isArray(data) ? data[0] : data;
 
   const yQty = Number(d.yQty ?? 0);
   const yAmount = Number(d.yAmount ?? 0);
-  const yOs = Number(d.yOs ?? 0);
 
   const tQty = Number(d.tQty ?? 0);
   const tAmount = Number(d.tAmount ?? 0);
-  const tOs = Number(d.tOs ?? 0);
 
   const yPrice = safeDiv(yAmount, yQty);
   const tPrice = safeDiv(tAmount, tQty);
 
-  const plPctAmount = yAmount > 0 ? (tAmount / yAmount - 1) * 100 : (tAmount > 0 ? 100 : 0);
-  const plPctPrice = yPrice > 0 ? (tPrice / yPrice - 1) * 100 : (tPrice > 0 ? 100 : 0);
+  const plPctAmount =
+    yAmount > 0 ? (tAmount / yAmount - 1) * 100 : tAmount > 0 ? 100 : 0;
 
-  const base = {
-    border: "1px solid #ccc",
-    padding: "7px 14px",
-    fontSize: "13px",
-  };
-  const labelCell = {
-    ...base,
-    fontWeight: "bold",
-    whiteSpace: "nowrap",
-    textAlign: "left",
-    background: "#f8f9fa",
-  };
-  const headCell = {
-    ...base,
-    textAlign: "right",
-    fontWeight: "bold",
-    background: "#e9ecef",
-    minWidth: "140px",
-  };
-  const numCell = { ...base, textAlign: "right" };
-  const plCell = { ...base, textAlign: "right", fontWeight: "bold" };
-  const plLabel = { ...labelCell };
-  const profitColor = "#16a34a"; // green-600
-  const lossColor = "#dc2626"; // red-600
-  const getPLColor = (val) => (val >= 0 ? profitColor : lossColor);
+  const plAmount = tAmount - yAmount;
+  const plPrice = tPrice - yPrice;
 
   return (
-    <div
-      style={{ overflowX: "auto", display: "flex", justifyContent: "center" }}
-    >
-      <table style={{ borderCollapse: "collapse" }}>
+    <div className="oc-summary-wrap">
+      <table className="oc-summary-table">
         <thead>
           <tr>
-            <th
-              style={{ ...headCell, textAlign: "left", minWidth: "140px" }}
-            ></th>
-            <th style={headCell}>Qty</th>
-            <th style={headCell}>Amount</th>
-            <th style={headCell}>Price</th>
+            <th></th>
+            <th>Qty</th>
+            <th>Amount</th>
+            <th>Price</th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td style={labelCell}>Yesterday Purchase</td>
-            <td style={numCell}>{fmt(yQty, 2)}</td>
-            <td style={numCell}>{fmt(yAmount, 2)}</td>
-            <td style={numCell}>{fmt(yPrice, 2)}</td>
+            <td className="oc-summary-label">Yesterday Purchase</td>
+            <td className="oc-summary-num">{fmt(yQty, 2)}</td>
+            <td className="oc-summary-num">{fmt(yAmount, 2)}</td>
+            <td className="oc-summary-num">{fmt(yPrice, 2)}</td>
           </tr>
           <tr>
-            <td style={labelCell}>Today Sale</td>
-            <td style={numCell}>{fmt(tQty, 2)}</td>
-            <td style={numCell}>{fmt(tAmount, 2)}</td>
-            <td style={numCell}>{fmt(tPrice, 2)}</td>
+            <td className="oc-summary-label">Today Sale</td>
+            <td className="oc-summary-num">{fmt(tQty, 2)}</td>
+            <td className="oc-summary-num">{fmt(tAmount, 2)}</td>
+            <td className="oc-summary-num">{fmt(tPrice, 2)}</td>
           </tr>
           <tr>
-            <td style={plLabel}>Today PL</td>
-            <td style={plCell}></td>
-            <td
-              style={{
-                ...plCell,
-                color: getPLColor(tAmount - yAmount),
-              }}
-            >
-              {fmt(tAmount - yAmount, 2)}
-            </td>
-
-            <td
-              style={{
-                ...plCell,
-                color: getPLColor(tPrice - yPrice),
-              }}
-            >
-              {fmt(tPrice - yPrice, 2)}
-            </td>
+            <td className="oc-summary-label">Today PL</td>
+            <td className="oc-summary-num"></td>
+            <td className={plClass(plAmount)}>{fmt(plAmount, 2)}</td>
+            <td className={plClass(plPrice)}>{fmt(plPrice, 2)}</td>
           </tr>
           <tr>
-            <td style={plLabel}>Today PL %</td>
-            <td style={plCell}></td>
-            <td
-              style={{
-                ...plCell,
-                color: getPLColor(plPctAmount),
-              }}
-            >
-              {fmt(plPctAmount, 2)}%
-            </td>
-            <td
-              style={{
-                ...plCell,
-              }}
-            ></td>
+            <td className="oc-summary-label">Today PL %</td>
+            <td className="oc-summary-num"></td>
+            <td className={plClass(plPctAmount)}>{fmt(plPctAmount, 2)}%</td>
+            <td className="oc-summary-num"></td>
           </tr>
         </tbody>
       </table>
@@ -163,7 +113,68 @@ const SummaryTable = ({ data }) => {
   );
 };
 
+const buildSelectStyles = (isDark) => ({
+  menuPortal: (base) => ({ ...base, zIndex: 999999 }),
+  menu: (base) => ({
+    ...base,
+    zIndex: 999999,
+    backgroundColor: isDark ? "#292e33" : base.backgroundColor,
+    border: isDark ? "1px solid #32383e" : base.border,
+  }),
+  control: (base, state) => ({
+    ...base,
+    backgroundColor: isDark ? "#262a2f" : base.backgroundColor,
+    borderColor: isDark
+      ? state.isFocused
+        ? "#405189"
+        : "#32383e"
+      : base.borderColor,
+    color: isDark ? "#ced4da" : base.color,
+    minHeight: 38,
+  }),
+  singleValue: (base) => ({
+    ...base,
+    color: isDark ? "#ced4da" : base.color,
+  }),
+  input: (base) => ({
+    ...base,
+    color: isDark ? "#ced4da" : base.color,
+  }),
+  placeholder: (base) => ({
+    ...base,
+    color: isDark ? "#878a99" : base.color,
+  }),
+  option: (base, state) => ({
+    ...base,
+    backgroundColor: state.isSelected
+      ? "#405189"
+      : state.isFocused
+        ? isDark
+          ? "#2f343a"
+          : base.backgroundColor
+        : isDark
+          ? "#292e33"
+          : base.backgroundColor,
+    color: state.isSelected ? "#fff" : isDark ? "#ced4da" : base.color,
+  }),
+  indicatorSeparator: (base) => ({
+    ...base,
+    backgroundColor: isDark ? "#3d4449" : base.backgroundColor,
+  }),
+  dropdownIndicator: (base) => ({
+    ...base,
+    color: isDark ? "#adb5bd" : base.color,
+  }),
+  clearIndicator: (base) => ({
+    ...base,
+    color: isDark ? "#adb5bd" : base.color,
+  }),
+});
+
 const OutstandingComparison = () => {
+  const { layoutModeType } = useSelector(selectLayoutProperties);
+  const isDarkMode = layoutModeType === "dark";
+
   const companyId = localStorage.getItem("companyId") || 10001;
 
   const [date1, setDate1] = useState(new Date().toISOString().split("T")[0]);
@@ -315,10 +326,14 @@ const OutstandingComparison = () => {
       totalType: "sum",
       cell: (r) => {
         const val = r.diff || 0;
+        const cls =
+          val > 0
+            ? "oc-diff-positive"
+            : val < 0
+              ? "oc-diff-negative"
+              : "";
         return (
-          <span
-            className={val > 0 ? "text-danger" : val < 0 ? "text-success" : ""}
-          >
+          <span className={cls}>
             {Number(val).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
           </span>
         );
@@ -491,49 +506,52 @@ const OutstandingComparison = () => {
 
   document.title = "Outstanding Comparison | SoftBook";
 
+  const selectStyles = useMemo(
+    () => buildSelectStyles(isDarkMode),
+    [isDarkMode],
+  );
+
   return (
     <React.Fragment>
-      <div className="page-content">
+      <div
+        className={`page-content oc-page${isDarkMode ? " oc-page--dark" : ""}`}
+      >
         <Container fluid>
           <Row>
             <Col xs={12}>
               <div className="page-title-box d-sm-flex align-items-center justify-content-between">
-                <h4 className="mb-sm-0">Outstanding Comparison Report</h4>
+                <div>
+                  <h4 className="mb-sm-0">Outstanding Comparison Report</h4>
+                  
+                </div>
               </div>
             </Col>
           </Row>
 
-          <Card className="mb-3">
+          <Card className="mb-3 oc-filter-card">
             <CardBody>
-              <Row className="g-3">
-                <Col xs={12} md={6} xl={2}>
+              <Row className="g-3 align-items-end">
+                <Col xs={12} sm={6} md={4} lg={3} xl={2}>
                   <Label>Date</Label>
-                  {/* <Flatpickr
-                                        className="form-control"
-                                        options={{ dateFormat: "Y-m-d" }}
-                                        value={date1}
-                                        onChange={setDate1}
-                                    /> */}
                   <Input
                     type="date"
                     value={date1}
                     onChange={(e) => setDate1(e.target.value)}
                   />
                 </Col>
-                <Col xs={12} md={6} xl={4}>
+                <Col xs={12} sm={6} md={5} lg={4} xl={4}>
                   <Label>Party</Label>
                   <Select
                     value={selectedParty}
                     onChange={setSelectedParty}
                     options={parties}
                     isClearable
+                    isSearchable
                     placeholder="Select Party..."
+                    classNamePrefix="oc-select"
                     menuPortalTarget={document.body}
                     menuPosition="fixed"
-                    styles={{
-                      menuPortal: (base) => ({ ...base, zIndex: 999999 }),
-                      menu: (base) => ({ ...base, zIndex: 999999 }),
-                    }}
+                    styles={selectStyles}
                   />
                 </Col>
                 <Col xs="auto" className="d-flex align-items-end pb-1">
@@ -554,20 +572,15 @@ const OutstandingComparison = () => {
                   </div>
                 </Col>
               </Row>
-              <Row className="mt-3 align-items-center">
-                <Col md={8}>
-                  <div className="d-flex align-items-center gap-3">
-                    <div className="d-flex align-items-center gap-2">
-                      <Label
-                        className="mb-0 small"
-                        style={{ whiteSpace: "nowrap" }}
-                      >
-                        Rows:
-                      </Label>
+              <Row className="mt-3 g-2 align-items-center">
+                <Col xs={12} lg={7}>
+                  <div className="oc-toolbar">
+                    <div className="oc-pagination">
+                      <Label className="mb-0 small text-nowrap">Rows:</Label>
                       <Input
                         type="select"
                         bsSize="sm"
-                        style={{ width: "95px" }}
+                        className="form-select-sm"
                         value={rowsPerPage}
                         onChange={(e) => {
                           setRowsPerPage(e.target.value);
@@ -579,9 +592,6 @@ const OutstandingComparison = () => {
                         <option value="1000">1000</option>
                         <option value="all">All</option>
                       </Input>
-                    </div>
-
-                    <div className="d-flex align-items-center gap-1">
                       <Button
                         color="light"
                         size="sm"
@@ -606,14 +616,13 @@ const OutstandingComparison = () => {
                           totalEntries === 0 ||
                           (rowsPerPage !== "all" &&
                             currentPage >=
-                            Math.ceil(totalEntries / Number(rowsPerPage)))
+                              Math.ceil(totalEntries / Number(rowsPerPage)))
                         }
                         onClick={() => setCurrentPage((prev) => prev + 1)}
                       >
                         <i className="ri-arrow-right-s-line"></i>
                       </Button>
                     </div>
-
                     {totalEntries > 0 && (
                       <span className="text-muted small">
                         Total: <strong>{totalEntries}</strong> records
@@ -621,10 +630,7 @@ const OutstandingComparison = () => {
                     )}
                   </div>
                 </Col>
-                <Col
-                  md={4}
-                  className="d-flex justify-content-end gap-2 text-end"
-                >
+                <Col xs={12} lg={5} className="oc-filter-actions">
                   <Button color="soft-secondary" onClick={handleClear}>
                     Clear
                   </Button>
@@ -666,31 +672,39 @@ const OutstandingComparison = () => {
           </Card>
 
           {(reportData.length > 0 || loading || generated) && (
-            <Card id="outstandingPrintArea">
-              {/*COMMON HEADER */}
+            <Card id="outstandingPrintArea" className="oc-report-card">
               <div className="text-start">
                 <HeaderForAllReport reportName="Outstanding Comparison Report" />
               </div>
 
-              <CardBody className="pt-3 pl-3 pr-3 pb-3">
+              <CardBody className="oc-report-body">
                 {appliedSummary ? (
                   loading ? (
-                    <div className="text-center py-4">
-                      <Spinner />
+                    <div className="px-3 py-2">
+                      {[1, 2, 3, 4].map((i) => (
+                        <div key={i} className="oc-skeleton" />
+                      ))}
                     </div>
+                  ) : reportData.length === 0 ? (
+                    <p className="oc-empty-hint mb-0">
+                      No summary data for the selected filters.
+                    </p>
                   ) : (
                     <SummaryTable data={reportData} />
                   )
                 ) : (
-                  <MergedHeaderTable
-                    columns={columns}
-                    data={paginatedData}
-                    loading={loading}
-                    autoHeight={true}
-                    minWidth="1000px"
-                    showTotals
-                    onDataChange={setFilteredData}
-                  />
+                  <div className="oc-table-panel">
+                    <MergedHeaderTable
+                      columns={columns}
+                      data={paginatedData}
+                      loading={loading}
+                      isDark={isDarkMode}
+                      autoHeight={true}
+                      minWidth="min(100%, 1000px)"
+                      showTotals
+                      onDataChange={setFilteredData}
+                    />
+                  </div>
                 )}
               </CardBody>
               {/* COMMON FOOTER */}

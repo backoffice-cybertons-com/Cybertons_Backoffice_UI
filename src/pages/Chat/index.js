@@ -38,7 +38,6 @@ import {
   getMessages,
   getChannels as onGetChannels,
   addMessage as onAddMessage,
-  deleteMessage as onDeleteMessage,
 } from "../../slices/thunks";
 import { getUnreadNotifications } from "../../slices/notifications/thunk";
 
@@ -88,6 +87,13 @@ const getMessageText = (message) =>
   message?.content ||
   message?.messageText ||
   "";
+
+const getMessageId = (message) =>
+  message?.messageId ??
+  message?.MessageId ??
+  message?.id ??
+  message?.message_id ??
+  null;
 
 const getMessageFileUrl = (message) => {
   if (!message?.fileLink) return "";
@@ -215,7 +221,9 @@ import {
   updateChatLastMessage,
   setSignalRStatus,
   setMessagesData,
+  removeMessage,
 } from "../../slices/chat/reducer";
+import { toast } from "react-toastify";
 
 import { APIClient, getLoggedinUser } from "../../helpers/api_helper";
 import { api as configApi } from "../../config";
@@ -253,7 +261,11 @@ const Chat = () => {
 
   const authUser = getLoggedinUser();
   const loggedInUserId =
-    authUser?.user?.id || authUser?.user?.userId || authUser?.userId || 0;
+    authUser?.user?.id ??
+    authUser?.user?.userId ??
+    authUser?.userId ??
+    authUser?.id ??
+    0;
   const loggedInCompanyId = getCompanyId(authUser);
   const loggedInUserName =
     authUser?.user?.firstName || authUser?.user?.username || "User";
@@ -750,23 +762,44 @@ const Chat = () => {
   };
 
   const handleDeleteMessage = (message) => {
-    const messageId = message?.id || message?.messageId;
+    const messageId = getMessageId(message);
 
     if (!messageId) return;
     setMessageToDelete(message);
     setDeleteModal(true);
   };
 
-  const confirmDeleteMessage = () => {
-    debugger;
-    const messageId = messageToDelete?.id || messageToDelete?.messageId;
-
-    if (messageId) {
-      dispatch(onDeleteMessage(messageId));
-    }
+  const confirmDeleteMessage = async () => {
+    const messageId = getMessageId(messageToDelete);
+    const senderUserId =
+      messageToDelete?.senderUserId ??
+      messageToDelete?.senderId ??
+      loggedInUserId;
 
     setDeleteModal(false);
     setMessageToDelete(null);
+
+    if (!messageId || !senderUserId) {
+      toast.error("Unable to delete: missing message or user id");
+      return;
+    }
+
+    try {
+      const res = await api.delete(
+        `/api/chat/message/${messageId}?senderUserId=${Number(senderUserId)}`,
+      );
+      if (res?.success === false) {
+        throw new Error(res?.message || "Failed to delete message");
+      }
+      dispatch(removeMessage(messageId));
+      toast.success("Message deleted successfully", { autoClose: 2000 });
+    } catch (error) {
+      const errMsg =
+        typeof error === "string"
+          ? error
+          : error?.message || "Failed to delete message";
+      toast.error(errMsg);
+    }
   };
 
   // emoji
@@ -785,7 +818,6 @@ const Chat = () => {
   };
 
   const handleFileUpload = async (event) => {
-    debugger;
     const file = event.target.files[0];
     if (!file) return;
     if (file.size > 2 * 1024 * 1024) {
@@ -1554,9 +1586,10 @@ const scrollToMessage = (replyMessageId) => {
                                                 <i className="ri-reply-line me-2 text-muted align-bottom"></i>
                                                 Reply
                                               </DropdownItem>
-                                              {(message.senderId ||
-                                                message.senderUserId) ===
-                                                loggedInUserId && (
+                                              {isMessageFromCurrentUser(
+                                                message,
+                                                loggedInUserId,
+                                              ) && (
                                                 <DropdownItem
                                                   href="#"
                                                   onClick={(e) => {
@@ -1773,7 +1806,7 @@ const scrollToMessage = (replyMessageId) => {
         currentuser={Chat_Box_Username}
         cuurentiseImg={Chat_Box_Image}
       /> */}
-      console.log("chatAttachments state", chatAttachments);
+       
       <PersonalInfo
         show={isInfoDetails}
         onCloseClick={() => setIsInfoDetails(false)}
