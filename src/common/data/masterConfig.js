@@ -1,4 +1,52 @@
 export const masterConfig = {
+    // Party Types Master
+    partyTypes: {
+        pk: "PartyTypeId",
+        label: "Party Type",
+        fetchUrl: "/api/partytypemaster",
+        fields: [
+            { name: "PartyTypeCode", label: "Code", type: "text", required: true },
+            { name: "PartyTypeName", label: "Name", type: "text", required: true },
+            { name: "Description", label: "Description", type: "text" },
+            { 
+                name: "AccountNature", 
+                label: "Account Nature", 
+                type: "select", 
+                options: [
+                    { label: "Asset", value: "ASSET" },
+                    { label: "Liability", value: "LIABILITY" },
+                    { label: "Income", value: "INCOME" },
+                    { label: "Expense", value: "EXPENSE" }
+                ],
+                required: true 
+            },
+            { 
+                name: "ReportType", 
+                label: "Report Type", 
+                type: "select", 
+                options: [
+                    { label: "Balance Sheet", value: "BALANCE_SHEET" },
+                    { label: "Profit & Loss", value: "PROFIT_LOSS" }
+                ],
+                required: true 
+            },
+            { 
+                name: "NormalBalance", 
+                label: "Normal Balance", 
+                type: "select", 
+                options: [
+                    { label: "Debit (DR)", value: "DR" },
+                    { label: "Credit (CR)", value: "CR" }
+                ]
+            },
+            { name: "ReportGroup", label: "Report Group", type: "text" },
+            { name: "IsDynamicNature", label: "Dynamic Nature", type: "checkbox" },
+            { name: "IsCustomer", label: "Is Customer?", type: "checkbox" },
+            { name: "IsVendor", label: "Is Vendor?", type: "checkbox" },
+            { name: "IsActive", label: "Active", type: "checkbox" },
+            { name: "SortOrder", label: "Sort Order", type: "number" }
+        ]
+    },
     // 1. Product (Complex, handled by dedicated page usually, but kept here for ref)
     products: {
         pk: "productId",
