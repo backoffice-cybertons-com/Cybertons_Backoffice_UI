@@ -211,6 +211,7 @@ const DailyOSReport = () => {
 
   const [fromDate, setFromDate] = useState(toLocalYMD(firstOfMonth));
   const [toDate, setToDate] = useState(toLocalYMD(today));
+  const [datePreset, setDatePreset] = useState("month");
   const [partyOptions, setPartyOptions] = useState([ALL_PARTIES_OPTION]);
   const [selectedParty, setSelectedParty] = useState(ALL_PARTIES_OPTION);
 
@@ -238,6 +239,9 @@ const DailyOSReport = () => {
     }
     if (routeState.toDate) {
       setToDate(toLocalYMD(routeState.toDate));
+    }
+    if (routeState.fromDate || routeState.toDate) {
+      setDatePreset(null);
     }
   }, []);
 
@@ -461,11 +465,7 @@ const DailyOSReport = () => {
 
   const applyDatePreset = useCallback((preset) => {
     const now = new Date();
-    if (preset === "today") {
-      const d = toLocalYMD(now);
-      setFromDate(d);
-      setToDate(d);
-    } else if (preset === "month") {
+    if (preset === "month") {
       setFromDate(toLocalYMD(new Date(now.getFullYear(), now.getMonth(), 1)));
       setToDate(toLocalYMD(now));
     } else if (preset === "last30") {
@@ -474,11 +474,13 @@ const DailyOSReport = () => {
       setFromDate(toLocalYMD(start));
       setToDate(toLocalYMD(now));
     }
+    setDatePreset(preset);
   }, []);
 
   const handleClear = useCallback(() => {
     setFromDate(toLocalYMD(firstOfMonth));
     setToDate(toLocalYMD(today));
+    setDatePreset("month");
     setSelectedParty(ALL_PARTIES_OPTION);
     setReportData([]);
     setCalendarData([]);
@@ -951,7 +953,10 @@ const DailyOSReport = () => {
                   <Input
                     type="date"
                     value={fromDate}
-                    onChange={(e) => setFromDate(e.target.value)}
+                    onChange={(e) => {
+                      setFromDate(e.target.value);
+                      setDatePreset(null);
+                    }}
                   />
                 </Col>
                 <Col xs={12} md={6} xl={4}>
@@ -959,7 +964,10 @@ const DailyOSReport = () => {
                   <Input
                     type="date"
                     value={toDate}
-                    onChange={(e) => setToDate(e.target.value)}
+                    onChange={(e) => {
+                      setToDate(e.target.value);
+                      setDatePreset(null);
+                    }}
                   />
                 </Col>
               </Row>
@@ -967,30 +975,27 @@ const DailyOSReport = () => {
               <Row className="mt-3 align-items-center">
                 <Col md={8}>
                   <div className="dos-date-presets d-print-none">
-                    <span className="text-muted small me-1 align-self-center">
-                      Quick:
-                    </span>
-                    <Button
-                      size="sm"
-                      color="light"
-                      onClick={() => applyDatePreset("today")}
-                    >
-                      Today
-                    </Button>
-                    <Button
-                      size="sm"
-                      color="light"
-                      onClick={() => applyDatePreset("month")}
-                    >
-                      This Month
-                    </Button>
-                    <Button
-                      size="sm"
-                      color="light"
-                      onClick={() => applyDatePreset("last30")}
-                    >
-                      Last 30 Days
-                    </Button>
+                    <span className="dos-preset-label">Quick:</span>
+                    <div className="dos-preset-group" role="group" aria-label="Quick date range">
+                      <Button
+                        type="button"
+                        size="sm"
+                        color={datePreset === "month" ? "soft-primary" : "light"}
+                        className={`dos-preset-btn rounded-pill${datePreset === "month" ? " dos-preset-active" : ""}`}
+                        onClick={() => applyDatePreset("month")}
+                      >
+                        This Month
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        color={datePreset === "last30" ? "soft-primary" : "light"}
+                        className={`dos-preset-btn rounded-pill${datePreset === "last30" ? " dos-preset-active" : ""}`}
+                        onClick={() => applyDatePreset("last30")}
+                      >
+                        Last 30 Days
+                      </Button>
+                    </div>
                   </div>
                 </Col>
                 <Col
@@ -1091,7 +1096,7 @@ const DailyOSReport = () => {
                 {loading ? renderSkeleton() : renderReportTable()}
 
                 {normalizedRows.length > 0 && !loading && (
-                  <div className="mt-2 dos-heatmap-legend d-flex flex-wrap gap-3 small text-muted d-print-none">
+                  <div className="mt-2 dos-heatmap-legend d-flex flex-wrap gap-3 small d-print-none">
                     <span>
                       <span className="dos-legend-swatch dos-legend-increase" />
                       ↑ Increased vs prior day

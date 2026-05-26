@@ -102,6 +102,13 @@ const CALENDAR_METRICS = [
     fmt: fmtAmountCell,
   },
   {
+    type: "adj",
+    label: "JV",
+    title: "Adjustment",
+    field: "totalAdj",
+    fmt: fmtAmountCell,
+  },
+  {
     type: "term",
     label: "T",
     title: "Terms",
@@ -115,6 +122,7 @@ const normalizeCalendarRow = (row) => ({
   totalSale: Number(row.totalSale ?? row.TotalSale ?? 0),
   totalReceipt: Number(row.totalReceipt ?? row.TotalReceipt ?? 0),
   totalOs: Number(row.totalOs ?? row.TotalOs ?? 0),
+  totalAdj: Number(row.totalAdj ?? row.TotalAdj ?? 0),
   avgTerms: Number(row.avgTerms ?? row.AvgTerms ?? 0),
 });
 
@@ -173,6 +181,7 @@ const DailyOSCalendarPanel = forwardRef(
           totalSale: 0,
           totalReceipt: 0,
           totalOs: 0,
+          totalAdj: 0,
           avgTerms: 0,
         };
         setHighlightedDate(dateKey);
@@ -321,6 +330,9 @@ const DailyOSCalendarPanel = forwardRef(
                 <span className="dos-legend-pill dos-legend-pill--os">
                   <span className="dos-legend-pill__key">O</span> Outstanding
                 </span>
+                <span className="dos-legend-pill dos-legend-pill--adj">
+                  <span className="dos-legend-pill__key">JV</span> Adjustment
+                </span>
                 <span className="dos-legend-pill dos-legend-pill--term">
                   <span className="dos-legend-pill__key">T</span> Terms
                 </span>
@@ -362,6 +374,11 @@ const DailyOSCalendarPanel = forwardRef(
                     key: "os",
                     label: "Outstanding",
                     value: fmtAmount(selectedDateDetails.totalOs),
+                  },
+                  {
+                    key: "adj",
+                    label: "JV (Adjustment)",
+                    value: fmtAmount(selectedDateDetails.totalAdj),
                   },
                   {
                     key: "terms",

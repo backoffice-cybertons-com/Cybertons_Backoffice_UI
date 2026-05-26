@@ -14,12 +14,56 @@
 .dos-date-presets {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.35rem;
+  align-items: center;
+  gap: 0.5rem;
 }
 
-.dos-date-presets .btn {
-  font-size: 11px;
-  padding: 0.2rem 0.55rem;
+.dos-preset-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: #495057;
+  flex-shrink: 0;
+}
+
+/* Both presets always visible side-by-side; only active gets highlight */
+.dos-preset-group {
+  display: inline-flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.dos-date-presets .dos-preset-btn {
+  display: inline-flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  flex-shrink: 0;
+  font-size: 12px;
+  padding: 0.3rem 0.85rem;
+  font-weight: 600;
+  line-height: 1.2;
+  border: 1px solid #dee2e6 !important;
+  box-shadow: none;
+}
+
+.dos-date-presets .dos-preset-btn.btn-light {
+  background-color: #fff !important;
+  color: #495057 !important;
+}
+
+.dos-date-presets .dos-preset-btn.btn-light:hover {
+  background-color: #f3f6f9 !important;
+  border-color: #ced4da !important;
+  color: #212529 !important;
+}
+
+.dos-date-presets .dos-preset-btn.dos-preset-active {
+  border-color: transparent !important;
+}
+
+.dos-heatmap-legend {
+  color: #334155;
+  font-size: 12px;
 }
 
 .dos-table-wrap {
@@ -241,6 +285,22 @@
   color: #878a99;
 }
 
+[data-bs-theme="dark"] .dos-preset-label {
+  color: #ced4da;
+}
+
+[data-bs-theme="dark"] .dos-date-presets .dos-preset-btn.btn-light {
+  background-color: #2a2f34 !important;
+  border-color: #3f464d !important;
+  color: #ced4da !important;
+}
+
+[data-bs-theme="dark"] .dos-date-presets .dos-preset-btn.btn-light:hover {
+  background-color: #343a40 !important;
+  border-color: #495057 !important;
+  color: #e9ecef !important;
+}
+
 [data-bs-theme="dark"] .dos-table-wrap {
   border-color: #32383e;
   background: #212529;
@@ -304,7 +364,7 @@
 }
 
 [data-bs-theme="dark"] .dos-heatmap-legend {
-  color: #878a99 !important;
+  color: #ced4da !important;
 }
 
 [data-bs-theme="dark"] .dos-skeleton {

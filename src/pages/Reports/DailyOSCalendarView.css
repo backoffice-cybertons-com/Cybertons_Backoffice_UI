@@ -18,6 +18,8 @@
   --dos-receipt-bg: #f0fdf4;
   --dos-os: #dc2626;
   --dos-os-bg: #fef2f2;
+  --dos-adj: #7c3aed;
+  --dos-adj-bg: #f5f3ff;
   --dos-term: #ea580c;
   --dos-term-bg: #fff7ed;
   --dos-radius: 10px;
@@ -308,6 +310,16 @@
   background: var(--dos-os-bg);
 }
 
+.dos-calendar-wrap .metric-key--adj {
+  color: var(--dos-adj);
+  background: var(--dos-adj-bg);
+  width: auto;
+  min-width: 16px;
+  padding: 0 3px;
+  border-radius: 8px;
+  font-size: 0.5rem;
+}
+
 .dos-calendar-wrap .metric-key--term {
   color: var(--dos-term);
   background: var(--dos-term-bg);
@@ -341,6 +353,10 @@
 
 .dos-calendar-wrap .metric-val--os {
   color: var(--dos-text);
+}
+
+.dos-calendar-wrap .metric-val--adj {
+  color: var(--dos-adj);
 }
 
 .dos-calendar-wrap .metric-val--term {
@@ -416,6 +432,16 @@
   background: var(--dos-os-bg);
 }
 
+.dos-legend-pill--adj .dos-legend-pill__key {
+  color: var(--dos-adj);
+  background: var(--dos-adj-bg);
+  width: auto;
+  min-width: 1.125rem;
+  padding: 0 0.2rem;
+  border-radius: 8px;
+  font-size: 0.5625rem;
+}
+
 .dos-legend-pill--term .dos-legend-pill__key {
   color: var(--dos-term);
   background: var(--dos-term-bg);
@@ -476,6 +502,10 @@
 /* .dos-detail-os strong {
   color: var(--dos-os);
 } */
+
+.dos-detail-adj strong {
+  color: var(--dos-adj);
+}
 
 .dos-detail-terms strong {
   color: var(--dos-term);
@@ -547,6 +577,8 @@
   --dos-receipt-bg: rgba(76, 175, 80, 0.2);
   --dos-os: #ef9a9a;
   --dos-os-bg: rgba(244, 67, 54, 0.2);
+  --dos-adj: #b39ddb;
+  --dos-adj-bg: rgba(124, 58, 237, 0.2);
   --dos-term: #ffb74d;
   --dos-term-bg: rgba(255, 152, 0, 0.18);
   --dos-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.28);
@@ -613,6 +645,10 @@
 
 [data-bs-theme="dark"] .dos-detail-receipt strong {
   color: var(--dos-receipt);
+}
+
+[data-bs-theme="dark"] .dos-detail-adj strong {
+  color: var(--dos-adj);
 }
 
 [data-bs-theme="dark"] .dos-detail-terms strong {
