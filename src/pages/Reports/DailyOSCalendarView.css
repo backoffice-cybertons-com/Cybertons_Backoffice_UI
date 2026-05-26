@@ -528,6 +528,111 @@
   }
 }
 
+/* ── Dark theme (Bootstrap data-bs-theme on <html>) ── */
+[data-bs-theme="dark"] .dos-calendar-wrap,
+[data-bs-theme="dark"] .dos-cal-legend,
+[data-bs-theme="dark"] .dos-cal-detail-modal {
+  --dos-border: #32383e;
+  --dos-surface: #212529;
+  --dos-muted: #6c757d;
+  --dos-text: #ced4da;
+  --dos-text-secondary: #878a99;
+  --dos-hover: #262a2f;
+  --dos-today-ring: #6ea8fe;
+  --dos-selected: rgba(59, 130, 246, 0.14);
+  --dos-selected-border: rgba(110, 168, 254, 0.4);
+  --dos-sale: #6ea8fe;
+  --dos-sale-bg: rgba(59, 130, 246, 0.22);
+  --dos-receipt: #81c784;
+  --dos-receipt-bg: rgba(76, 175, 80, 0.2);
+  --dos-os: #ef9a9a;
+  --dos-os-bg: rgba(244, 67, 54, 0.2);
+  --dos-term: #ffb74d;
+  --dos-term-bg: rgba(255, 152, 0, 0.18);
+  --dos-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.28);
+  --dos-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.35);
+}
+
+[data-bs-theme="dark"] .dos-calendar-loading {
+  background: rgba(33, 37, 41, 0.96);
+  color: var(--dos-text-secondary);
+  border-color: var(--dos-border);
+}
+
+[data-bs-theme="dark"] .dos-calendar-wrap .fc .fc-button:hover,
+[data-bs-theme="dark"] .dos-calendar-wrap .fc .fc-button-primary:not(:disabled).fc-button-active,
+[data-bs-theme="dark"] .dos-calendar-wrap .fc .fc-button-primary:not(:disabled):active {
+  border-color: #3d4449 !important;
+}
+
+[data-bs-theme="dark"] .dos-calendar-wrap .fc .fc-today-button {
+  color: var(--dos-today-ring) !important;
+  border-color: rgba(110, 168, 254, 0.45) !important;
+  background: rgba(59, 130, 246, 0.18) !important;
+}
+
+[data-bs-theme="dark"] .dos-calendar-wrap .fc .fc-today-button:hover {
+  background: rgba(59, 130, 246, 0.28) !important;
+  border-color: rgba(110, 168, 254, 0.55) !important;
+  color: #9ec5fe !important;
+}
+
+[data-bs-theme="dark"] .dos-calendar-wrap .fc-col-header-cell {
+  background: #2a2f34 !important;
+}
+
+[data-bs-theme="dark"] .dos-calendar-wrap .fc-day-today {
+  background: rgba(59, 130, 246, 0.08) !important;
+}
+
+[data-bs-theme="dark"] .dos-calendar-wrap .fc-day-today:hover {
+  background: rgba(59, 130, 246, 0.14) !important;
+}
+
+[data-bs-theme="dark"] .dos-calendar-wrap .fc-daygrid-day.dos-day-selected .fc-daygrid-day-number {
+  color: var(--dos-today-ring);
+}
+
+[data-bs-theme="dark"] .dos-legend-pill {
+  background: #2a2f34;
+  border-color: var(--dos-border);
+  color: var(--dos-text-secondary);
+}
+
+[data-bs-theme="dark"] .dos-cal-detail-list li {
+  border-bottom-color: var(--dos-border);
+}
+
+[data-bs-theme="dark"] .dos-cal-detail-list li span {
+  color: var(--dos-text-secondary);
+}
+
+[data-bs-theme="dark"] .dos-cal-detail-list li strong {
+  color: var(--dos-text);
+}
+
+[data-bs-theme="dark"] .dos-detail-receipt strong {
+  color: var(--dos-receipt);
+}
+
+[data-bs-theme="dark"] .dos-detail-terms strong {
+  color: var(--dos-term);
+}
+
+/* FullCalendar bootstrap theme defaults fight dark surfaces */
+[data-bs-theme="dark"] .dos-calendar-wrap .fc-theme-bootstrap .fc-scrollgrid,
+[data-bs-theme="dark"] .dos-calendar-wrap .fc-scrollgrid {
+  background: var(--dos-surface);
+}
+
+[data-bs-theme="dark"] .dos-calendar-wrap .fc-daygrid-day.fc-day-other {
+  background: #1a1d21;
+}
+
+[data-bs-theme="dark"] .dos-calendar-wrap .fc-day-other .fc-daygrid-day-number {
+  color: #495057;
+}
+
 @media print {
   #dosCalendarPrintArea {
     min-height: auto !important;

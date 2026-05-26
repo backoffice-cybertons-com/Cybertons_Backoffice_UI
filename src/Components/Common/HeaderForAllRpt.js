@@ -26,99 +26,120 @@ const HeaderForAllRpt = ({ reportName = "Outstanding Comparison Report" }) => {
   const companyEmail = companyInfo?.email || "";
 
   return (
-    <div
-      className="border-bottom mb-1 pb-1"
-      style={{
-        background: "#fff",
-        padding: "10px 18px",
-      }}
-    >
-      <div className="d-flex justify-content-between align-items-start flex-wrap">
-
-        {/* Left Side */}
-        <div className="d-flex align-items-start">
-
-          {/* Logo */}
-          <img
-            src={
-              companyInfo?.logoPath
-                ? `${process.env.REACT_APP_API_URL}${companyInfo.logoPath}`
-                : companyLogo
+    <>
+      <style>
+        {`
+        @media print {
+            .header-for-all-rpt {
+                background: #fff !important;
+                border-bottom: 1px solid #e9ebec !important;
             }
-            alt="Company Logo"
-            style={{
-              width: "95px",
-              height: "95px",
-              objectFit: "contain",
-              marginRight: "14px",
-            }}
-          />
+            .rpt-header-badge {
+                background: #eff6ff !important;
+                border: 1px solid #bfdbfe !important;
+            }
+            .rpt-header-badge h4 {
+                color: #1e3a8a !important;
+            }
+        }
+        `}
+      </style>
+      <div
+        className="border-bottom mb-1 pb-1 header-for-all-rpt"
+        style={{
+          background: "var(--vz-card-bg, #fff)",
+          borderBottom: "1px solid var(--vz-border-color, #e9ebec)",
+          padding: "10px 18px",
+        }}
+      >
+        <div className="d-flex justify-content-between align-items-start flex-wrap">
 
-          {/* Company Details */}
-          <div
-            style={{
-              height: "95px",
-              display: "flex",
-              flexDirection: "column",
-              justifyContent: "space-between",
-              paddingBottom: "2px",
-            }}
-          >
-            <h5
+          {/* Left Side */}
+          <div className="d-flex align-items-start">
+
+            {/* Logo */}
+            <img
+              src={
+                companyInfo?.logoPath
+                  ? `${process.env.REACT_APP_API_URL}${companyInfo.logoPath}`
+                  : companyLogo
+              }
+              alt="Company Logo"
               style={{
-                margin: 0,
-                fontWeight: "700",
-                color: "#111",
-                fontSize: "16px",
+                width: "95px",
+                height: "95px",
+                objectFit: "contain",
+                marginRight: "14px",
               }}
-            >
-              {companyName}
-            </h5>
+            />
 
+            {/* Company Details */}
             <div
               style={{
-                fontSize: "11px",
-                color: "#444",
-                lineHeight: "1.4",
+                height: "95px",
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "space-between",
+                paddingBottom: "2px",
               }}
             >
-              <div>{companyAddress}</div>
+              <h5
+                style={{
+                  margin: 0,
+                  fontWeight: "700",
+                  color: "var(--vz-heading-color, #111)",
+                  fontSize: "16px",
+                }}
+              >
+                {companyName}
+              </h5>
 
-              <div>
-                <strong>Tel:</strong> {companyMobile}
-              </div>
+              <div
+                style={{
+                  fontSize: "11px",
+                  color: "var(--vz-secondary-color, #444)",
+                  lineHeight: "1.4",
+                }}
+              >
+                <div>{companyAddress}</div>
 
-              <div>
-                <strong>Email:</strong> {companyEmail}
+                <div>
+                  <strong>Tel:</strong> {companyMobile}
+                </div>
+
+                <div>
+                  <strong>Email:</strong> {companyEmail}
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Right Side */}
-        <div
-          style={{
-            background: "#eff6ff",
-            padding: "10px 16px",
-            borderRadius: "8px",
-            border: "1px solid #bfdbfe",
-            minWidth: "240px",
-            textAlign: "center",
-          }}
-        >
-          <h4
+          {/* Right Side */}
+          <div
+            className="rpt-header-badge"
             style={{
-              margin: 0,
-              fontSize: "18px",
-              fontWeight: "700",
-              color: "#1e3a8a",
+              background: "var(--vz-light, #eff6ff)",
+              padding: "10px 16px",
+              borderRadius: "8px",
+              border: "1px solid var(--vz-border-color, #bfdbfe)",
+              minWidth: "240px",
+              textAlign: "center",
             }}
           >
-            {reportName}
-          </h4>
+            <h4
+              style={{
+                margin: 0,
+                fontSize: "18px",
+                fontWeight: "700",
+                color: "var(--vz-primary, #1e3a8a)",
+              }}
+            >
+              {reportName}
+            </h4>
+          </div>
         </div>
       </div>
-    </div >
+    </>
   );
 };
 

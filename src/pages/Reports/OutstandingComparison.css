@@ -1,0 +1,325 @@
+/* OutstandingComparison.css — Outstanding Comparison Report */
+
+.oc-page-subtitle {
+  font-size: 13px;
+  color: #64748b;
+  margin-top: -0.35rem;
+  margin-bottom: 0;
+}
+
+.oc-filter-card .card-body {
+  padding: 1rem 1.25rem;
+}
+
+.oc-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1rem;
+}
+
+.oc-pagination {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+}
+
+.oc-pagination .form-select {
+  width: auto;
+  min-width: 95px;
+}
+
+.oc-filter-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.oc-report-card {
+  overflow: hidden;
+}
+
+.oc-report-body {
+  padding: 0.75rem 1rem 1rem;
+}
+
+.oc-table-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  width: 100%;
+}
+
+/* ── Summary table ── */
+.oc-summary-wrap {
+  width: 100%;
+  overflow-x: auto;
+  display: flex;
+  justify-content: center;
+  padding: 0.25rem 0 0.5rem;
+}
+
+.oc-summary-table {
+  border-collapse: collapse;
+  width: 100%;
+  max-width: 720px;
+  min-width: 320px;
+  font-size: 13px;
+  border: 1px solid #e3e6ea;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 10px rgba(30, 58, 110, 0.06);
+}
+
+.oc-summary-table th,
+.oc-summary-table td {
+  border: 1px solid #e3e6ea;
+  padding: 8px 14px;
+}
+
+.oc-summary-table thead th {
+  background: #eef2f7;
+  font-weight: 700;
+  text-align: right;
+  color: #1e3a6e;
+  white-space: nowrap;
+}
+
+.oc-summary-table thead th:first-child {
+  text-align: left;
+  min-width: 140px;
+}
+
+.oc-summary-label {
+  font-weight: 700;
+  text-align: left;
+  white-space: nowrap;
+  background: #f8f9fa;
+  color: #334155;
+}
+
+.oc-summary-num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: #334155;
+  background: #fff;
+}
+
+.oc-summary-pl {
+  text-align: right;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.oc-pl-profit {
+  color: #16a34a;
+}
+
+.oc-pl-loss {
+  color: #dc2626;
+}
+
+/* Diff column in detail grid */
+.oc-diff-positive {
+  color: #dc2626;
+  font-weight: 600;
+}
+
+.oc-diff-negative {
+  color: #16a34a;
+  font-weight: 600;
+}
+
+.oc-skeleton {
+  height: 12px;
+  border-radius: 6px;
+  margin: 10px 0;
+  background: linear-gradient(90deg, #f0f3f8 25%, #e8ecf2 50%, #f0f3f8 75%);
+  background-size: 200% 100%;
+  animation: oc-shimmer 1.2s ease-in-out infinite;
+}
+
+@keyframes oc-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.oc-empty-hint {
+  text-align: center;
+  padding: 2rem 1rem;
+  color: #94a3b8;
+  font-size: 14px;
+}
+
+@media (max-width: 767.98px) {
+  .oc-filter-actions {
+    justify-content: stretch;
+  }
+
+  .oc-filter-actions .btn {
+    flex: 1 1 auto;
+  }
+
+  .oc-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+/* MergedHeaderTable — diff colors inside dark table cells */
+.mht-root--dark .oc-diff-positive {
+  color: #f48fb1 !important;
+}
+
+.mht-root--dark .oc-diff-negative {
+  color: #a5d6a7 !important;
+}
+
+.mht-root--dark input::placeholder {
+  color: #6c757d;
+  opacity: 1;
+}
+
+/* ── Dark theme (Bootstrap data-bs-theme + page class) ── */
+[data-bs-theme="dark"] .oc-page-subtitle,
+.oc-page--dark .oc-page-subtitle {
+  color: #878a99;
+}
+
+[data-bs-theme="dark"] .oc-report-body,
+.oc-page--dark .oc-report-body {
+  color: #ced4da;
+}
+
+[data-bs-theme="dark"] .oc-summary-table,
+.oc-page--dark .oc-summary-table {
+  border-color: #32383e;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.35);
+}
+
+[data-bs-theme="dark"] .oc-summary-table th,
+[data-bs-theme="dark"] .oc-summary-table td,
+.oc-page--dark .oc-summary-table th,
+.oc-page--dark .oc-summary-table td {
+  border-color: #32383e;
+}
+
+[data-bs-theme="dark"] .oc-summary-table thead th,
+.oc-page--dark .oc-summary-table thead th {
+  background: #2a2f34;
+  color: #e9ecef;
+}
+
+[data-bs-theme="dark"] .oc-summary-label,
+.oc-page--dark .oc-summary-label {
+  background: #262a2f;
+  color: #e9ecef;
+}
+
+[data-bs-theme="dark"] .oc-summary-num,
+.oc-page--dark .oc-summary-num {
+  color: #ced4da;
+  background: #212529;
+}
+
+[data-bs-theme="dark"] .oc-summary-pl,
+.oc-page--dark .oc-summary-pl {
+  background: #212529;
+}
+
+[data-bs-theme="dark"] .oc-pl-profit,
+.oc-page--dark .oc-pl-profit {
+  color: #81c784;
+}
+
+[data-bs-theme="dark"] .oc-pl-loss,
+.oc-page--dark .oc-pl-loss {
+  color: #ef9a9a;
+}
+
+[data-bs-theme="dark"] .oc-diff-positive,
+.oc-page--dark .oc-diff-positive {
+  color: #f48fb1;
+}
+
+[data-bs-theme="dark"] .oc-diff-negative,
+.oc-page--dark .oc-diff-negative {
+  color: #a5d6a7;
+}
+
+[data-bs-theme="dark"] .oc-skeleton,
+.oc-page--dark .oc-skeleton {
+  background: linear-gradient(90deg, #2a2f34 25%, #32383e 50%, #2a2f34 75%);
+  background-size: 200% 100%;
+}
+
+[data-bs-theme="dark"] .oc-empty-hint,
+.oc-page--dark .oc-empty-hint {
+  color: #adb5bd;
+}
+
+[data-bs-theme="dark"] .oc-toolbar .text-muted,
+.oc-page--dark .oc-toolbar .text-muted {
+  color: #adb5bd !important;
+}
+
+[data-bs-theme="dark"] .oc-toolbar strong,
+.oc-page--dark .oc-toolbar strong {
+  color: #e9ecef;
+}
+
+/* react-select (Party filter) */
+[data-bs-theme="dark"] .oc-select__control,
+.oc-page--dark .oc-select__control {
+  background-color: #262a2f;
+  border-color: #2a2f34;
+  color: #ced4da;
+}
+
+[data-bs-theme="dark"] .oc-select__control:hover,
+.oc-page--dark .oc-select__control:hover {
+  border-color: #3d4449;
+}
+
+[data-bs-theme="dark"] .oc-select__single-value,
+[data-bs-theme="dark"] .oc-select__input-container,
+.oc-page--dark .oc-select__single-value,
+.oc-page--dark .oc-select__input-container {
+  color: #ced4da;
+}
+
+[data-bs-theme="dark"] .oc-select__menu,
+.oc-page--dark .oc-select__menu {
+  background-color: #292e33;
+  border: 1px solid #32383e;
+}
+
+[data-bs-theme="dark"] .oc-select__option,
+.oc-page--dark .oc-select__option {
+  color: #ced4da;
+}
+
+[data-bs-theme="dark"] .oc-select__option--is-focused,
+.oc-page--dark .oc-select__option--is-focused {
+  background-color: #2f343a;
+  color: #e9ecef;
+}
+
+[data-bs-theme="dark"] .oc-select__option--is-selected,
+.oc-page--dark .oc-select__option--is-selected {
+  background-color: #405189;
+  color: #fff;
+}
+
+[data-bs-theme="dark"] .oc-select__indicator,
+[data-bs-theme="dark"] .oc-select__placeholder,
+.oc-page--dark .oc-select__indicator,
+.oc-page--dark .oc-select__placeholder {
+  color: #adb5bd;
+}

@@ -239,7 +239,7 @@ const DailyOSReport = () => {
     if (routeState.toDate) {
       setToDate(toLocalYMD(routeState.toDate));
     }
-   }, []);
+  }, []);
 
   useEffect(() => {
     const loadParties = async () => {
@@ -502,6 +502,7 @@ const DailyOSReport = () => {
   }, [companyId, fromDate, toDate, selectedParty]);
 
   const fetchCalendarReport = useCallback(async () => {
+    debugger;
     const params = {
       company_id: Number(companyId) || companyId,
       from_date: fromDate,
@@ -577,10 +578,9 @@ const DailyOSReport = () => {
       return;
     }
     didAutoFetchCalendar.current = true;
-    const mode =
-      routeState.viewMode === "calendar" ? "calendar" : "table";
+    const mode = routeState.viewMode === "calendar" ? "calendar" : "table";
     runReport(mode);
-   }, []);
+  }, []);
 
   const handleExportExcel = useCallback(() => {
     const exportRows =
