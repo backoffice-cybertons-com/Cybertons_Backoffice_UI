@@ -4,6 +4,8 @@ import {
     Card, CardHeader, CardBody, Col, Container, Row,
     Button, Input, Label, Table, Spinner
 } from 'reactstrap';
+import { useSelector } from 'react-redux';
+import { createSelector } from 'reselect';
 import * as XLSX from 'xlsx-js-style';
 import { saveAs } from 'file-saver';
 import { getStockSummaryReport } from "../../helpers/fakebackend_helper";
@@ -13,7 +15,14 @@ import "./StockSummaryReport.css";
 import HeaderForAllRpt from '../../Components/Common/HeaderForAllRpt';
 import FooterForAllRpt from '../../Components/Common/FooterForAllRpt';
 
+const selectLayoutState = (state) => state.Layout;
+const selectLayoutProperties = createSelector(selectLayoutState, (layout) => ({
+    layoutModeType: layout.layoutModeType,
+}));
+
 const StockSummaryReport = () => {
+    const { layoutModeType } = useSelector(selectLayoutProperties);
+    const isDarkMode = layoutModeType === 'dark';
     const today = new Date();
     const firstOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
 
@@ -228,7 +237,7 @@ const StockSummaryReport = () => {
 
     return (
         <React.Fragment>
-            <div className="page-content">
+            <div className={`page-content stock-summary-page${isDarkMode ? ' stock-summary-page--dark' : ''}`}>
                 <Container fluid>
                     <BreadCrumb title="Stock Summary" pageTitle="Reports" />
 
@@ -331,7 +340,7 @@ const StockSummaryReport = () => {
                                                 <Card className="ssr-summary-card closing mb-0">
                                                     <CardBody className="py-1 px-2 text-center">
                                                         <div className="text-muted text-uppercase fw-semibold ssr-summary-label">Closing</div>
-                                                        <h4 className="ssr-summary-value mb-0 text-dark">{formatQty(totals.closing)}</h4>
+                                                        <h4 className="ssr-summary-value mb-0 ssr-closing-value">{formatQty(totals.closing)}</h4>
                                                     </CardBody>
                                                 </Card>
                                             </Col>
@@ -389,7 +398,7 @@ const StockSummaryReport = () => {
                                                 <div style={{ width: '12.5%' }} className="text-end">{formatQty(totals.opening)}</div>
                                                 <div style={{ width: '12.5%' }} className="text-end text-success">{formatQty(totals.inward)}</div>
                                                 <div style={{ width: '12.5%' }} className="text-end text-danger">{formatQty(totals.outward)}</div>
-                                                <div style={{ width: '12.5%' }} className="text-end text-dark">{formatQty(totals.closing)}</div>
+                                                <div style={{ width: '12.5%' }} className="text-end ssr-closing-value">{formatQty(totals.closing)}</div>
                                             </div>
                                         </div>
                                     </CardBody>

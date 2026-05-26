@@ -285,3 +285,73 @@
         position: relative !important;
     }
 }
+
+/* Closing qty — theme-aware (replaces text-dark) */
+.ssr-closing-value {
+  color: #212529;
+}
+
+/* ── Dark theme ── */
+[data-bs-theme="dark"] .stock-summary-page .ssr-table-wrap,
+.stock-summary-page--dark .ssr-table-wrap {
+  background: var(--vz-card-bg, #212529);
+  border-color: #32383e;
+}
+
+[data-bs-theme="dark"] .stock-summary-page .ssr-table thead th,
+.stock-summary-page--dark .ssr-table thead th {
+  background-color: #2a2f34 !important;
+  border-bottom-color: #32383e !important;
+  color: #e9ecef;
+}
+
+[data-bs-theme="dark"] .stock-summary-page .ssr-table tbody td,
+.stock-summary-page--dark .ssr-table tbody td {
+  color: #ced4da;
+  border-bottom-color: #2f343a;
+}
+
+[data-bs-theme="dark"] .stock-summary-page .ssr-total-strip,
+.stock-summary-page--dark .ssr-total-strip {
+  background: #262a2f;
+  border-top-color: #32383e;
+  color: #e9ecef;
+}
+
+[data-bs-theme="dark"] .stock-summary-page .ssr-closing-value,
+.stock-summary-page--dark .ssr-closing-value {
+  color: #e9ecef;
+}
+
+[data-bs-theme="dark"] .stock-summary-page .ssr-summary-card,
+.stock-summary-page--dark .ssr-summary-card {
+  background: var(--vz-card-bg, #212529) !important;
+  border-color: #32383e !important;
+}
+
+[data-bs-theme="dark"] .stock-summary-page .ssr-summary-label,
+.stock-summary-page--dark .ssr-summary-label {
+  color: #adb5bd !important;
+}
+
+[data-bs-theme="dark"] .stock-summary-page .report-card-compact,
+.stock-summary-page--dark .report-card-compact {
+  background: var(--vz-card-bg, #212529);
+}
+
+[data-bs-theme="dark"] .stock-summary-page .report-card-compact .footer-print-sticky,
+.stock-summary-page--dark .report-card-compact .footer-print-sticky {
+  background: var(--vz-card-bg, #212529) !important;
+  border-top-color: #32383e !important;
+  color: #ced4da !important;
+}
+
+[data-bs-theme="dark"] .stock-summary-page .ssr-table-container::-webkit-scrollbar-track,
+.stock-summary-page--dark .ssr-table-container::-webkit-scrollbar-track {
+  background: #2a2f34;
+}
+
+[data-bs-theme="dark"] .stock-summary-page .ssr-table-container::-webkit-scrollbar-thumb,
+.stock-summary-page--dark .ssr-table-container::-webkit-scrollbar-thumb {
+  background: #495057;
+}

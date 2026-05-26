@@ -1,11 +1,21 @@
 import React, { useState, useEffect } from "react";
+import { useSelector } from "react-redux";
+import { createSelector } from "reselect";
 import companyLogo from "../../assets/images/softsense.jpg";
 import { APIClient } from "../../helpers/api_helper";
 import * as url from "../../helpers/url_helper";
+import "./HeaderForAllRpt.css";
 
 const api = new APIClient();
 
+const selectLayoutState = (state) => state.Layout;
+const selectLayoutProperties = createSelector(selectLayoutState, (layout) => ({
+  layoutModeType: layout.layoutModeType,
+}));
+
 const HeaderForAllRpt = ({ reportName = "Outstanding Comparison Report" }) => {
+  const { layoutModeType } = useSelector(selectLayoutProperties);
+  const isDarkMode = layoutModeType === "dark";
   const [companyInfo, setCompanyInfo] = useState(null);
 
   useEffect(() => {
@@ -26,26 +36,8 @@ const HeaderForAllRpt = ({ reportName = "Outstanding Comparison Report" }) => {
   const companyEmail = companyInfo?.email || "";
 
   return (
-    <>
-      <style>
-        {`
-        @media print {
-            .header-for-all-rpt {
-                background: #fff !important;
-                border-bottom: 1px solid #e9ebec !important;
-            }
-            .rpt-header-badge {
-                background: #eff6ff !important;
-                border: 1px solid #bfdbfe !important;
-            }
-            .rpt-header-badge h4 {
-                color: #1e3a8a !important;
-            }
-        }
-        `}
-      </style>
       <div
-        className="border-bottom mb-1 pb-1 header-for-all-rpt"
+        className={`border-bottom mb-1 pb-1 header-for-all-rpt${isDarkMode ? " header-for-all-rpt--dark" : ""}`}
         style={{
           background: "var(--vz-card-bg, #fff)",
           borderBottom: "1px solid var(--vz-border-color, #e9ebec)",
@@ -95,6 +87,7 @@ const HeaderForAllRpt = ({ reportName = "Outstanding Comparison Report" }) => {
               </h5>
 
               <div
+                className="rpt-company-meta"
                 style={{
                   fontSize: "11px",
                   color: "var(--vz-secondary-color, #444)",
@@ -139,7 +132,6 @@ const HeaderForAllRpt = ({ reportName = "Outstanding Comparison Report" }) => {
           </div>
         </div>
       </div>
-    </>
   );
 };
 

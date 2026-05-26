@@ -4,6 +4,8 @@ import {
     Card, CardHeader, CardBody, Col, Container, Row,
     Button, Input, Label, Table, Spinner
 } from 'reactstrap';
+import { useSelector } from 'react-redux';
+import { createSelector } from 'reselect';
 import Flatpickr from "react-flatpickr";
 import * as XLSX from 'xlsx-js-style';
 import { saveAs } from 'file-saver';
@@ -14,7 +16,14 @@ import "./TrialBalanceReport.css";
 import HeaderForAllReport from "../../Components/Common/HeaderForAllRpt";
 import FooterForAllRpt from "../../Components/Common/FooterForAllRpt";
 
+const selectLayoutState = (state) => state.Layout;
+const selectLayoutProperties = createSelector(selectLayoutState, (layout) => ({
+    layoutModeType: layout.layoutModeType,
+}));
+
 const TrialBalanceReport = () => {
+    const { layoutModeType } = useSelector(selectLayoutProperties);
+    const isDarkMode = layoutModeType === 'dark';
     const [asOfDate, setAsOfDate] = useState(new Date());
     const [reportData, setReportData] = useState(null);
     const [loading, setLoading] = useState(false);
@@ -539,7 +548,7 @@ const TrialBalanceReport = () => {
 
                                             {/* Static Total Strip Under Table */}
                                             <div className="tb-total-strip d-flex align-items-center py-2">
-                                                <div style={{ width: '50%' }} className="text-start ps-4 text-dark fw-bold">GRAND TOTAL</div>
+                                                <div style={{ width: '50%' }} className="text-start ps-4 tb-grand-total-label fw-bold">GRAND TOTAL</div>
                                                 <div style={{ width: '25%' }} className="text-end text-success fw-bold">{formatMoney(totalDebit)}</div>
                                                 <div style={{ width: '25%' }} className="text-end text-danger pe-3 fw-bold">{formatMoney(totalCredit)}</div>
                                             </div>

@@ -4,6 +4,8 @@ import {
     Card, CardBody, Col, Container, Row,
     Button, Input, Label, Table, Spinner
 } from 'reactstrap';
+import { useSelector } from 'react-redux';
+import { createSelector } from 'reselect';
 import * as XLSX from 'xlsx-js-style';
 import { saveAs } from 'file-saver';
 import { getStockLedgerDatewise } from "../../helpers/fakebackend_helper";
@@ -13,7 +15,14 @@ import "./StockSummaryReport.css";
 import HeaderForAllRpt from '../../Components/Common/HeaderForAllRpt';
 import FooterForAllRpt from '../../Components/Common/FooterForAllRpt';
 
+const selectLayoutState = (state) => state.Layout;
+const selectLayoutProperties = createSelector(selectLayoutState, (layout) => ({
+    layoutModeType: layout.layoutModeType,
+}));
+
 const StockLedgerDatewiseReport = () => {
+    const { layoutModeType } = useSelector(selectLayoutProperties);
+    const isDarkMode = layoutModeType === 'dark';
     const today = new Date();
     const firstOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
 
@@ -182,7 +191,7 @@ const StockLedgerDatewiseReport = () => {
 
     return (
         <React.Fragment>
-            <div className="page-content">
+            <div className={`page-content stock-summary-page${isDarkMode ? ' stock-summary-page--dark' : ''}`}>
                 <Container fluid>
                     <BreadCrumb title="Stock Ledger Datewise" pageTitle="Reports" />
 
@@ -257,7 +266,7 @@ const StockLedgerDatewiseReport = () => {
                                                 <Card className="ssr-summary-card closing">
                                                     <CardBody className="py-1 px-2 text-center">
                                                         <div className="text-muted text-uppercase fw-semibold ssr-summary-label">Closing Balance</div>
-                                                        <h4 className="ssr-summary-value mb-0 text-dark">
+                                                        <h4 className="ssr-summary-value mb-0 ssr-closing-value">
                                                             {rows.length > 0 ? formatQty(rows[rows.length - 1].balanceQty) : '—'}
                                                         </h4>
                                                     </CardBody>
