@@ -234,10 +234,10 @@ const GenericMasterModal = ({ isOpen, toggle, masterId, isEdit = false, selected
                                             <Select
                                                 id={field.name}
                                                 name={field.name}
-                                                value={(selectOptions[field.name] || []).find(opt => String(opt.value) === String(formik.values[field.name])) || null}
+                                                value={(selectOptions[field.name] || field.options || []).find(opt => String(opt.value) === String(formik.values[field.name])) || null}
                                                 onChange={(opt) => formik.setFieldValue(field.name, opt ? opt.value : '')}
                                                 onBlur={formik.handleBlur}
-                                                options={selectOptions[field.name] || []}
+                                                options={selectOptions[field.name] || field.options || []}
                                                 placeholder={`Select ${field.label}`}
                                                 isSearchable
                                                 isClearable

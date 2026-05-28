@@ -377,7 +377,8 @@ const GenericMasterList = () => {
             ),
             selector: row => row?.[col.accessor],
             sortable: true,
-            wrap: true,
+            wrap: false,
+            minWidth: col.accessor.toLowerCase() === "description" ? "350px" : undefined,
             cell: row => {
                 const raw = row?.[col.accessor];
                 if (isProductMaster && col.accessor.toLowerCase() === "name") {
@@ -385,6 +386,13 @@ const GenericMasterList = () => {
                     return (
                         <div>
                             <div>{productName}</div>
+                        </div>
+                    );
+                }
+                if (col.accessor.toLowerCase() === "description") {
+                    return (
+                        <div style={{ whiteSpace: 'nowrap' }}>
+                            {raw}
                         </div>
                     );
                 }
@@ -396,7 +404,7 @@ const GenericMasterList = () => {
                 }
                 if (typeof raw === "boolean") return raw ? "Yes" : "No";
                 if (raw === null || raw === undefined) return "";
-                return String(raw);
+                return <div style={{ whiteSpace: 'nowrap' }}>{String(raw)}</div>;
             },
         };
         });

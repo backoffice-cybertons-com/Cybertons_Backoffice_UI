@@ -39,7 +39,27 @@ export const masterConfig = {
                     { label: "Credit (CR)", value: "CR" }
                 ]
             },
-            { name: "ReportGroup", label: "Report Group", type: "text" },
+            { 
+                name: "ReportGroup", 
+                label: "Report Group", 
+                type: "select",
+                options: [
+                    { label: "Assets", value: "Assets" },
+                    { label: "Capital Account", value: "Capital Account" },
+                    { label: "Cash & Bank", value: "Cash & Bank" },
+                    { label: "Direct Expense", value: "Direct Expense" },
+                    { label: "Direct Income", value: "Direct Income" },
+                    { label: "Duties And Taxes", value: "Duties And Taxes" },
+                    { label: "Indirect Expense", value: "Indirect Expense" },
+                    { label: "Indirect Income", value: "Indirect Income" },
+                    { label: "Liabilities", value: "Liabilities" },
+                    { label: "Loans", value: "Loans" },
+                    { label: "Sundry Creditors", value: "Sundry Creditors" },
+                    { label: "Sundry Debtors", value: "Sundry Debtors" },
+                    { label: "Taxes", value: "Taxes" },
+                    { label: "Others", value: "Others" }
+                ]
+            },
             { name: "IsDynamicNature", label: "Dynamic Nature", type: "checkbox" },
             { name: "IsCustomer", label: "Is Customer?", type: "checkbox" },
             { name: "IsVendor", label: "Is Vendor?", type: "checkbox" },
