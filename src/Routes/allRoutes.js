@@ -11,6 +11,7 @@ import DashboardProject from "../pages/DashboardProject";
 import DashboardNFT from "../pages/DashboardNFT";
 import DashboardJob from "../pages/DashboardJob/";
 import DashboardMain from "../pages/DashboardMain";
+import SystemAnnouncements from "../pages/SystemAnnouncements";
 
 
 //Calendar
@@ -321,6 +322,7 @@ const authProtectedRoutes = [
   { path: "/dashboard-crm", component: <DashboardCrm /> },
   { path: "/dashboard", component: <DashboardMain /> },
   { path: "/index", component: <DashboardMain /> },
+  { path: "/system-announcements", component: <SystemAnnouncements /> },
 
   { path: "/dashboard-crypto", component: <DashboardCrypto /> },
   { path: "/dashboard-projects", component: <DashboardProject /> },

@@ -13,6 +13,7 @@
 import React, { useEffect, useState } from "react";
 import PropTypes from "prop-types";
 import { Container, Row, Col } from "reactstrap";
+import { useSearchParams } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { createSelector } from "reselect";
 // Components
@@ -43,6 +44,7 @@ import {
 const companyId = localStorage.getItem("companyId");
 const Calendar = () => {
   const dispatch = useDispatch();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   // --- STATE ---
   const [modal, setModal] = useState(false);
@@ -162,6 +164,51 @@ const Calendar = () => {
       setDeleteModal(false);
     }
   }, [isEventUpdated]);
+
+  // Open task from notification deep link (?taskId=)
+  useEffect(() => {
+    const taskId = searchParams.get("taskId");
+    if (!taskId || !events?.length) return;
+
+    const event = events.find(
+      (e) => String(e.id) === String(taskId)
+    );
+    if (!event) return;
+
+    const props = event.extendedProps || event;
+    setSelectedTask({
+      id: event.id,
+      title: event.title,
+      start: event.start,
+      end: event.end,
+      allDay: event.allDay,
+      className: event.className || event.classNames,
+      category: event.category || event.className,
+      description: props.description || event.description || "",
+      status: props.status || event.status || "Pending",
+      priority: props.priority || event.priority || "Medium",
+      assignedUserId: props.assignedUserId || event.assignedUserId || null,
+      reminder: props.reminder ?? event.reminder ?? false,
+      reminderDate: props.reminderDate || event.reminderDate || null,
+      finishDate: props.finishDate || event.finishDate || null,
+      isRecurring: props.isRecurring ?? event.isRecurring ?? false,
+      recurringGroupId: props.recurringGroupId || event.recurringGroupId || null,
+      recurrenceParentId: props.recurrenceParentId || event.recurrenceParentId || null,
+      recurrenceType: props.recurrenceType || event.recurrenceType || "WEEKLY",
+      recurrenceInterval: props.recurrenceInterval || event.recurrenceInterval || 1,
+      recurrenceDays: props.recurrenceDays || event.recurrenceDays || [],
+      ...getMonthlyRecurrenceFields(event, event.start ? new Date(event.start).getDate() : 1),
+      recurrenceEndDate: props.recurrenceEndDate || event.recurrenceEndDate || null,
+      recurrenceOccurrenceCount: props.recurrenceOccurrenceCount || event.recurrenceOccurrenceCount || 10,
+      reminderOffsetMinutes: props.reminderOffsetMinutes ?? event.reminderOffsetMinutes ?? 0,
+      recurrenceYearMonth: props.recurrenceYearMonth || event.recurrenceYearMonth || 1,
+      recurrenceYearDay: props.recurrenceYearDay || event.recurrenceYearDay || 1,
+      recurrenceEndType: props.recurrenceEndType || event.recurrenceEndType || "NEVER",
+      recurrenceRule: props.recurrenceRule || event.recurrenceRule || null,
+    });
+    setModal(true);
+    setSearchParams({}, { replace: true });
+  }, [searchParams, events, setSearchParams]);
 
   // --- HANDLERS ---
   const toggle = () => {

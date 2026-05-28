@@ -572,15 +572,15 @@
   --dos-selected: rgba(59, 130, 246, 0.14);
   --dos-selected-border: rgba(110, 168, 254, 0.4);
   --dos-sale: #6ea8fe;
-  --dos-sale-bg: rgba(59, 130, 246, 0.22);
-  --dos-receipt: #81c784;
-  --dos-receipt-bg: rgba(76, 175, 80, 0.2);
-  --dos-os: #ef9a9a;
-  --dos-os-bg: rgba(244, 67, 54, 0.2);
-  --dos-adj: #b39ddb;
-  --dos-adj-bg: rgba(124, 58, 237, 0.2);
-  --dos-term: #ffb74d;
-  --dos-term-bg: rgba(255, 152, 0, 0.18);
+  --dos-sale-bg: rgba(59, 130, 246, 0.15);
+  --dos-receipt: #4ade80;
+  --dos-receipt-bg: rgba(74, 222, 128, 0.15);
+  --dos-os: #f87171;
+  --dos-os-bg: rgba(248, 113, 113, 0.15);
+  --dos-adj: #c4b5fd;
+  --dos-adj-bg: rgba(139, 92, 246, 0.15);
+  --dos-term: #fbbf24;
+  --dos-term-bg: rgba(245, 158, 11, 0.15);
   --dos-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.28);
   --dos-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.35);
 }
@@ -667,6 +667,36 @@
 
 [data-bs-theme="dark"] .dos-calendar-wrap .fc-day-other .fc-daygrid-day-number {
   color: #495057;
+}
+
+/* ── Dynamic API Colors ── */
+.dos-custom-bg {
+  background-color: var(--dos-api-bg);
+}
+
+.dos-custom-color {
+  color: var(--dos-api-color);
+}
+
+.dos-calendar-wrap .fc-daygrid-day.dos-custom-bg {
+  background-color: var(--dos-api-bg);
+}
+
+.dos-calendar-wrap .fc-daygrid-day.dos-custom-bg:hover {
+  background-color: color-mix(in srgb, var(--dos-api-bg) 90%, #000);
+}
+
+[data-bs-theme="dark"] .dos-custom-bg,
+[data-bs-theme="dark"] .dos-calendar-wrap .fc-daygrid-day.dos-custom-bg {
+  background-color: color-mix(in srgb, var(--dos-api-bg) 20%, transparent);
+}
+
+[data-bs-theme="dark"] .dos-calendar-wrap .fc-daygrid-day.dos-custom-bg:hover {
+  background-color: color-mix(in srgb, var(--dos-api-bg) 30%, transparent);
+}
+
+[data-bs-theme="dark"] .dos-custom-color {
+  color: color-mix(in srgb, var(--dos-api-color) 80%, #fff);
 }
 
 @media print {

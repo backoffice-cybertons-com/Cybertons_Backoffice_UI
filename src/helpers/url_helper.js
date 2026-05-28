@@ -166,6 +166,12 @@ export const GET_COMPANY_PROFILE = "/api/CompanyProfile";
 export const UPDATE_COMPANY_PROFILE = "/api/CompanyProfile";
 export const UPLOAD_COMPANY_LOGO = "/api/CompanyProfile/upload-logo";
 
+// Outstanding Term Config
+export const GET_OUTSTANDING_TERM_CONFIG_LIST = "/api/outstanding-term-config/list"; // + /{companyId}
+export const ADD_OUTSTANDING_TERM_CONFIG = "/api/outstanding-term-config/add";
+export const UPDATE_OUTSTANDING_TERM_CONFIG = "/api/outstanding-term-config/update";
+export const DELETE_OUTSTANDING_TERM_CONFIG = "/api/outstanding-term-config/delete"; // + /{configId}
+
 // Delivery Challan
 export const GET_DELIVERY_CHALLANS = "/api/deliveryChallan";
 export const GET_DELIVERY_CHALLANS_DETAILED = "/api/deliveryChallan/detailed";

@@ -7,6 +7,7 @@ import Header from './Header';
 import Sidebar from './Sidebar';
 import Footer from './Footer';
 import RightSidebar from '../Components/Common/RightSidebar';
+import { AnnouncementProvider } from '../Components/Announcements/AnnouncementContext';
 
 //import actions
 import {
@@ -182,7 +183,7 @@ const Layout = (props) => {
 
 
     return (
-        <React.Fragment>
+        <AnnouncementProvider>
             <div id="layout-wrapper">
                 <Header
                     headerClass={headerClass}
@@ -197,8 +198,7 @@ const Layout = (props) => {
                 </div>
             </div>
             <RightSidebar />
-        </React.Fragment>
-
+        </AnnouncementProvider>
     );
 };
 

@@ -201,6 +201,16 @@ export const getCompanyProfile = () => api.get(url.GET_COMPANY_PROFILE);
 export const updateCompanyProfile = (profile) => api.post(url.UPDATE_COMPANY_PROFILE, profile);
 export const uploadCompanyLogo = (data) => api.create(url.UPLOAD_COMPANY_LOGO, data, { headers: { 'Content-Type': 'multipart/form-data' } });
 
+// Outstanding Term Config
+export const getOutstandingTermConfigList = (companyId) =>
+  api.get(`${url.GET_OUTSTANDING_TERM_CONFIG_LIST}/${companyId}`);
+export const addOutstandingTermConfig = (payload) =>
+  api.post(url.ADD_OUTSTANDING_TERM_CONFIG, payload);
+export const updateOutstandingTermConfig = (payload) =>
+  api.put(url.UPDATE_OUTSTANDING_TERM_CONFIG, payload);
+export const deleteOutstandingTermConfig = (configId) =>
+  api.delete(`${url.DELETE_OUTSTANDING_TERM_CONFIG}/${configId}`);
+
 // add Companies
 export const addNewCompanies = company => api.create(url.ADD_NEW_COMPANIES, company);
 

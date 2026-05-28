@@ -124,6 +124,8 @@ const normalizeCalendarRow = (row) => ({
   totalOs: Number(row.totalOs ?? row.TotalOs ?? 0),
   totalAdj: Number(row.totalAdj ?? row.TotalAdj ?? 0),
   avgTerms: Number(row.avgTerms ?? row.AvgTerms ?? 0),
+  colorCode: row.color_code ?? row.ColorCode ?? row.colorCode ?? "",
+  bgColor: row.bg_color ?? row.BgColor ?? row.bgColor ?? "",
 });
 
 const DailyOSCalendarPanel = forwardRef(
@@ -200,9 +202,20 @@ const DailyOSCalendarPanel = forwardRef(
         const valueClass = isEmpty
           ? "metric-val metric-val--empty"
           : `metric-val metric-val--${m.type}`;
+
+        let extraClass = "";
+        let extraStyle = "";
+
+        if (m.type === "term" && !isEmpty) {
+          if (data.colorCode) {
+            extraClass = " dos-custom-color";
+            extraStyle = ` style="--dos-api-color: ${data.colorCode};"`;
+          }
+        }
+
         return `<div class="metric-row">
-          <span class="metric-key metric-key--${m.type}" title="${m.title}">${m.label}</span>
-          <span class="${valueClass}">${value}</span>
+          <span class="metric-key metric-key--${m.type}${extraClass}" title="${m.title}"${extraStyle}>${m.label}</span>
+          <span class="${valueClass}${extraClass}"${extraStyle}>${value}</span>
         </div>`;
       }).join("");
 
@@ -229,6 +242,18 @@ const DailyOSCalendarPanel = forwardRef(
 
         const data = calendarDataMap[dateKey];
         metricsWrap.innerHTML = buildMetricsHtml(data);
+        if (data && data.bgColor) {
+          dayEl.style.setProperty("--dos-api-bg", data.bgColor);
+          dayEl.classList.add("dos-custom-bg");
+          metricsWrap.style.backgroundColor = "";
+          metricsWrap.style.borderRadius = "";
+        } else {
+          dayEl.style.removeProperty("--dos-api-bg");
+          dayEl.classList.remove("dos-custom-bg");
+          metricsWrap.style.backgroundColor = "";
+          metricsWrap.style.borderRadius = "";
+        }
+
         dayEl.classList.toggle("dos-day-selected", dateKey === highlightedDate);
       });
     }, [calendarDataMap, buildMetricsHtml, highlightedDate]);
@@ -384,6 +409,8 @@ const DailyOSCalendarPanel = forwardRef(
                     key: "terms",
                     label: "Terms",
                     value: fmtTerms(selectedDateDetails.avgTerms),
+                    colorCode: selectedDateDetails.colorCode,
+                    bgColor: selectedDateDetails.bgColor,
                   },
                 ].filter((r) => r.value);
 
@@ -398,9 +425,13 @@ const DailyOSCalendarPanel = forwardRef(
                 return (
                   <ul className="list-unstyled mb-0 dos-cal-detail-list">
                     {rows.map((r) => (
-                      <li key={r.key} className={`dos-detail-${r.key}`}>
+                      <li
+                        key={r.key}
+                        className={`dos-detail-${r.key}${r.bgColor ? ' dos-custom-bg' : ''}`}
+                        style={r.bgColor ? { "--dos-api-bg": r.bgColor, padding: "0.625rem 0.5rem", margin: "0 -0.5rem", borderRadius: "4px" } : undefined}
+                      >
                         <span>{r.label}</span>
-                        <strong>{r.value}</strong>
+                        <strong className={r.colorCode ? 'dos-custom-color' : ''} style={r.colorCode ? { "--dos-api-color": r.colorCode } : undefined}>{r.value}</strong>
                       </li>
                     ))}
                   </ul>

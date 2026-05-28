@@ -301,5 +301,16 @@ export const masterConfig = {
             { name: "DisplayName", label: "Account Code", type: "text" },
             { name: "GroupId", label: "Account Group", type: "select", masterName: "accountgroup" }
         ]
+    },
+    // 29. Outstanding Term Color Rules -> tab_outstanding_term_color_rules (min/max day + colors)
+    outstandingTermColorRules: {
+        pk: "RuleId",
+        label: "Outstanding Term Color Rules",
+        fields: [
+            { name: "MinDay", label: "Min Day", type: "number", required: true },
+            { name: "MaxDay", label: "Max Day", type: "number", required: true },
+            { name: "ColorCode", label: "Color Code", type: "color", required: true },
+            { name: "BgColor", label: "BG Color", type: "color", required: true }
+        ]
     }
 };

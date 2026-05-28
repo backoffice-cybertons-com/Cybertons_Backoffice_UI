@@ -1,0 +1,362 @@
+/* Notification dropdown panel — matches premium ERP bell design */
+
+.notification-dropdown-menu.dropdown-menu {
+  width: 22rem;
+  max-width: 92vw;
+  padding: 0;
+  border: none;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 12px 40px rgba(15, 23, 42, 0.14);
+}
+
+.notification-dropdown__head {
+  background: #1e3a5f;
+  padding: 0;
+  border-radius: 0;
+}
+
+.notification-dropdown__head-inner {
+  padding: 1rem 1.125rem 0.5rem;
+}
+
+.notification-dropdown__title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.notification-dropdown__title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #fff;
+}
+
+.notification-dropdown__live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #22c55e;
+  flex-shrink: 0;
+  box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.35);
+}
+
+.notification-dropdown__count-badge {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #1e3a5f;
+  background: #e8e0f7;
+  padding: 0.35rem 0.75rem;
+  border-radius: 8px;
+  white-space: nowrap;
+}
+
+.notification-dropdown__tabs {
+  padding: 0 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.notification-dropdown__tabs .nav-tabs {
+  border: 0;
+  gap: 0;
+}
+
+.notification-dropdown__tabs .nav-link {
+  border: 0;
+  border-radius: 8px 8px 0 0;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.65);
+  background: transparent;
+  margin-bottom: 0;
+}
+
+.notification-dropdown__tabs .nav-link:hover {
+  color: #fff;
+}
+
+.notification-dropdown__tabs .nav-link.active {
+  color: #1e293b;
+  background: #fff;
+}
+
+.notification-dropdown__body {
+  background: #fff;
+  padding: 0;
+}
+
+.notification-dropdown__list {
+  max-height: 320px;
+}
+
+.notification-dropdown__list .simplebar-content {
+  padding: 0;
+}
+
+.notification-dropdown__footer {
+  border-top: 1px solid #f1f5f9;
+  padding: 0.75rem 1rem;
+  text-align: center;
+  background: #fff;
+}
+
+.notification-dropdown__view-all {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #3b82f6;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+.notification-dropdown__view-all:hover {
+  color: #2563eb;
+  text-decoration: underline;
+}
+
+.notification-dropdown__empty {
+  padding: 2rem 1rem;
+  text-align: center;
+}
+
+.notification-dropdown__empty-icon {
+  width: 3rem;
+  height: 3rem;
+  margin: 0 auto 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #f1f5f9;
+  color: #64748b;
+  font-size: 1.5rem;
+}
+
+.notification-dropdown__empty-text {
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: #64748b;
+  margin: 0;
+}
+
+/* ——— Notification cards ——— */
+
+.notification-card {
+  display: block;
+  width: 100%;
+  padding: 0;
+  margin: 0;
+  border: none;
+  border-bottom: 1px solid #f1f5f9;
+  border-radius: 0;
+  background: #fff;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.notification-card:last-child {
+  border-bottom: none;
+}
+
+.notification-card:hover {
+  background-color: #f8fafc;
+}
+
+.notification-card__inner {
+  display: flex;
+  gap: 0.75rem;
+  padding: 0.875rem 1rem;
+  align-items: flex-start;
+}
+
+.notification-card--announcement {
+  background: #f5f0ff;
+  border-left: 4px solid #7c3aed;
+}
+
+.notification-card--announcement:hover {
+  background: #ede9fe;
+}
+
+.notification-card__icon-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.notification-card__avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  font-size: 1.125rem;
+}
+
+.notification-card__avatar--task {
+  background-color: #dbeafe;
+  color: #2563eb;
+}
+
+.notification-card__avatar--chat {
+  background-color: #d1fae5;
+  color: #059669;
+}
+
+.notification-card__avatar--announcement {
+  background-color: #ede9fe;
+  color: #7c3aed;
+}
+
+.notification-card__avatar--default {
+  background-color: #f1f5f9;
+  color: #64748b;
+}
+
+.notification-card__icon-new {
+  position: absolute;
+  bottom: -2px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.5rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: #fff;
+  background: #7c3aed;
+  padding: 0.1rem 0.35rem;
+  border-radius: 3px;
+  line-height: 1.2;
+  white-space: nowrap;
+  box-shadow: 0 1px 3px rgba(124, 58, 237, 0.35);
+}
+
+.notification-card__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.notification-card__headline {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.2rem;
+}
+
+.notification-card__title-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.notification-card__title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #1e293b;
+  line-height: 1.35;
+}
+
+.notification-card__badge {
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  padding: 0.12rem 0.4rem;
+  border-radius: 4px;
+  line-height: 1.2;
+  flex-shrink: 0;
+}
+
+.notification-card__badge--task {
+  color: #1d4ed8;
+  background-color: #dbeafe;
+}
+
+.notification-card__badge--chat {
+  color: #047857;
+  background-color: #d1fae5;
+}
+
+.notification-card__badge--announcement {
+  color: #6d28d9;
+  background-color: #ede9fe;
+}
+
+.notification-card__badge--default {
+  color: #475569;
+  background-color: #f1f5f9;
+}
+
+.notification-card__unread-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #3b82f6;
+  flex-shrink: 0;
+  margin-top: 0.35rem;
+}
+
+.notification-card__count {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  color: #dc2626;
+  background: #fee2e2;
+  padding: 0.05rem 0.35rem;
+  border-radius: 4px;
+}
+
+.notification-card__message {
+  font-size: 0.8125rem;
+  color: #64748b;
+  margin: 0 0 0.35rem;
+  line-height: 1.45;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.notification-card--announcement .notification-card__message {
+  color: #6b7280;
+}
+
+.notification-card__meta {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  color: #94a3b8;
+  margin: 0;
+  letter-spacing: 0.02em;
+}
+
+.notification-card__meta i {
+  font-size: 0.75rem;
+}
+
+/* Announcement toast */
+.announcement-toast-container.Toastify__toast {
+  padding: 0.875rem 1rem;
+  border-left: 3px solid #7c3aed;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.1);
+}
+
+.announcement-toast__headline {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #7c3aed;
+  margin-bottom: 0.2rem;
+}

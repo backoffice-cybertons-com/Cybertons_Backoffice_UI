@@ -1,0 +1,112 @@
+.announcement-admin-page .page-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.announcement-admin-page .page-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0;
+  color: var(--vz-heading-color, #212529);
+}
+
+.announcement-admin-page .page-subtitle {
+  font-size: 0.8125rem;
+  color: var(--vz-secondary-color, #878a99);
+  margin: 0.25rem 0 0;
+}
+
+.announcement-admin-card {
+  border: 1px solid var(--vz-border-color, #e9ebec);
+  border-radius: 0.5rem;
+  box-shadow: none;
+}
+
+.announcement-admin-table thead th {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--vz-secondary-color, #878a99);
+  background: var(--vz-light, #f3f6f9);
+  border-bottom: 1px solid var(--vz-border-color, #e9ebec);
+  white-space: nowrap;
+}
+
+.announcement-admin-table tbody td {
+  font-size: 0.875rem;
+  vertical-align: middle;
+}
+
+.announcement-admin-table .col-message {
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--vz-secondary-color, #878a99);
+}
+
+.announcement-status-badge {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.announcement-status-badge.active {
+  background: rgba(10, 179, 156, 0.12);
+  color: #0ab39c;
+}
+
+.announcement-status-badge.inactive {
+  background: rgba(135, 138, 153, 0.15);
+  color: #878a99;
+}
+
+.announcement-status-badge.expired {
+  background: rgba(253, 126, 20, 0.12);
+  color: #fd7e14;
+}
+
+.announcement-status-badge.scheduled {
+  background: rgba(73, 130, 250, 0.12);
+  color: #4982fa;
+}
+
+.announcement-status-badge.deleted {
+  background: rgba(240, 101, 72, 0.12);
+  color: #f06548;
+}
+
+.announcement-row-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.announcement-row-actions .btn {
+  padding: 0.25rem 0.5rem;
+  line-height: 1;
+}
+
+.announcement-admin-drawer {
+  width: min(480px, 100vw);
+}
+
+.announcement-admin-empty {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: var(--vz-secondary-color, #878a99);
+}
+
+.announcement-admin-empty i {
+  font-size: 2.5rem;
+  opacity: 0.35;
+  margin-bottom: 0.75rem;
+  display: block;
+}

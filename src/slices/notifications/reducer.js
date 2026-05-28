@@ -1,5 +1,5 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { getUnreadNotifications, markNotificationRead, markToastShown, getAllNotifications } from "./thunk";
+import { getUnreadNotifications, markNotificationRead, markToastShown } from "./thunk";
 
 export const initialState = {
     notifications: [],
@@ -44,10 +44,6 @@ const notificationSlice = createSlice({
             }
         });
 
-        builder.addCase(getAllNotifications.fulfilled, (state, action) => {
-            state.notifications = action.payload;
-            state.loading = false;
-        });
     },
 });
 

@@ -10,19 +10,27 @@ import {
     Input,
     Label,
     Button,
-    FormFeedback
+    FormFeedback,
 } from "reactstrap";
 import BreadCrumb from "../../../Components/Common/BreadCrumb";
-import { getCompanyProfile, updateCompanyProfile, uploadCompanyLogo } from "../../../helpers/fakebackend_helper";
+import {
+    getCompanyProfile,
+    getOutstandingTermConfigList,
+    updateCompanyProfile,
+    uploadCompanyLogo,
+} from "../../../helpers/fakebackend_helper";
 import { toast, ToastContainer } from "react-toastify";
 import { api } from "../../../config";
 import { useFormik } from "formik";
 import * as Yup from "yup";
+import OutstandingTermColorRulesSection from "./OutstandingTermColorRulesSection";
+import "./CompanyProfile.css";
 
 const CompanyProfile = () => {
     const [loading, setLoading] = useState(true);
     const [selectedFile, setSelectedFile] = useState(null);
     const [isUploading, setIsUploading] = useState(false);
+    const [outstandingRules, setOutstandingRules] = useState([]);
 
     const validation = useFormik({
         enableReinitialize: true,
@@ -72,6 +80,21 @@ const CompanyProfile = () => {
                 setLoading(false);
             });
     }, []);
+
+    useEffect(() => {
+        const companyId = validation.values.companyId;
+        if (!companyId) return;
+
+        getOutstandingTermConfigList(companyId)
+            .then((res) => {
+                const rules = res?.data || res || [];
+                setOutstandingRules(Array.isArray(rules) ? rules : []);
+            })
+            .catch((err) => {
+                // keep UI usable even if rules fail
+                console.error("Failed to fetch outstanding term rules", err);
+            });
+    }, [validation.values.companyId]);
 
     const handleFileChange = (e) => {
         if (e.target.files && e.target.files.length > 0) {
@@ -419,10 +442,22 @@ const CompanyProfile = () => {
                                                 </div>
                                             </Col>
                                         </Row>
-                                        <div className="text-end">
-                                            <Button type="submit" color="primary">Update Profile</Button>
-                                        </div>
                                     </Form>
+
+                                    <OutstandingTermColorRulesSection
+                                        companyId={validation.values.companyId}
+                                        initialRules={outstandingRules}
+                                    />
+
+                                    <div className="text-end mt-3">
+                                        <Button
+                                            type="button"
+                                            color="primary"
+                                            onClick={() => validation.handleSubmit()}
+                                        >
+                                            Update Profile
+                                        </Button>
+                                    </div>
                                 </CardBody>
                             </Card>
                         </Col>

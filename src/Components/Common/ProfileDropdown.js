@@ -15,10 +15,10 @@ const ProfileDropdown = () => {
         (state) => ({
             user: state.user
         })
-      );
+    );
     // Inside your component
-    const {user} = useSelector(profiledropdownData);
-    
+    const { user } = useSelector(profiledropdownData);
+
     // Also get user from auth slice (new auth system)
     const authUser = useSelector(state => state.auth?.user);
 
@@ -27,35 +27,35 @@ const ProfileDropdown = () => {
     useEffect(() => {
         // Try to get user name from multiple sources
         let name = "Admin"; // Default fallback
-        
+
         // 1. Check localStorage (new auth structure)
         if (localStorage.getItem("authUser")) {
             try {
                 const obj = JSON.parse(localStorage.getItem("authUser"));
                 const userObj = obj.user || obj.User || obj;
-                
+
                 // Try various name fields
-                name = userObj.fullName || userObj.FullName || 
-                       userObj.username || userObj.Username || 
-                       userObj.first_name || userObj.firstName ||
-                       userObj.name || userObj.Name ||
-                       userObj.email || userObj.Email ||
-                       name;
+                name = userObj.fullName || userObj.FullName ||
+                    userObj.username || userObj.Username ||
+                    userObj.first_name || userObj.firstName ||
+                    userObj.name || userObj.Name ||
+                    userObj.email || userObj.Email ||
+                    name;
             } catch (e) {
                 console.warn("ProfileDropdown: Failed to parse localStorage authUser", e);
             }
         }
-        
+
         // 2. Check Redux auth slice (new auth system)
         if (name === "Admin" && authUser) {
             name = authUser.Name || authUser.username || authUser.email || name;
         }
-        
+
         // 3. Check old Profile Redux state (legacy) - guard nulls
         if (name === "Admin" && user) {
             name = user.first_name || user.firstName || user.username || user.email || name;
         }
-        
+
         // 4. Check old localStorage structure (legacy fake auth)
         if (name === "Admin" && process.env.REACT_APP_DEFAULTAUTH === "fake") {
             try {
@@ -69,7 +69,7 @@ const ProfileDropdown = () => {
                 // Ignore
             }
         }
-        
+
         // 5. Firebase auth fallback
         if (name === "Admin" && process.env.REACT_APP_DEFAULTAUTH === "firebase") {
             try {
@@ -81,7 +81,7 @@ const ProfileDropdown = () => {
                 // Ignore
             }
         }
-        
+
         setUserName(name);
     }, [user, authUser]);
 
@@ -112,19 +112,19 @@ const ProfileDropdown = () => {
                         </Link>
                     </DropdownItem>
                     <DropdownItem className='p-0'>
-                        <Link to= "/apps-chat" className="dropdown-item">
+                        <Link to="/apps-chat" className="dropdown-item">
                             <i className="mdi mdi-message-text-outline text-muted fs-16 align-middle me-1"></i> <span
                                 className="align-middle">Messages</span>
                         </Link>
                     </DropdownItem>
                     <DropdownItem className='p-0'>
-                        <Link to="#" className="dropdown-item">
+                        <Link to="/apps-tasks-kanban" className="dropdown-item">
                             <i className="mdi mdi-calendar-check-outline text-muted fs-16 align-middle me-1"></i> <span
                                 className="align-middle">Taskboard</span>
                         </Link>
                     </DropdownItem>
                     <DropdownItem className='p-0'>
-                        <Link to= "/pages-faqs" className="dropdown-item">
+                        <Link to="/pages-faqs" className="dropdown-item">
                             <i
                                 className="mdi mdi-lifebuoy text-muted fs-16 align-middle me-1"></i> <span
                                     className="align-middle">Help</span>
@@ -132,14 +132,14 @@ const ProfileDropdown = () => {
                     </DropdownItem>
                     <div className="dropdown-divider"></div>
                     <DropdownItem className='p-0'>
-                        <Link to= "/pages-profile" className="dropdown-item">
+                        <Link to="/pages-profile" className="dropdown-item">
                             <i
                                 className="mdi mdi-wallet text-muted fs-16 align-middle me-1"></i> <span
                                     className="align-middle">Balance : <b>$5971.67</b></span>
                         </Link>
                     </DropdownItem >
                     <DropdownItem className='p-0'>
-                        <Link to= "/pages-profile-settings" className="dropdown-item">
+                        <Link to="/pages-profile-settings" className="dropdown-item">
                             <span
                                 className="badge bg-success-subtle text-success mt-1 float-end">New</span><i
                                     className="mdi mdi-cog-outline text-muted fs-16 align-middle me-1"></i> <span
@@ -147,13 +147,13 @@ const ProfileDropdown = () => {
                         </Link>
                     </DropdownItem>
                     <DropdownItem className='p-0'>
-                        <Link to= "/auth-lockscreen-basic" className="dropdown-item">
+                        <Link to="/auth-lockscreen-basic" className="dropdown-item">
                             <i
                                 className="mdi mdi-lock text-muted fs-16 align-middle me-1"></i> <span className="align-middle">Lock screen</span>
                         </Link>
                     </DropdownItem>
                     <DropdownItem className='p-0'>
-                        <Link to= "/logout" className="dropdown-item">
+                        <Link to="/logout" className="dropdown-item">
                             <i
                                 className="mdi mdi-logout text-muted fs-16 align-middle me-1"></i> <span
                                     className="align-middle" data-key="t-logout">Logout</span>

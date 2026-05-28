@@ -1,0 +1,76 @@
+.announcement-modal .modal-content {
+  border: none;
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(15, 23, 42, 0.18);
+  overflow: hidden;
+}
+
+.announcement-modal .modal-body {
+  padding: 2rem 2rem 1.5rem;
+}
+
+.announcement-modal__badge {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--vz-primary, #405189);
+  background: rgba(64, 81, 137, 0.08);
+  padding: 0.25rem 0.6rem;
+  border-radius: 4px;
+  margin-bottom: 0.75rem;
+}
+
+.announcement-modal__title {
+  font-size: 1.35rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 0.5rem;
+  line-height: 1.35;
+}
+
+.announcement-modal__short {
+  font-size: 0.95rem;
+  color: #64748b;
+  margin-bottom: 0;
+  line-height: 1.55;
+}
+
+.announcement-modal__full {
+  font-size: 0.875rem;
+  color: #475569;
+  margin-top: 1rem;
+  margin-bottom: 0;
+  line-height: 1.6;
+  padding-top: 1rem;
+  border-top: 1px solid #f1f5f9;
+}
+
+.announcement-modal__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid #f1f5f9;
+}
+
+.announcement-modal__actions .btn {
+  font-weight: 500;
+  font-size: 0.875rem;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+}
+
+.announcement-modal__actions .btn-close-modal {
+  margin-left: auto;
+  color: #64748b;
+  background: transparent;
+  border: 1px solid #e2e8f0;
+}
+
+.announcement-modal__actions .btn-close-modal:hover {
+  background: #f8fafc;
+  color: #334155;
+}

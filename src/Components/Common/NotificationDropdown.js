@@ -1,61 +1,60 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Col, Dropdown, DropdownMenu, DropdownToggle, Nav, NavItem, NavLink, Row, TabContent, TabPane } from 'reactstrap';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Dropdown, DropdownMenu, DropdownToggle, Nav, NavItem, NavLink, TabContent, TabPane } from 'reactstrap';
+import { useLocation } from 'react-router-dom';
 import classnames from 'classnames';
 import { useSelector, useDispatch } from "react-redux";
-import moment from "moment";
 import { toast } from "react-toastify";
 
-//SimpleBar
 import SimpleBar from "simplebar-react";
 
-// Import Thunks
 import { getUnreadNotifications, markNotificationRead, markToastShown } from "../../slices/notifications/thunk";
 import signalRService from "../../services/signalrService";
+import { useAnnouncement } from "../Announcements/AnnouncementContext";
+import NotificationItem from "./NotificationItem";
+import useNotificationActions from "./useNotificationActions";
+import {
+    getNotificationConfig,
+    isReferenceType,
+    NOTIFICATION_TYPES,
+} from "./notificationConfig";
+
+import "../Announcements/AnnouncementDrawer.css";
+import "./NotificationDropdown.css";
 
 const NOTIFICATION_HUB_KEY = "notifications";
-const POLL_INTERVAL_MS = 300000; // 5 minutes — fallback when SignalR is unavailable
-
-//import bell
-import bell from "../../assets/images/svg/bell.svg";
-
-const isChatNotification = (notification) =>
-    (notification?.referenceType || "").toUpperCase() === "CHAT";
+const POLL_INTERVAL_MS = 300000;
+const DROPDOWN_PREVIEW_LIMIT = 5;
 
 const isChatRoute = (pathname) =>
     pathname === "/apps-chat" || pathname.startsWith("/apps-chat/");
 
-const getNotificationIcon = (referenceType) => {
-    const type = (referenceType || "").toUpperCase();
-    switch (type) {
-        case "CHAT":
-            return "bx bx-chat";
-        case "TASK":
-            return "bx bx-task";
-        case "CALENDAR":
-            return "bx bx-calendar";
-        case "SYSTEM":
-            return "bx bx-cog";
-        default:
-            return "bx bx-bell";
-    }
-};
+const AnnouncementToastContent = ({ headline, title, onView }) => (
+    <div className="announcement-toast">
+        <span className="announcement-toast__icon" aria-hidden="true">🚀</span>
+        <div className="announcement-toast__content">
+            <div className="announcement-toast__headline">{headline}</div>
+            <div className="announcement-toast__title">{title}</div>
+            <button type="button" className="announcement-toast__view" onClick={onView}>
+                View
+            </button>
+        </div>
+    </div>
+);
 
 const NotificationDropdown = () => {
     const dispatch = useDispatch();
-    const navigate = useNavigate();
     const location = useLocation();
+    const { openAnnouncement } = useAnnouncement();
     const isChatPage = isChatRoute(location.pathname);
     const { notifications, unreadCount } = useSelector((state) => state.Notifications);
 
     const visibleNotifications = Array.isArray(notifications)
         ? isChatPage
-            ? notifications.filter((n) => !isChatNotification(n))
+            ? notifications.filter((n) => !isReferenceType(n, NOTIFICATION_TYPES.CHAT))
             : notifications
         : [];
     const visibleUnreadCount = isChatPage ? visibleNotifications.length : unreadCount;
 
-    // Get Auth User
     const [authUser, setAuthUser] = useState(null);
     useEffect(() => {
         const raw = localStorage.getItem("authUser");
@@ -64,9 +63,7 @@ const NotificationDropdown = () => {
                 const parsed = JSON.parse(raw);
                 if (parsed && parsed.user) {
                     const u = parsed.user;
-                    // Normalize: ensure 'id' is always populated (handles JWT claim variations)
                     if (!u.id && u.userId) u.id = u.userId;
-                    console.log("[NotificationDropdown] authUser loaded:", u);
                     setAuthUser(u);
                 }
             } catch (e) {
@@ -75,21 +72,17 @@ const NotificationDropdown = () => {
         }
     }, []);
 
-    // Fetch Notifications
     const fetchNotifications = useCallback(() => {
         const userId = authUser?.id || authUser?.userId;
         const companyId = authUser?.companyId;
         if (authUser && companyId && userId) {
-            dispatch(getUnreadNotifications({ 
-                companyId: Number(companyId), 
-                userId: Number(userId) 
+            dispatch(getUnreadNotifications({
+                companyId: Number(companyId),
+                userId: Number(userId),
             }));
-        } else {
-            console.warn("[NotificationDropdown] Missing authUser fields. companyId:", companyId, "userId:", userId);
         }
     }, [authUser, dispatch]);
 
-    // SignalR — instant bell updates
     useEffect(() => {
         let isMounted = true;
 
@@ -133,7 +126,6 @@ const NotificationDropdown = () => {
         };
     }, [fetchNotifications]);
 
-    // Polling fallback — visible tab only; 5 min safety refresh or when hub is down
     useEffect(() => {
         let intervalId = null;
 
@@ -171,17 +163,15 @@ const NotificationDropdown = () => {
         };
     }, [fetchNotifications]);
 
-    // Track notifications that have already been toasted in this session
     const toastedIds = useRef(new Set());
 
-    // Suppress chat toasts while on the chat screen; mark them shown so they do not appear after leaving
     useEffect(() => {
         if (!isChatPage || !authUser || !Array.isArray(notifications)) return;
 
         notifications
             .filter(
                 (n) =>
-                    isChatNotification(n) &&
+                    isReferenceType(n, NOTIFICATION_TYPES.CHAT) &&
                     (n.toastShown === false || n.ToastShown === false) &&
                     !toastedIds.current.has(n.notificationId)
             )
@@ -196,80 +186,144 @@ const NotificationDropdown = () => {
             });
     }, [notifications, authUser, dispatch, isChatPage]);
 
-    // Toast for new notifications
+    const { handleNotificationClick, openAnnouncementFromNotification } =
+        useNotificationActions({
+            dispatch,
+            markNotificationRead,
+            authUser,
+            openAnnouncement,
+        });
+
     useEffect(() => {
-        if (Array.isArray(notifications) && notifications.length > 0 && authUser) {
-            // Only show toast for notifications where toastShown is false AND we haven't toasted it in this session
-            const unshownNotifications = notifications.filter(n => 
-                (n.toastShown === false || n.ToastShown === false) && 
-                !toastedIds.current.has(n.notificationId) &&
-                !(isChatPage && isChatNotification(n))
-            );
-            
-            if (unshownNotifications.length > 0) {
-                unshownNotifications.forEach(n => {
-                    // Mark as toasted in the ref immediately to prevent duplicate toasts
-                    // from subsequent renders before the Redux state is updated
-                    toastedIds.current.add(n.notificationId);
-
-                    toast.info(`🔔 ${n.title}: ${n.message}`, {
-                        position: "top-right",
-                        autoClose: 6000,
-                        hideProgressBar: false,
-                        closeOnClick: true,
-                        pauseOnHover: true,
-                        draggable: true,
-                    });
-
-                    // Mark as toast shown in backend
-                    dispatch(markToastShown({ 
-                        notificationId: n.notificationId, 
-                        companyId: authUser.companyId 
-                    }));
-                });
-            }
+        if (!Array.isArray(notifications) || notifications.length === 0 || !authUser) {
+            return;
         }
-    }, [notifications, authUser, dispatch, isChatPage]);
 
-    //Dropdown Toggle
+        const isUnshown = (n) =>
+            (n.toastShown === false || n.ToastShown === false) &&
+            !toastedIds.current.has(n.notificationId) &&
+            !(isChatPage && isReferenceType(n, NOTIFICATION_TYPES.CHAT));
+
+        const unshownAnnouncements = notifications
+            .filter((n) => isReferenceType(n, NOTIFICATION_TYPES.ANNOUNCEMENT) && isUnshown(n))
+            .sort(
+                (a, b) =>
+                    new Date(b.createdDate || b.CreatedDate) -
+                    new Date(a.createdDate || a.CreatedDate)
+            );
+
+        if (unshownAnnouncements.length > 0) {
+            const latest = unshownAnnouncements[0];
+            const config = getNotificationConfig(latest);
+            toastedIds.current.add(latest.notificationId);
+
+            const toastId = toast(
+                () => (
+                    <AnnouncementToastContent
+                        headline={config.toastHeadline || "New Feature Released"}
+                        title={latest.title}
+                        onView={() => {
+                            toast.dismiss(toastId);
+                            openAnnouncementFromNotification(latest);
+                        }}
+                    />
+                ),
+                {
+                    position: "top-right",
+                    autoClose: 5000,
+                    hideProgressBar: true,
+                    closeOnClick: false,
+                    pauseOnHover: true,
+                    draggable: true,
+                    className: "announcement-toast-container",
+                    onClick: () => openAnnouncementFromNotification(latest),
+                }
+            );
+
+            dispatch(
+                markToastShown({
+                    notificationId: latest.notificationId,
+                    companyId: authUser.companyId,
+                })
+            );
+
+            unshownAnnouncements.slice(1).forEach((n) => {
+                toastedIds.current.add(n.notificationId);
+                dispatch(
+                    markToastShown({
+                        notificationId: n.notificationId,
+                        companyId: authUser.companyId,
+                    })
+                );
+            });
+
+            return;
+        }
+
+        const unshownNotifications = notifications.filter(
+            (n) =>
+                isUnshown(n) &&
+                !isReferenceType(n, NOTIFICATION_TYPES.ANNOUNCEMENT)
+        );
+
+        unshownNotifications.forEach((n) => {
+            toastedIds.current.add(n.notificationId);
+
+            toast.info(`🔔 ${n.title}: ${n.message}`, {
+                position: "top-right",
+                autoClose: 6000,
+                hideProgressBar: false,
+                closeOnClick: true,
+                pauseOnHover: true,
+                draggable: true,
+            });
+
+            dispatch(
+                markToastShown({
+                    notificationId: n.notificationId,
+                    companyId: authUser.companyId,
+                })
+            );
+        });
+    }, [
+        notifications,
+        authUser,
+        dispatch,
+        isChatPage,
+        openAnnouncementFromNotification,
+    ]);
+
     const [isNotificationDropdown, setIsNotificationDropdown] = useState(false);
-    const toggleNotificationDropdown = () => {
-        setIsNotificationDropdown(!isNotificationDropdown);
-    };
 
-    //Tab 
     const [activeTab, setActiveTab] = useState('1');
+    const [showAllNotifications, setShowAllNotifications] = useState(false);
+
     const toggleTab = (tab) => {
         if (activeTab !== tab) {
             setActiveTab(tab);
         }
     };
 
-    const handleMarkAsRead = (notificationId) => {
-        if (authUser && authUser.companyId) {
-            dispatch(markNotificationRead({ 
-                notificationId, 
-                companyId: authUser.companyId 
-            }));
-        }
+    const hasMoreThanPreview = visibleNotifications.length > DROPDOWN_PREVIEW_LIMIT;
+    const listNotifications = showAllNotifications
+        ? visibleNotifications
+        : visibleNotifications.slice(0, DROPDOWN_PREVIEW_LIMIT);
+
+    const handleViewAllToggle = (e) => {
+        e.preventDefault();
+        setShowAllNotifications((prev) => !prev);
     };
 
-    const handleNotificationClick = (notification) => {
-        const refType = (notification.referenceType || "").toUpperCase();
-        const senderUserId = notification.senderUserId ?? notification.SenderUserId;
-
-        handleMarkAsRead(notification.notificationId);
-
-        if (refType === "CHAT" && senderUserId) {
-            navigate(`/apps-chat?openUserId=${senderUserId}`);
+    const handleDropdownToggle = () => {
+        if (isNotificationDropdown) {
+            setShowAllNotifications(false);
         }
+        setIsNotificationDropdown(!isNotificationDropdown);
     };
-
-
 
     return (
         <React.Fragment>
-            <Dropdown isOpen={isNotificationDropdown} toggle={toggleNotificationDropdown} className="topbar-head-dropdown ms-1 header-item">
+            <Dropdown isOpen={isNotificationDropdown} toggle={handleDropdownToggle} className="topbar-head-dropdown ms-1 header-item">
                 <DropdownToggle type="button" tag="button" className="btn btn-icon btn-topbar btn-ghost-secondary rounded-circle">
                     <i className='bx bx-bell fs-22'></i>
                     {visibleUnreadCount > 0 && (
@@ -280,87 +334,75 @@ const NotificationDropdown = () => {
                         </span>
                     )}
                 </DropdownToggle>
-                <DropdownMenu className="dropdown-menu-lg dropdown-menu-end p-0">
-                    <div className="dropdown-head bg-primary bg-pattern rounded-top">
-                        <div className="p-3">
-                            <Row className="align-items-center">
-                                <Col>
-                                    <h6 className="m-0 fs-16 fw-semibold text-white"> Notifications </h6>
-                                </Col>
-                                <div className="col-auto dropdown-tabs">
-                                    <span className="badge bg-light-subtle text-body fs-13"> {visibleUnreadCount || 0} New</span>
-                                </div>
-                            </Row>
+                <DropdownMenu className="dropdown-menu-lg dropdown-menu-end notification-dropdown-menu">
+                    <div className="notification-dropdown__head">
+                        <div className="notification-dropdown__head-inner">
+                            <div className="notification-dropdown__title-row">
+                                <h6 className="notification-dropdown__title">
+                                    Notifications
+                                    <span className="notification-dropdown__live-dot" aria-hidden="true" />
+                                </h6>
+                                <span className="notification-dropdown__count-badge">
+                                    {visibleUnreadCount || 0} New
+                                </span>
+                            </div>
                         </div>
 
-                        <div className="px-2 pt-2">
-                            <Nav className="nav-tabs dropdown-tabs nav-tabs-custom">
+                        <div className="notification-dropdown__tabs">
+                            <Nav className="nav-tabs">
                                 <NavItem>
                                     <NavLink
                                         href="#"
                                         className={classnames({ active: activeTab === '1' })}
-                                        onClick={() => { toggleTab('1'); }}
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            toggleTab('1');
+                                        }}
                                     >
                                         All ({visibleNotifications.length})
                                     </NavLink>
                                 </NavItem>
-
                             </Nav>
                         </div>
                     </div>
 
-                    <TabContent activeTab={activeTab}>
-                        <TabPane tabId="1" className="py-2 ps-2">
-                            <SimpleBar style={{ maxHeight: "300px" }} className="pe-2">
-                                {visibleNotifications.length > 0 ? (
-                                    visibleNotifications.map((notification, index) => (
-                                        <div 
-                                            key={index} 
-                                            className="text-reset notification-item d-block dropdown-item position-relative"
-                                            onClick={() => handleNotificationClick(notification)}
-                                            style={{ cursor: 'pointer' }}
-                                        >
-                                            <div className="d-flex">
-                                                <div className="avatar-xs me-3">
-                                                    <span className="avatar-title bg-info-subtle text-info rounded-circle fs-16">
-                                                        <i className={getNotificationIcon(notification.referenceType)}></i>
-                                                    </span>
-                                                </div>
-                                                <div className="flex-grow-1">
-                                                    <h6 className="mt-0 mb-1 fs-13 fw-semibold">
-                                                        {notification.title}
-                                                        {(notification.notificationCount ?? notification.NotificationCount) > 1 && (
-                                                            <span className="badge bg-danger-subtle text-danger ms-1">
-                                                                {notification.notificationCount ?? notification.NotificationCount}
-                                                            </span>
-                                                        )}
-                                                    </h6>
-                                                    <div className="fs-13 text-muted">
-                                                        <p className="mb-1">{notification.message}</p>
-                                                    </div>
-                                                    <p className="mb-0 fs-11 fw-medium text-uppercase text-muted">
-                                                        <span><i className="mdi mdi-clock-outline"></i> {moment(notification.createdDate).fromNow()}</span>
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        </div>
+                    <TabContent activeTab={activeTab} className="notification-dropdown__body">
+                        <TabPane tabId="1">
+                            <SimpleBar className="notification-dropdown__list">
+                                {listNotifications.length > 0 ? (
+                                    listNotifications.map((notification) => (
+                                        <NotificationItem
+                                            key={notification.notificationId ?? notification.NotificationId}
+                                            notification={notification}
+                                            onClick={handleNotificationClick}
+                                        />
                                     ))
                                 ) : (
-                                    <div className="text-center pb-5 mt-2">
-                                        <div className="avatar-lg mx-auto">
-                                            <div className="avatar-title bg-light text-primary rounded-circle fs-24">
-                                                <i className="ri-notification-off-line"></i>
-                                            </div>
+                                    <div className="notification-dropdown__empty">
+                                        <div className="notification-dropdown__empty-icon">
+                                            <i className="ri-notification-off-line" />
                                         </div>
-                                        <div className="mt-4 pt-2">
-                                            <h6 className="fs-18 fw-semibold lh-base">Hey! You have no any notifications </h6>
-                                        </div>
+                                        <p className="notification-dropdown__empty-text">
+                                            No notifications yet
+                                        </p>
                                     </div>
                                 )}
                             </SimpleBar>
+
+                            {hasMoreThanPreview && (
+                                <div className="notification-dropdown__footer">
+                                    <button
+                                        type="button"
+                                        className="notification-dropdown__view-all"
+                                        onClick={handleViewAllToggle}
+                                    >
+                                        {showAllNotifications
+                                            ? 'Show less'
+                                            : `View all notifications (${visibleNotifications.length}) >`}
+                                    </button>
+                                </div>
+                            )}
                         </TabPane>
-
-
                     </TabContent>
                 </DropdownMenu>
             </Dropdown>

@@ -12,7 +12,6 @@ import { useSelector, useDispatch } from "react-redux";
 import { getDashboardData } from "../../slices/dashboard/thunk";
 import { getPartyTypeMaster } from "../../helpers/fakebackend_helper";
 import secureStorage from "../../utils/secureStorage";
-
 const DashboardMain = () => {
     document.title = "Dashboard | SoftBook";
 
