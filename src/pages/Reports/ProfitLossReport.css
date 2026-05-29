@@ -1,0 +1,343 @@
+.balance-sheet-page .bs-report-card {
+  display: flex;
+  flex-direction: column;
+  height: calc(100dvh - clamp(180px, 24dvh, 250px));
+  min-height: clamp(380px, 58dvh, 560px);
+  margin-bottom: 0.5rem;
+  overflow: hidden;
+}
+
+.balance-sheet-page .bs-report-card > .border-bottom,
+.balance-sheet-page .bs-report-card > .card-header {
+  flex: 0 0 auto;
+}
+
+.balance-sheet-page .bs-report-body {
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding-top: 0;
+}
+
+.balance-sheet-page .footer-print-sticky {
+  flex: 0 0 auto;
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  position: relative;
+  z-index: 5;
+  width: 100%;
+  margin: 0 !important;
+  padding: 0.5rem 1rem !important;
+  border-top: 1px solid #e9ebec;
+  background: #fff !important;
+  color: #212529 !important;
+}
+
+.bs-toolbar-row {
+  align-items: stretch;
+}
+
+.bs-toolbar-row .form-control {
+  height: 38px;
+  min-height: 38px;
+  font-size: 0.8125rem;
+}
+
+.bs-icon-btn {
+  width: 38px;
+  min-width: 38px;
+  height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.bs-actions {
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  padding: 0 0.4rem;
+  background: rgba(248, 250, 252, 0.95);
+  height: 38px;
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-shrink: 0;
+}
+
+.bs-actions .form-check {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding-left: 0;
+  margin: 0;
+  white-space: nowrap;
+}
+
+.bs-actions .form-check-input {
+  margin: 0;
+  float: none;
+  width: 2rem;
+  height: 1.1rem;
+}
+
+.bs-actions .form-check-label {
+  font-size: 0.75rem;
+  margin: 0;
+  line-height: 1;
+}
+
+.bs-actions .btn {
+  width: 34px;
+  min-width: 34px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.bs-pill {
+  border-radius: 999px;
+  padding: 0.35rem 0.6rem;
+  font-weight: 600;
+}
+
+.bs-summary-grid {
+  flex: 0 0 auto;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.bs-summary-tile {
+  min-height: 52px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #fff;
+  padding: 0.55rem 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.bs-summary-tile span {
+  color: #64748b;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.bs-summary-tile strong {
+  color: #0f172a;
+  font-size: 1rem;
+  line-height: 1.2;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.bs-summary-liability {
+  border-left: 4px solid #344767;
+}
+
+.bs-summary-asset {
+  border-left: 4px solid #0ab39c;
+}
+
+.bs-summary-balanced {
+  border-left: 4px solid #22c55e;
+}
+
+.bs-summary-diff {
+  border-left: 4px solid #f7b84b;
+}
+
+.bs-side-grid {
+  flex: 1 1 0;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.bs-side-panel {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid #dbe1ea;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.bs-side-heading {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.7rem 0.85rem;
+  border-bottom: 1px solid #e9ebec;
+  background: #f8fafc;
+}
+
+.bs-side-title {
+  color: #0f172a;
+  font-size: 0.9rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.bs-side-subtitle {
+  color: #64748b;
+  font-size: 0.72rem;
+  margin-top: 0.15rem;
+}
+
+.bs-side-total {
+  color: #111827;
+  font-size: 0.95rem;
+  font-weight: 800;
+  white-space: nowrap;
+  text-align: right;
+}
+
+.bs-side-scroll {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow: auto;
+}
+
+.bs-side-table {
+  min-width: 420px;
+}
+
+.bs-side-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: #f3f4f6 !important;
+  color: #475569;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 0.45rem 0.75rem !important;
+  white-space: nowrap;
+  box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.08);
+}
+
+.bs-side-table tbody td {
+  padding: 0.38rem 0.75rem !important;
+  font-size: 0.8rem;
+  vertical-align: middle;
+}
+
+.bs-side-table tfoot td {
+  position: sticky;
+  bottom: 0;
+  z-index: 3;
+  background: #eef2f7;
+  color: #111827;
+  font-size: 0.82rem;
+  font-weight: 800;
+  padding: 0.55rem 0.75rem !important;
+  border-top: 2px solid #d8dee9;
+}
+
+.bs-group-row td {
+  background: #f8fafc;
+  color: #1f2937;
+  font-weight: 800;
+  border-top: 1px solid #e5e7eb;
+}
+
+.bs-ledger-name {
+  display: inline-block;
+  color: #334155;
+  padding-left: 0.85rem;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.bs-side-liabilities .bs-side-heading {
+  border-top: 3px solid #344767;
+}
+
+.bs-side-assets .bs-side-heading {
+  border-top: 3px solid #0ab39c;
+}
+
+@media (max-width: 991.98px) {
+  .balance-sheet-page .bs-report-card {
+    height: auto;
+    min-height: 0;
+    overflow: visible;
+  }
+
+  .balance-sheet-page .bs-report-body,
+  .bs-side-panel {
+    overflow: visible;
+  }
+
+  .bs-summary-grid,
+  .bs-side-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .bs-side-scroll {
+    max-height: 58dvh;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .bs-toolbar-row {
+    flex-wrap: wrap;
+  }
+
+  .bs-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .bs-summary-tile {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .bs-summary-tile strong {
+    text-align: left;
+  }
+}
+
+@media print {
+  .balance-sheet-page .bs-filter-card,
+  .balance-sheet-page .breadcrumb,
+  .balance-sheet-page .bs-actions {
+    display: none !important;
+  }
+
+  .balance-sheet-page .bs-report-card {
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  .balance-sheet-page .bs-report-body,
+  .bs-side-panel,
+  .bs-side-scroll {
+    overflow: visible !important;
+  }
+
+  .bs-side-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}

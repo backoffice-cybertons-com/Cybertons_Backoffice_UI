@@ -72,6 +72,7 @@ import OutstandingComparison from "../pages/Reports/OutstandingComparison";
 
 import TrialBalanceReport from "../pages/Reports/TrialBalanceReport";
 import BalanceSheetReport from "../pages/Reports/BalanceSheetReport";
+import ProfitLossReport from "../pages/Reports/ProfitLossReport";
 import StockSummaryReport from "../pages/Reports/StockSummaryReport";
 // Developed by Hetak on 11-05-2026
 import StockLedgerDatewiseReport from "../pages/Reports/StockLedgerDatewiseReport";
@@ -393,6 +394,7 @@ const authProtectedRoutes = [
 
   { path: "/reports/TrialBalanceReport", component: <TrialBalanceReport /> },
   { path: "/reports/balance-sheet", component: <BalanceSheetReport /> },
+  { path: "/reports/profit-loss", component: <ProfitLossReport /> },
   { path: "/reports/stock-summary", component: <StockSummaryReport /> },
   // Developed by Hetak on 11-05-2026
   { path: "/reports/stock-ledger-datewise", component: <StockLedgerDatewiseReport /> },
