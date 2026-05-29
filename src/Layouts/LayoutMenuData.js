@@ -234,6 +234,13 @@ const useNavData = () => {
       // Developed by Hetak on 11-05-2026
       } else if (tabName === "Stock Ledger Datewise" || tabName === "Stock Ledger") {
         finalLink = "/reports/stock-ledger-datewise";
+      // Code developed by Hetak Modi 290526
+      } else if (tabName === "Day Book") {
+        finalLink = "/reports/day-book";
+      } else if (tabName === "Cash Book") {
+        finalLink = "/reports/cash-book";
+      } else if (tabName === "Bank Book") {
+        finalLink = "/reports/bank-book";
       } else if (tabName === "Trial Balance") {
         finalLink = "/reports/TrialBalanceReport";
       } else if (tabName === "Expense" || tabName === "Expenses") {

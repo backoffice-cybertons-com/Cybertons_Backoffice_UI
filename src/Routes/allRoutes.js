@@ -73,6 +73,10 @@ import OutstandingComparison from "../pages/Reports/OutstandingComparison";
 import TrialBalanceReport from "../pages/Reports/TrialBalanceReport";
 import BalanceSheetReport from "../pages/Reports/BalanceSheetReport";
 import ProfitLossReport from "../pages/Reports/ProfitLossReport";
+// Code developed by Hetak Modi 290526
+import DayBookReport from "../pages/Reports/DayBookReport";
+import CashBookReport from "../pages/Reports/CashBookReport";
+import BankBookReport from "../pages/Reports/BankBookReport";
 import StockSummaryReport from "../pages/Reports/StockSummaryReport";
 // Developed by Hetak on 11-05-2026
 import StockLedgerDatewiseReport from "../pages/Reports/StockLedgerDatewiseReport";
@@ -395,6 +399,10 @@ const authProtectedRoutes = [
   { path: "/reports/TrialBalanceReport", component: <TrialBalanceReport /> },
   { path: "/reports/balance-sheet", component: <BalanceSheetReport /> },
   { path: "/reports/profit-loss", component: <ProfitLossReport /> },
+  // Code developed by Hetak Modi 290526
+  { path: "/reports/day-book", component: <DayBookReport /> },
+  { path: "/reports/cash-book", component: <CashBookReport /> },
+  { path: "/reports/bank-book", component: <BankBookReport /> },
   { path: "/reports/stock-summary", component: <StockSummaryReport /> },
   // Developed by Hetak on 11-05-2026
   { path: "/reports/stock-ledger-datewise", component: <StockLedgerDatewiseReport /> },

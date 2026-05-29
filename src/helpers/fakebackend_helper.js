@@ -472,3 +472,13 @@ export const getStockSummaryReport = (companyId, fromDate, toDate) =>
 // Developed by Hetak on 11-05-2026
 export const getStockLedgerDatewise = (companyId, fromDate, toDate) =>
   api.get(url.GET_STOCK_LEDGER_DATEWISE, { companyId, fromDate, toDate });
+
+// Code developed by Hetak Modi 290526
+export const getDayBook = (companyId, fromDate, toDate) =>
+  api.get(url.GET_DAY_BOOK, { companyId, fromDate, toDate });
+
+export const getCashBook = (companyId, fromDate, toDate) =>
+  api.get(url.GET_CASH_BOOK, { companyId, fromDate, toDate });
+
+export const getBankBook = (companyId, fromDate, toDate) =>
+  api.get(url.GET_BANK_BOOK, { companyId, fromDate, toDate });

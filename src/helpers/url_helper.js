@@ -370,3 +370,8 @@ export const GET_APPLICATION_LIST = "/application-list";
 
 //JOB APPLICATION
 export const GET_API_KEY = "/api-key";
+
+// Code developed by Hetak Modi 290526
+export const GET_DAY_BOOK = "/api/Report/day-book";
+export const GET_CASH_BOOK = "/api/Report/cash-book";
+export const GET_BANK_BOOK = "/api/Report/bank-book";
