@@ -86,9 +86,10 @@ const PayebleReceivableReport = () => {
     { accessor: "contact", label: "Contact" },
     { accessor: "outstanding", label: "Outstanding Amount" },
     { accessor: "creditDebit", label: "D/C" },
-    { accessor: "terms", label: "Terms" },
     { accessor: "weekly", label: "Weekly Avg" },
-    { accessor: "monthly", label: "Monthly Avg" }
+    { accessor: "terms", label: "Weekly Term" },
+    { accessor: "monthly", label: "Monthly Avg" },
+    { accessor: "monthlyTerm", label: "Monthly Term" }
   ], []);
 
   const headerRows = useMemo(() => [
@@ -118,6 +119,27 @@ const PayebleReceivableReport = () => {
       width: "280px",
       align: "left",
       sortType: "string",
+      cell: (row) => {
+        return (
+          <span 
+            className="text-primary" 
+            style={{ cursor: "pointer", textDecoration: "underline" }}
+            onClick={() => {
+              const date = new Date(asOfDate);
+              const firstDay = new Date(date.getFullYear(), date.getMonth(), 1);
+              const lastDay = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+              
+              const fromStr = `${firstDay.getFullYear()}-${String(firstDay.getMonth() + 1).padStart(2, '0')}-01`;
+              const toStr = `${lastDay.getFullYear()}-${String(lastDay.getMonth() + 1).padStart(2, '0')}-${String(lastDay.getDate()).padStart(2, '0')}`;
+              
+              const url = `/report/daily-outstanding-report?viewMode=calendar&partyId=${row.partyId || row.PartyId}&fromDate=${fromStr}&toDate=${toStr}`;
+              window.open(url, "_blank");
+            }}
+          >
+            {row.displayName}
+          </span>
+        );
+      }
     },
 
     {
@@ -144,16 +166,6 @@ const PayebleReceivableReport = () => {
       sortType: "string",
     },
     {
-      key: "terms",
-      label: "Terms",
-      width: "110px",
-      align: "right",
-      sortType: "number",
-      totalFn: (t) => t.weekly > 0
-        ? t.outstanding / t.weekly
-        : 0
-    },
-    {
       key: "weekly",
       label: "Weekly Avg",
       width: "140px",
@@ -162,12 +174,32 @@ const PayebleReceivableReport = () => {
       totalType: "avg",
     },
     {
+      key: "terms",
+      label: "Weekly Term",
+      width: "110px",
+      align: "right",
+      sortType: "number",
+      totalFn: (t) => t.weekly > 0
+        ? t.outstanding / t.weekly
+        : 0
+    },
+    {
       key: "monthly",
       label: "Monthly Avg",
       width: "140px",
       align: "right",
       sortType: "number",
       totalType: "avg",
+    },
+    {
+      key: "monthlyTerm",
+      label: "Monthly Term",
+      width: "110px",
+      align: "right",
+      sortType: "number",
+      totalFn: (t) => t.monthly > 0
+        ? t.outstanding / t.monthly
+        : 0
     },
   ];
 

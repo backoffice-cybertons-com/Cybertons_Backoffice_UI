@@ -201,7 +201,13 @@ const DailyOSReport = () => {
   document.title = "Daily Outstanding Report | SoftBook";
 
   const location = useLocation();
-  const routeState = location.state || {};
+  const searchParams = new URLSearchParams(location.search);
+  const routeState = {
+    viewMode: location.state?.viewMode || searchParams.get("viewMode"),
+    fromDate: location.state?.fromDate || searchParams.get("fromDate"),
+    toDate: location.state?.toDate || searchParams.get("toDate"),
+    partyId: location.state?.partyId || searchParams.get("partyId"),
+  };
 
   const today = useMemo(() => new Date(), []);
   const firstOfMonth = useMemo(
@@ -213,7 +219,9 @@ const DailyOSReport = () => {
   const [toDate, setToDate] = useState(toLocalYMD(today));
   const [datePreset, setDatePreset] = useState("month");
   const [partyOptions, setPartyOptions] = useState([ALL_PARTIES_OPTION]);
-  const [selectedParty, setSelectedParty] = useState(ALL_PARTIES_OPTION);
+  const [selectedParty, setSelectedParty] = useState(
+    routeState.partyId ? { value: routeState.partyId, label: "Loading..." } : ALL_PARTIES_OPTION
+  );
 
   const [viewMode, setViewMode] = useState(
     routeState.viewMode === "calendar" ? "calendar" : "table",
@@ -255,6 +263,13 @@ const DailyOSReport = () => {
           label: p.displayName ?? p.DisplayName ?? p.partyName ?? p.PartyName,
         }));
         setPartyOptions([ALL_PARTIES_OPTION, ...options]);
+        
+        if (routeState.partyId) {
+          const preselected = options.find((p) => String(p.value) === String(routeState.partyId));
+          if (preselected) {
+            setSelectedParty(preselected);
+          }
+        }
       } catch (err) {
         console.error("DailyOSReport: failed to load parties", err);
       }
