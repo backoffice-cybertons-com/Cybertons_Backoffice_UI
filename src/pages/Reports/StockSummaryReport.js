@@ -83,8 +83,13 @@ const StockSummaryReport = () => {
             unitName: (row.unitName || row.UnitName || '').toString().trim(),
             openingQty: Number(row.openingQty || row.OpeningQty || 0),
             inwardQty: Number(row.inwardQty || row.InwardQty || 0),
+            costPrice: Number(row.costPrice || row.CostPrice || 0),
+            inwardAmount: Number(row.inwardAmount || row.InwardAmount || 0),
             outwardQty: Number(row.outwardQty || row.OutwardQty || 0),
-            closingQty: Number(row.closingQty || row.ClosingQty || 0)
+            sellingPrice: Number(row.sellingPrice || row.SellingPrice || 0),
+            outwardAmount: Number(row.outwardAmount || row.OutwardAmount || 0),
+            closingQty: Number(row.closingQty || row.ClosingQty || 0),
+            closingAmount: Number(row.closingAmount || row.ClosingAmount || 0)
         }));
     }, [reportData]);
 
@@ -116,9 +121,12 @@ const StockSummaryReport = () => {
         return shownRows.reduce((acc, r) => ({
             opening: acc.opening + r.openingQty,
             inward: acc.inward + r.inwardQty,
+            inwardAmount: acc.inwardAmount + r.inwardAmount,
             outward: acc.outward + r.outwardQty,
-            closing: acc.closing + r.closingQty
-        }), { opening: 0, inward: 0, outward: 0, closing: 0 });
+            outwardAmount: acc.outwardAmount + r.outwardAmount,
+            closing: acc.closing + r.closingQty,
+            closingAmount: acc.closingAmount + r.closingAmount
+        }), { opening: 0, inward: 0, inwardAmount: 0, outward: 0, outwardAmount: 0, closing: 0, closingAmount: 0 });
     }, [shownRows]);
 
     const handleSort = (key) => {
@@ -137,22 +145,25 @@ const StockSummaryReport = () => {
         if (!shownRows.length) return;
 
         const aoa = [
-            ["STOCK SUMMARY REPORT", "", "", "", "", ""],
-            ["", "", "", "", "", ""],
-            ["Company Name:", companyName, "", "", "", ""],
-            ["Period:", `${formatDate(fromDate)} to ${formatDate(toDate)}`, "", "", "", ""],
-            ["", "", "", "", "", ""],
-            ["Product Name", "Unit", "Opening Qty", "Inward Qty", "Outward Qty", "Closing Qty"]
+            ["STOCK SUMMARY REPORT", "", "", "", "", "", "", "", "", "", ""],
+            ["", "", "", "", "", "", "", "", "", "", ""],
+            ["Company Name:", companyName, "", "", "", "", "", "", "", "", ""],
+            ["Period:", `${formatDate(fromDate)} to ${formatDate(toDate)}`, "", "", "", "", "", "", "", "", ""],
+            ["", "", "", "", "", "", "", "", "", "", ""],
+            ["Product Name", "Unit", "Opening Qty", "Inward Qty", "Cost Price", "Inward Amt", "Outward Qty", "Sale Price", "Outward Amt", "Closing Qty", "Closing Amt"]
         ];
 
         shownRows.forEach(r => {
-            aoa.push([r.productName, r.unitName, r.openingQty, r.inwardQty, r.outwardQty, r.closingQty]);
+            aoa.push([r.productName, r.unitName, r.openingQty, r.inwardQty, r.costPrice, r.inwardAmount, r.outwardQty, r.sellingPrice, r.outwardAmount, r.closingQty, r.closingAmount]);
         });
 
-        aoa.push(["GRAND TOTAL", "", totals.opening, totals.inward, totals.outward, totals.closing]);
+        aoa.push(["GRAND TOTAL", "", totals.opening, totals.inward, "", totals.inwardAmount, totals.outward, "", totals.outwardAmount, totals.closing, totals.closingAmount]);
 
         const ws = XLSX.utils.aoa_to_sheet(aoa);
-        ws["!cols"] = [{ wch: 40 }, { wch: 12 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 }];
+        ws["!cols"] = [
+            { wch: 30 }, { wch: 10 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, 
+            { wch: 14 }, { wch: 12 }, { wch: 12 }, { wch: 14 }, { wch: 12 }, { wch: 14 }
+        ];
 
         const border = {
             top: { style: "thin", color: { rgb: "D1D5DB" } },
@@ -325,6 +336,7 @@ const StockSummaryReport = () => {
                                                     <CardBody className="py-1 px-2 text-center">
                                                         <div className="text-muted text-uppercase fw-semibold ssr-summary-label">Inward (+)</div>
                                                         <h4 className="ssr-summary-value mb-0 text-success">{formatQty(totals.inward)}</h4>
+                                                        <div className="text-muted fs-11 mt-1">Val: {formatQty(totals.inwardAmount)}</div>
                                                     </CardBody>
                                                 </Card>
                                             </Col>
@@ -333,6 +345,7 @@ const StockSummaryReport = () => {
                                                     <CardBody className="py-1 px-2 text-center">
                                                         <div className="text-muted text-uppercase fw-semibold ssr-summary-label">Outward (-)</div>
                                                         <h4 className="ssr-summary-value mb-0 text-danger">{formatQty(totals.outward)}</h4>
+                                                        <div className="text-muted fs-11 mt-1">Val: {formatQty(totals.outwardAmount)}</div>
                                                     </CardBody>
                                                 </Card>
                                             </Col>
@@ -341,6 +354,7 @@ const StockSummaryReport = () => {
                                                     <CardBody className="py-1 px-2 text-center">
                                                         <div className="text-muted text-uppercase fw-semibold ssr-summary-label">Closing</div>
                                                         <h4 className="ssr-summary-value mb-0 ssr-closing-value">{formatQty(totals.closing)}</h4>
+                                                        <div className="text-muted fs-11 mt-1">Val: {formatQty(totals.closingAmount)}</div>
                                                     </CardBody>
                                                 </Card>
                                             </Col>
@@ -350,32 +364,37 @@ const StockSummaryReport = () => {
                                                 <Table className="align-middle ssr-table table-hover">
                                                     <thead className="sticky-top">
                                                         <tr>
-                                                            <th style={{ width: '40%' }}>
+                                                            <th style={{ width: '22%' }}>
                                                                 <button className="ssr-th-btn" onClick={() => handleSort('productName')}>
                                                                     Product <i className={sortIcon('productName')} />
                                                                 </button>
                                                             </th>
-                                                            <th style={{ width: '10%' }}>Unit</th>
-                                                            <th style={{ width: '12.5%' }} className="text-end">
+                                                            <th style={{ width: '6%' }}>Unit</th>
+                                                            <th style={{ width: '8%' }} className="text-end">
                                                                 <button className="ssr-th-btn ssr-th-btn-end" onClick={() => handleSort('openingQty')}>
                                                                     Opening <i className={sortIcon('openingQty')} />
                                                                 </button>
                                                             </th>
-                                                            <th style={{ width: '12.5%' }} className="text-end">
+                                                            <th style={{ width: '8%' }} className="text-end">
                                                                 <button className="ssr-th-btn ssr-th-btn-end" onClick={() => handleSort('inwardQty')}>
                                                                     Inward <i className={sortIcon('inwardQty')} />
                                                                 </button>
                                                             </th>
-                                                            <th style={{ width: '12.5%' }} className="text-end">
+                                                            <th style={{ width: '8%' }} className="text-end">Cost</th>
+                                                            <th style={{ width: '10%' }} className="text-end">Inward Amt</th>
+                                                            <th style={{ width: '8%' }} className="text-end">
                                                                 <button className="ssr-th-btn ssr-th-btn-end" onClick={() => handleSort('outwardQty')}>
                                                                     Outward <i className={sortIcon('outwardQty')} />
                                                                 </button>
                                                             </th>
-                                                            <th style={{ width: '12.5%' }} className="text-end">
+                                                            <th style={{ width: '8%' }} className="text-end">Sale Price</th>
+                                                            <th style={{ width: '10%' }} className="text-end">Outward Amt</th>
+                                                            <th style={{ width: '8%' }} className="text-end">
                                                                 <button className="ssr-th-btn ssr-th-btn-end" onClick={() => handleSort('closingQty')}>
                                                                     Closing <i className={sortIcon('closingQty')} />
                                                                 </button>
                                                             </th>
+                                                            <th style={{ width: '10%' }} className="text-end">Closing Amt</th>
                                                         </tr>
                                                     </thead>
                                                     <tbody>
@@ -385,20 +404,30 @@ const StockSummaryReport = () => {
                                                                 <td className="text-muted">{r.unitName}</td>
                                                                 <td className="text-end">{formatQty(r.openingQty)}</td>
                                                                 <td className="text-end text-success">+{formatQty(r.inwardQty)}</td>
+                                                                <td className="text-end text-muted">{formatQty(r.costPrice)}</td>
+                                                                <td className="text-end text-success">{formatQty(r.inwardAmount)}</td>
                                                                 <td className="text-end text-danger">-{formatQty(r.outwardQty)}</td>
+                                                                <td className="text-end text-muted">{formatQty(r.sellingPrice)}</td>
+                                                                <td className="text-end text-danger">{formatQty(r.outwardAmount)}</td>
                                                                 <td className="text-end fw-bold">{formatQty(r.closingQty)}</td>
+                                                                <td className="text-end fw-bold text-primary">{formatQty(r.closingAmount)}</td>
                                                             </tr>
                                                         ))}
                                                     </tbody>
                                                 </Table>
                                             </div>
                                             <div className="ssr-total-strip d-flex align-items-center py-2 px-3">
-                                                <div style={{ width: '40%' }} className="text-start ps-3 text-uppercase fw-bold">Grand Total</div>
-                                                <div style={{ width: '10%' }} className="text-muted fs-11">Found {shownRows.length}</div>
-                                                <div style={{ width: '12.5%' }} className="text-end">{formatQty(totals.opening)}</div>
-                                                <div style={{ width: '12.5%' }} className="text-end text-success">{formatQty(totals.inward)}</div>
-                                                <div style={{ width: '12.5%' }} className="text-end text-danger">{formatQty(totals.outward)}</div>
-                                                <div style={{ width: '12.5%' }} className="text-end ssr-closing-value">{formatQty(totals.closing)}</div>
+                                                <div style={{ width: '22%' }} className="text-start ps-3 text-uppercase fw-bold">Grand Total</div>
+                                                <div style={{ width: '6%' }} className="text-muted fs-11">({shownRows.length})</div>
+                                                <div style={{ width: '8%' }} className="text-end">{formatQty(totals.opening)}</div>
+                                                <div style={{ width: '8%' }} className="text-end text-success">{formatQty(totals.inward)}</div>
+                                                <div style={{ width: '8%' }} className="text-end"></div>
+                                                <div style={{ width: '10%' }} className="text-end text-success fw-bold">{formatQty(totals.inwardAmount)}</div>
+                                                <div style={{ width: '8%' }} className="text-end text-danger">{formatQty(totals.outward)}</div>
+                                                <div style={{ width: '8%' }} className="text-end"></div>
+                                                <div style={{ width: '10%' }} className="text-end text-danger fw-bold">{formatQty(totals.outwardAmount)}</div>
+                                                <div style={{ width: '8%' }} className="text-end ssr-closing-value">{formatQty(totals.closing)}</div>
+                                                <div style={{ width: '10%' }} className="text-end ssr-closing-value fw-bold">{formatQty(totals.closingAmount)}</div>
                                             </div>
                                         </div>
                                     </CardBody>

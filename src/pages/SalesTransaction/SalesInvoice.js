@@ -143,6 +143,7 @@ const SalesInvoice = () => {
     const roundOff = header?.roundOff || header?.RoundOff || 0;
     const prevOutstanding = header?.previousOutstanding || header?.PreviousOutstanding || 0;
     const finalOutstanding = header?.finalOutstanding || header?.FinalOutstanding || 0;
+    const todaysInvoice = header?.todaysInvoice ?? header?.TodaysInvoice ?? grandTotal;
 
     // Company info (from Master Profile)
     const companyName = company?.companyName || company?.CompanyName || company?.name || company?.Name || "Your Company";
@@ -472,12 +473,12 @@ const SalesInvoice = () => {
                                         <td className="gst-cell text-right" style={{ paddingRight: '6px' }}>{fmt(prevOutstanding)}</td>
                                     </tr>
                                     <tr>
-                                        <td className="os-cell">This Bill &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: <span className="os-val">{fmt(grandTotal)}</span></td>
+                                        <td className="os-cell">Today's Invoice : <span className="os-val">{fmt(todaysInvoice)}</span></td>
                                         <td className="gst-cell text-center">{lines.find(l => (l.cgstPercent || l.CgstPercent) > 0) ? (Number(lines.find(l => (l.cgstPercent || l.CgstPercent) > 0)?.cgstPercent || 0) * 2).toFixed(2) : "0.00"}</td>
                                         <td className="gst-cell text-right">{fmt(totTaxable)}</td>
                                         <td className="gst-cell text-right">{fmt(totCgst)}</td>
                                         <td className="gst-cell text-right">{fmt(totSgst)}</td>
-                                        <td className="gst-cell text-right" style={{ paddingRight: '6px' }}>{fmt(grandTotal)}</td>
+                                        <td className="gst-cell text-right" style={{ paddingRight: '6px' }}>{fmt(todaysInvoice)}</td>
                                     </tr>
                                     <tr>
                                         <td className="os-cell">Today's Receipt : <span className="os-val">{fmt(header?.todaysReceipt || header?.TodaysReceipt || 0)}</span></td>
@@ -496,7 +497,7 @@ const SalesInvoice = () => {
                                         <td className="gst-cell text-right"></td>
                                     </tr> */}
                                     <tr>
-                                        <td className="os-cell" style={{ borderTop: '1px solid #000' }}>Final O/S &nbsp;&nbsp;&nbsp;&nbsp;: <span className="os-val bold">{fmt(prevOutstanding + grandTotal - (header?.todaysReceipt || header?.TodaysReceipt || 0))}</span></td>
+                                        <td className="os-cell" style={{ borderTop: '1px solid #000' }}>Final O/S &nbsp;&nbsp;&nbsp;&nbsp;: <span className="os-val bold">{fmt(prevOutstanding + todaysInvoice - (header?.todaysReceipt || header?.TodaysReceipt || 0))}</span></td>
                                         <td className="gst-cell text-center"></td>
                                         <td className="gst-cell text-right"></td>
                                         <td className="gst-cell text-right"></td>

@@ -70,30 +70,35 @@ const StockLedgerDatewiseReport = () => {
 
     const rows = useMemo(() => {
         return (reportData || []).map(row => ({
-            srNo:        Number(row.srNo        || row.SrNo        || 0),
-            tranDate:    row.tranDate    || row.TranDate    || null,
-            description: (row.description || row.Description || '').toString().trim(),
-            inwardQty:   Number(row.inwardQty   || row.InwardQty   || 0),
-            outwardQty:  Number(row.outwardQty  || row.OutwardQty  || 0),
-            balanceQty:  Number(row.balanceQty  || row.BalanceQty  || 0),
+            srNo:         Number(row.srNo         || row.SrNo         || 0),
+            tranDate:     row.tranDate     || row.TranDate     || null,
+            description:  (row.description || row.Description || '').toString().trim(),
+            inwardQty:    Number(row.inwardQty    || row.InwardQty    || 0),
+            inwardAmount: Number(row.inwardAmount || row.InwardAmount || 0),
+            outwardQty:   Number(row.outwardQty   || row.OutwardQty   || 0),
+            outwardAmount:Number(row.outwardAmount|| row.OutwardAmount|| 0),
+            balanceQty:   Number(row.balanceQty   || row.BalanceQty   || 0),
+            balanceAmount:Number(row.balanceAmount|| row.BalanceAmount|| 0),
         }));
     }, [reportData]);
 
     const totals = useMemo(() => rows.reduce((acc, r) => ({
-        inward:  acc.inward  + r.inwardQty,
-        outward: acc.outward + r.outwardQty,
-    }), { inward: 0, outward: 0 }), [rows]);
+        inward:        acc.inward        + r.inwardQty,
+        inwardAmount:  acc.inwardAmount  + r.inwardAmount,
+        outward:       acc.outward       + r.outwardQty,
+        outwardAmount: acc.outwardAmount + r.outwardAmount,
+    }), { inward: 0, inwardAmount: 0, outward: 0, outwardAmount: 0 }), [rows]);
 
     const handleExcel = () => {
         if (!rows.length) return;
 
         const aoa = [
-            ["STOCK LEDGER DATEWISE REPORT", "", "", "", "", ""],
-            ["", "", "", "", "", ""],
-            ["Company Name:", companyName, "", "", "", ""],
-            ["Period:", `${formatDate(fromDate)} to ${formatDate(toDate)}`, "", "", "", ""],
-            ["", "", "", "", "", ""],
-            ["Sr No", "Date", "Description", "Inward Qty", "Outward Qty", "Balance Qty"],
+            ["STOCK LEDGER DATEWISE REPORT", "", "", "", "", "", "", "", ""],
+            ["", "", "", "", "", "", "", "", ""],
+            ["Company Name:", companyName, "", "", "", "", "", "", ""],
+            ["Period:", `${formatDate(fromDate)} to ${formatDate(toDate)}`, "", "", "", "", "", "", ""],
+            ["", "", "", "", "", "", "", "", ""],
+            ["Sr No", "Date", "Description", "Inward Qty", "Inward Amt", "Outward Qty", "Outward Amt", "Balance Qty", "Balance Amt"],
         ];
 
         rows.forEach(r => {
@@ -102,16 +107,19 @@ const StockLedgerDatewiseReport = () => {
                 r.tranDate ? formatDate(r.tranDate) : '',
                 r.description,
                 r.inwardQty,
+                r.inwardAmount,
                 r.outwardQty,
+                r.outwardAmount,
                 r.balanceQty,
+                r.balanceAmount,
             ]);
         });
 
-        aoa.push(["", "TOTAL", "", totals.inward, totals.outward, ""]);
+        aoa.push(["", "TOTAL", "", totals.inward, totals.inwardAmount, totals.outward, totals.outwardAmount, "", ""]);
 
         const ws = XLSX.utils.aoa_to_sheet(aoa);
         ws["!cols"] = [
-            { wch: 6 }, { wch: 14 }, { wch: 18 }, { wch: 14 }, { wch: 14 }, { wch: 14 }
+            { wch: 6 }, { wch: 14 }, { wch: 16 }, { wch: 14 }, { wch: 16 }, { wch: 14 }, { wch: 16 }, { wch: 14 }, { wch: 16 }
         ];
 
         const border = {
@@ -251,6 +259,7 @@ const StockLedgerDatewiseReport = () => {
                                                     <CardBody className="py-1 px-2 text-center">
                                                         <div className="text-muted text-uppercase fw-semibold ssr-summary-label">Total Inward</div>
                                                         <h4 className="ssr-summary-value mb-0 text-success">{formatQty(totals.inward)}</h4>
+                                                        <div className="text-muted fs-11 mt-1">Amt: {formatQty(totals.inwardAmount)}</div>
                                                     </CardBody>
                                                 </Card>
                                             </Col>
@@ -259,6 +268,7 @@ const StockLedgerDatewiseReport = () => {
                                                     <CardBody className="py-1 px-2 text-center">
                                                         <div className="text-muted text-uppercase fw-semibold ssr-summary-label">Total Outward</div>
                                                         <h4 className="ssr-summary-value mb-0 text-danger">{formatQty(totals.outward)}</h4>
+                                                        <div className="text-muted fs-11 mt-1">Amt: {formatQty(totals.outwardAmount)}</div>
                                                     </CardBody>
                                                 </Card>
                                             </Col>
@@ -269,6 +279,7 @@ const StockLedgerDatewiseReport = () => {
                                                         <h4 className="ssr-summary-value mb-0 ssr-closing-value">
                                                             {rows.length > 0 ? formatQty(rows[rows.length - 1].balanceQty) : '—'}
                                                         </h4>
+                                                        <div className="text-muted fs-11 mt-1">Amt: {rows.length > 0 ? formatQty(rows[rows.length - 1].balanceAmount) : '—'}</div>
                                                     </CardBody>
                                                 </Card>
                                             </Col>
@@ -288,17 +299,20 @@ const StockLedgerDatewiseReport = () => {
                                                     <thead className="sticky-top">
                                                         <tr>
                                                             <th style={{ width: '5%' }}>Sr</th>
-                                                            <th style={{ width: '14%' }}>Date</th>
-                                                            <th style={{ width: '16%' }}>Description</th>
-                                                            <th style={{ width: '21%' }} className="text-end">Inward Qty</th>
-                                                            <th style={{ width: '21%' }} className="text-end">Outward Qty</th>
-                                                            <th style={{ width: '23%' }} className="text-end">Balance Qty</th>
+                                                            <th style={{ width: '11%' }}>Date</th>
+                                                            <th style={{ width: '12%' }}>Description</th>
+                                                            <th style={{ width: '11%' }} className="text-end">Inward Qty</th>
+                                                            <th style={{ width: '13%' }} className="text-end">Inward Amt</th>
+                                                            <th style={{ width: '11%' }} className="text-end">Outward Qty</th>
+                                                            <th style={{ width: '13%' }} className="text-end">Outward Amt</th>
+                                                            <th style={{ width: '12%' }} className="text-end">Balance Qty</th>
+                                                            <th style={{ width: '12%' }} className="text-end">Balance Amt</th>
                                                         </tr>
                                                     </thead>
                                                     <tbody>
                                                         {rows.length === 0 ? (
                                                             <tr>
-                                                                <td colSpan={6} className="text-center text-muted py-4">
+                                                                <td colSpan={9} className="text-center text-muted py-4">
                                                                     No data found for selected date range.
                                                                 </td>
                                                             </tr>
@@ -310,10 +324,17 @@ const StockLedgerDatewiseReport = () => {
                                                                 <td className="text-end text-success" style={{ whiteSpace: 'nowrap' }}>
                                                                     {r.inwardQty > 0 ? formatQty(r.inwardQty) : ''}
                                                                 </td>
+                                                                <td className="text-end text-success" style={{ whiteSpace: 'nowrap' }}>
+                                                                    {r.inwardAmount > 0 ? formatQty(r.inwardAmount) : ''}
+                                                                </td>
                                                                 <td className="text-end text-danger" style={{ whiteSpace: 'nowrap' }}>
                                                                     {r.outwardQty > 0 ? formatQty(r.outwardQty) : ''}
                                                                 </td>
+                                                                <td className="text-end text-danger" style={{ whiteSpace: 'nowrap' }}>
+                                                                    {r.outwardAmount > 0 ? formatQty(r.outwardAmount) : ''}
+                                                                </td>
                                                                 <td className="text-end fw-bold" style={{ whiteSpace: 'nowrap' }}>{formatQty(r.balanceQty)}</td>
+                                                                <td className="text-end fw-bold text-primary" style={{ whiteSpace: 'nowrap' }}>{formatQty(r.balanceAmount)}</td>
                                                             </tr>
                                                         ))}
                                                     </tbody>
@@ -322,11 +343,16 @@ const StockLedgerDatewiseReport = () => {
 
                                             {/* Grand Total Strip */}
                                             <div className="ssr-total-strip d-flex align-items-center py-2 px-3">
-                                                <div style={{ width: '35%' }} className="text-uppercase fw-bold">Grand Total</div>
-                                                <div style={{ width: '21%' }} className="text-end text-success fw-bold">{formatQty(totals.inward)}</div>
-                                                <div style={{ width: '21%' }} className="text-end text-danger fw-bold">{formatQty(totals.outward)}</div>
-                                                <div style={{ width: '23%' }} className="text-end fw-bold">
+                                                <div style={{ width: '28%' }} className="text-uppercase fw-bold">Grand Total</div>
+                                                <div style={{ width: '11%' }} className="text-end text-success fw-bold">{formatQty(totals.inward)}</div>
+                                                <div style={{ width: '13%' }} className="text-end text-success fw-bold">{formatQty(totals.inwardAmount)}</div>
+                                                <div style={{ width: '11%' }} className="text-end text-danger fw-bold">{formatQty(totals.outward)}</div>
+                                                <div style={{ width: '13%' }} className="text-end text-danger fw-bold">{formatQty(totals.outwardAmount)}</div>
+                                                <div style={{ width: '12%' }} className="text-end fw-bold">
                                                     {rows.length > 0 ? formatQty(rows[rows.length - 1].balanceQty) : ''}
+                                                </div>
+                                                <div style={{ width: '12%' }} className="text-end fw-bold ssr-closing-value">
+                                                    {rows.length > 0 ? formatQty(rows[rows.length - 1].balanceAmount) : ''}
                                                 </div>
                                             </div>
                                         </div>

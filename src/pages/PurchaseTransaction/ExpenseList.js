@@ -133,7 +133,21 @@ const ExpenseList = () => {
                 header: "Description",
                 accessorKey: "description",
                 enableColumnFilter: true,
-                cell: (cell) => cell.getValue() || cell.row.original.Description || cell.row.original.description || "-",
+                cell: (cell) => {
+                    const desc = cell.getValue() || cell.row.original.Description || cell.row.original.description;
+                    if (desc && desc.trim() !== "") return desc;
+                    // Fallback: show the opposing account name so the row is never blank
+                    const vType = cell.row.original.vType || cell.row.original.VType || "";
+                    if (vType === "Income") {
+                        // Income = money received INTO main account → CR side is the source
+                        return cell.row.original.crAccountName || cell.row.original.CrAccountName || "-";
+                    }
+                    if (vType === "Expense") {
+                        // Expense = money paid FROM main account → DR side is the destination
+                        return cell.row.original.drAccountName || cell.row.original.DrAccountName || "-";
+                    }
+                    return "-";
+                },
             },
             {
                 header: "Debit Account",
@@ -210,15 +224,27 @@ const ExpenseList = () => {
 
     const exportRows = useMemo(() => {
         const sourceRows = (visibleRows && visibleRows.length >= 0) ? visibleRows : (expenses || []);
-        return sourceRows.map((row) => ({
-            gCode: row.gCode || row.GCode || row.g_code || "",
-            jvDate: handleValidDate(row.jvDate || row.JvDate || row.jv_date),
-            description: row.description || row.Description || "-",
-            drAccountName: row.drAccountName || row.DrAccountName || "-",
-            crAccountName: row.crAccountName || row.CrAccountName || "-",
-            vType: row.vType || row.VType || "",
-            amount: Number(row.amount || row.Amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 }),
-        }));
+        return sourceRows.map((row) => {
+            const desc = row.description || row.Description || "";
+            const vType = row.vType || row.VType || "";
+            // Fallback: if no description, show the opposing account name
+            const descDisplay = desc.trim()
+                ? desc
+                : vType === "Income"
+                    ? (row.crAccountName || row.CrAccountName || "-")
+                    : vType === "Expense"
+                        ? (row.drAccountName || row.DrAccountName || "-")
+                        : "-";
+            return {
+                gCode: row.gCode || row.GCode || row.g_code || "",
+                jvDate: handleValidDate(row.jvDate || row.JvDate || row.jv_date),
+                description: descDisplay,
+                drAccountName: row.drAccountName || row.DrAccountName || "-",
+                crAccountName: row.crAccountName || row.CrAccountName || "-",
+                vType: vType,
+                amount: Number(row.amount || row.Amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 }),
+            };
+        });
     }, [visibleRows, expenses]);
 
     document.title = "Income & Expenses | SoftBook";
