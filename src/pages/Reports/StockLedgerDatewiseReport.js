@@ -1,5 +1,5 @@
 // Developed by Hetak on 11-05-2026
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import {
     Card, CardBody, Col, Container, Row,
     Button, Input, Label, Table, Spinner
@@ -8,7 +8,7 @@ import { useSelector } from 'react-redux';
 import { createSelector } from 'reselect';
 import * as XLSX from 'xlsx-js-style';
 import { saveAs } from 'file-saver';
-import { getStockLedgerDatewise } from "../../helpers/fakebackend_helper";
+import { getStockLedgerDatewise, getProductsForSales } from "../../helpers/fakebackend_helper";
 import secureStorage from "../../utils/secureStorage";
 import BreadCrumb from '../../Components/Common/BreadCrumb';
 import "./StockSummaryReport.css";
@@ -37,6 +37,21 @@ const StockLedgerDatewiseReport = () => {
     const [reportData, setReportData] = useState(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [productList, setProductList] = useState([]);
+    const [selectedProductId, setSelectedProductId] = useState('');
+
+    useEffect(() => {
+        const fetchProducts = async () => {
+            try {
+                const response = await getProductsForSales();
+                const list = Array.isArray(response) ? response : (response?.data || []);
+                setProductList(list);
+            } catch (err) {
+                console.error("Failed to load products:", err);
+            }
+        };
+        fetchProducts();
+    }, []);
 
     const companyName = secureStorage.getPlain('companyName') || secureStorage.getPlain('CompanyName') || 'SoftBook';
 
@@ -57,7 +72,7 @@ const StockLedgerDatewiseReport = () => {
         setError('');
         try {
             const companyId = secureStorage.getPlain('companyId') || 10001;
-            const response = await getStockLedgerDatewise(companyId, fromDate, toDate);
+            const response = await getStockLedgerDatewise(companyId, fromDate, toDate, selectedProductId || null);
             const data = Array.isArray(response) ? response : (response?.data || []);
             setReportData(data);
         } catch (err) {
@@ -91,9 +106,11 @@ const StockLedgerDatewiseReport = () => {
 
     const handleExcel = () => {
         if (!rows.length) return;
+        const selectedProductObj = productList.find(p => p.productId?.toString() === selectedProductId?.toString());
+        const productName = selectedProductObj ? selectedProductObj.name : "All Products";
 
         const aoa = [
-            ["STOCK LEDGER DATEWISE REPORT", "", "", "", "", "", "", "", ""],
+            [`STOCK LEDGER DATEWISE REPORT - ${productName}`, "", "", "", "", "", "", "", ""],
             ["", "", "", "", "", "", "", "", ""],
             ["Company Name:", companyName, "", "", "", "", "", "", ""],
             ["Period:", `${formatDate(fromDate)} to ${formatDate(toDate)}`, "", "", "", "", "", "", ""],
@@ -168,6 +185,8 @@ const StockLedgerDatewiseReport = () => {
     const handlePrint = () => {
         const content = document.getElementById('reportViewContainer');
         if (!content) return;
+        const selectedProductObj = productList.find(p => p.productId?.toString() === selectedProductId?.toString());
+        const productName = selectedProductObj ? selectedProductObj.name : "All Products";
         const w = window.open('', '_blank');
         w.document.write(`<html><head><title>Stock Ledger Datewise Report</title>
             <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
@@ -185,7 +204,7 @@ const StockLedgerDatewiseReport = () => {
                 <div class="header-info">
                     <div>
                         <h1 class="company-name">${companyName}</h1>
-                        <p class="report-title">Stock Ledger Datewise Report</p>
+                        <p class="report-title">Stock Ledger Datewise Report - <b>${productName}</b></p>
                     </div>
                     <div class="text-end">
                         <small>Period: <b>${formatDate(fromDate)} to ${formatDate(toDate)}</b></small>
@@ -209,15 +228,31 @@ const StockLedgerDatewiseReport = () => {
                             <Card className="mb-2">
                                 <CardBody className="py-2">
                                     <Row className="g-3 align-items-end">
-
-                                        <Col md={3}>
+                                        <Col md={2}>
                                             <Label className="text-muted text-uppercase fw-semibold mb-1">From Date</Label>
                                             <Input type="date" className="form-control" value={fromDate} onChange={(e) => setFromDate(e.target.value)} />
                                         </Col>
 
-                                        <Col md={3}>
+                                        <Col md={2}>
                                             <Label className="text-muted text-uppercase fw-semibold mb-1">To Date</Label>
                                             <Input type="date" className="form-control" value={toDate} onChange={(e) => setToDate(e.target.value)} />
+                                        </Col>
+
+                                        <Col md={4}>
+                                            <Label className="text-muted text-uppercase fw-semibold mb-1">Product</Label>
+                                            <Input
+                                                type="select"
+                                                className="form-select"
+                                                value={selectedProductId}
+                                                onChange={(e) => setSelectedProductId(e.target.value)}
+                                            >
+                                                <option value="">All Products</option>
+                                                {productList.map((prod) => (
+                                                    <option key={prod.productId} value={prod.productId}>
+                                                        {prod.name}
+                                                    </option>
+                                                ))}
+                                            </Input>
                                         </Col>
 
                                         <Col md={2}>
@@ -226,7 +261,7 @@ const StockLedgerDatewiseReport = () => {
                                             </Button>
                                         </Col>
 
-                                        <Col md={4}>
+                                        <Col md={2}>
                                             <div className="d-flex gap-2 justify-content-end">
                                                 <Button color="success" outline onClick={handleExcel} title="Export Excel">
                                                     <i className="ri-file-excel-2-line" />
