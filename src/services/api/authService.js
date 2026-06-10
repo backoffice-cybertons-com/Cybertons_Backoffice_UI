@@ -18,6 +18,7 @@
  */
 
 import apiClient from './apiClient';
+import secureStorage from '../../utils/secureStorage';
 
 export const authService = {
   /**
@@ -40,9 +41,12 @@ export const authService = {
    * (Optional if backend has server-side session invalidation)
    */
   logout: () => {
-    // If backend has a logout endpoint
-    // return apiClient.post('/api/auth/logout');
-    return Promise.resolve(); // Client-side logout only for now
+    const payload = {
+      EmailUsername: '',
+      Password: '',
+      CompanyId: parseInt(secureStorage.getPlain('companyId'), 10) || 0,
+    };
+    return apiClient.post('/api/user/logout', payload);
   },
 
   /**

@@ -89,6 +89,7 @@ const SalesTransactionCreate = () => {
     const [allSalesOrders, setAllSalesOrders] = useState([]);
     const [customerRateDiff, setCustomerRateDiff] = useState(0);
     const itemTableScrollRef = useRef(null);
+    const partyPreselectedRef = useRef(false);
 
     // Helper: extract crt value from a unit object regardless of key casing
     const getCrtFromUnit = (unit) => {
@@ -770,6 +771,7 @@ const SalesTransactionCreate = () => {
                 validation.setFieldValue("previousOutstanding", 0);
             }
 
+            // Use stored rate_diff from party master (not auto-calculated / not persisted on open).
             const rateDiff = parseFloat(party.rateDiff || party.RateDiff) || 0;
             setCustomerRateDiff(rateDiff);
 
@@ -798,6 +800,16 @@ const SalesTransactionCreate = () => {
             console.error("Error fetching customer details:", error);
         }
     };
+
+    useEffect(() => {
+        const preselectedPartyId = location.state?.partyId;
+        if (partyPreselectedRef.current || isEdit || isCopy || !preselectedPartyId || customers.length === 0) return;
+        const customer = customers.find((c) => String(c.value) === String(preselectedPartyId));
+        if (customer) {
+            partyPreselectedRef.current = true;
+            handleCustomerChange(customer, true);
+        }
+    }, [customers, isEdit, isCopy, location.state?.partyId]);
 
     const formatProductOption = (option) => (
         <div className="d-flex flex-column">

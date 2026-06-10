@@ -7,7 +7,7 @@ import {
 } from 'reactstrap';
 import classnames from 'classnames';
 import { APIClient } from '../../../helpers/api_helper';
-import { uploadPartyProfile } from '../../../helpers/fakebackend_helper';
+import { uploadPartyProfile, calculatePartyRateAdjustment } from '../../../helpers/fakebackend_helper';
 import { api } from "../../../config";
 import { toast } from 'react-toastify';
 import ResultModal from '../../../Components/Common/ResultModal';
@@ -80,6 +80,7 @@ const PartyMasterModal = ({ isOpen, toggle, partyId, isEdit, onSuccess, defaultT
 
     const [form, setForm] = useState(initialPartyState);
     const [validationErrors, setValidationErrors] = useState({});
+    const [calculatedAddPricePreview, setCalculatedAddPricePreview] = useState(null);
 
     // Result Modal State (Artistic Popup)
     const [resultModal, setResultModal] = useState({
@@ -294,6 +295,41 @@ const PartyMasterModal = ({ isOpen, toggle, partyId, isEdit, onSuccess, defaultT
                 [name]: type === 'checkbox' ? checked : value
             }
         }));
+    };
+
+    const handlePreviewCalculatedAddPrice = async () => {
+        const id = form.Party?.PartyId || partyId;
+        if (!id) {
+            toast.info('Save the party first, then preview calculated add price.');
+            return;
+        }
+        try {
+            setLoading(true);
+            const result = await calculatePartyRateAdjustment(id);
+            const calculated = parseFloat(result?.addPrice ?? result?.AddPrice ?? 0) || 0;
+            const stored = parseFloat(
+                result?.storedRateDiff ?? result?.StoredRateDiff ?? form.Party.RateDiff ?? 0
+            ) || 0;
+            setCalculatedAddPricePreview({
+                calculated,
+                stored,
+                avgOutstandingDays: result?.avgOutstandingDays ?? result?.AvgOutstandingDays ?? 0,
+                fromDue: result?.fromDue ?? result?.FromDue ?? 0,
+                toDue: result?.toDue ?? result?.ToDue ?? 0,
+            });
+            if (calculated === stored) {
+                toast.info(`Calculated add price matches stored value: ${formatToTwoDecimals(calculated)}`);
+            } else {
+                toast.warning(
+                    `Calculated: ${formatToTwoDecimals(calculated)} | Stored: ${formatToTwoDecimals(stored)} (stored value is used in sales orders)`
+                );
+            }
+        } catch (err) {
+            console.error('Add price preview failed:', err);
+            toast.error('Failed to preview calculated add price.');
+        } finally {
+            setLoading(false);
+        }
     };
 
     const handleAddressChange = (index, e) => {
@@ -655,7 +691,32 @@ const PartyMasterModal = ({ isOpen, toggle, partyId, isEdit, onSuccess, defaultT
                                         placeholder="e.g. 5 or -5"
                                         className="no-spin-input"
                                     />
-                                    <p className="text-muted small">This amount will be added (positive) or subtracted (negative) from item rates in Sales.</p>
+                                    <p className="text-muted small mb-1">
+                                        Stored value used in Sales Orders (Adj. column). Virtual add price is calculated from
+                                        last 7 days sales and outstanding using <code>tab_add_price</code> — see report for comparison.
+                                    </p>
+                                    <p className="text-muted small mb-2">
+                                        Formula: Avg O/S Days = Total Outstanding ÷ (Last 7 Days Sales ÷ 7), then lookup Add Price from range.
+                                    </p>
+                                    {calculatedAddPricePreview && (
+                                        <div className={`small mb-2 p-2 rounded border ${calculatedAddPricePreview.calculated !== calculatedAddPricePreview.stored ? 'border-warning bg-warning bg-opacity-10' : 'border-success bg-success bg-opacity-10'}`}>
+                                            <div>Calculated Add Price: <strong>{formatToTwoDecimals(calculatedAddPricePreview.calculated)}</strong></div>
+                                            <div>Stored Rate Diff: <strong>{formatToTwoDecimals(calculatedAddPricePreview.stored)}</strong></div>
+                                            <div className="text-muted">
+                                                Avg O/S Days: {formatToTwoDecimals(calculatedAddPricePreview.avgOutstandingDays)}
+                                                {' '}| Range: {formatToTwoDecimals(calculatedAddPricePreview.fromDue)} – {formatToTwoDecimals(calculatedAddPricePreview.toDue)}
+                                            </div>
+                                        </div>
+                                    )}
+                                    <Button
+                                        type="button"
+                                        color="soft-primary"
+                                        size="sm"
+                                        onClick={handlePreviewCalculatedAddPrice}
+                                        disabled={loading}
+                                    >
+                                        Preview Calculated Add Price
+                                    </Button>
                                 </FormGroup>
                             </Col>
                             <Col md={12}>

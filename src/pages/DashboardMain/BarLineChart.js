@@ -71,7 +71,7 @@ const BarLineChart = ({ dataColors, seriesData, filter, loading }) => {
             if (rawLabel.includes('-') || rawLabel.includes('T')) {
                 const date = new Date(rawLabel);
                 if (!isNaN(date.getTime())) {
-                    if (filter === "TODAY") return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+                    if (filter === "TODAY" || filter === "YESTERDAY") return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
                     
                     // Show "DD MMM" for any filter that results in a daily list (This Week, This Month, Prev Month, Custom)
                     if (filter === "THIS_WEEK" || filter === "THIS_MONTH" || filter === "PREV_MONTH" || filter === "CUSTOM") {
@@ -80,7 +80,7 @@ const BarLineChart = ({ dataColors, seriesData, filter, loading }) => {
                 }
             }
 
-            if (filter === "TODAY" && !isNaN(rawLabel) && rawLabel !== '') {
+            if ((filter === "TODAY" || filter === "YESTERDAY") && !isNaN(rawLabel) && rawLabel !== '') {
                 const hour = parseInt(rawLabel);
                 return hour >= 12
                     ? (hour === 12 ? "12 PM" : (hour - 12) + " PM")

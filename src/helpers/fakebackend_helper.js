@@ -270,6 +270,32 @@ export const deleteSalesTransaction = salesTransaction => api.delete(url.DELETE_
 export const getSalesTransactionDetails = (id) => api.get(`${url.GET_SALES_TRANSACTION_DETAILS}/${id}`);
 export const getPartyOutstanding = (partyId) => api.get(`${url.GET_PARTY_OUTSTANDING}/${partyId}`);
 
+/** Virtual calculation only — does not update tab_party_master.rate_diff. */
+export const calculatePartyRateAdjustment = (partyId) =>
+  api.get(`${url.GET_PARTY_CALCULATE_RATE_ADJUSTMENT}/${partyId}/calculate-rate-adjustment`);
+
+/** Persists to DB only when backend AutoPersistRateDiff is enabled. */
+export const recalculatePartyRateAdjustment = (partyId) =>
+  api.create(`${url.POST_PARTY_RECALCULATE_RATE_ADJUSTMENT}/${partyId}/recalculate-rate-adjustment`, {});
+
+export const getPartyRateAdjustmentSummary = (partyType = 'Customer,Trader', onlyWithAddPrice = true) =>
+  api.get(url.GET_PARTY_RATE_ADJUSTMENT_SUMMARY, {
+    params: { partyType, onlyWithAddPrice }
+  });
+
+export const getPartyRateAdjustmentInvoiceMismatches = (fromDate, toDate, partyType = 'Customer,Trader') =>
+  api.get(url.GET_PARTY_RATE_ADJUSTMENT_INVOICE_MISMATCHES, {
+    params: { fromDate, toDate, partyType }
+  });
+
+export const getPartyRateAdjustmentChanges = (partyType = 'Customer,Trader', changeType = null) =>
+  api.get(url.GET_PARTY_RATE_ADJUSTMENT_CHANGES, {
+    params: { partyType, ...(changeType ? { changeType } : {}) }
+  });
+
+export const getSystemLogDatewise = (fromDate, toDate) =>
+  api.get(url.GET_SYSTEM_LOG_DATEWISE, { params: { fromDate, toDate } });
+
 // Payment & Receipt
 export const getPaymentReceipts = (params) => api.get(url.GET_PAYMENT_RECEIPTS, { params });
 export const addNewPaymentReceipt = (data) => api.create(url.ADD_NEW_PAYMENT_RECEIPT, data);
@@ -472,6 +498,9 @@ export const getStockSummaryReport = (companyId, fromDate, toDate) =>
 // Developed by Hetak on 11-05-2026
 export const getStockLedgerDatewise = (companyId, fromDate, toDate) =>
   api.get(url.GET_STOCK_LEDGER_DATEWISE, { companyId, fromDate, toDate });
+
+export const getBelowPriceSalesReport = (companyId, fromDate, toDate, filterType = "all") =>
+  api.get(url.GET_BELOW_PRICE_SALES_REPORT, { companyId, fromDate, toDate, filterType });
 
 // Code developed by Hetak Modi 290526
 export const getDayBook = (companyId, fromDate, toDate) =>

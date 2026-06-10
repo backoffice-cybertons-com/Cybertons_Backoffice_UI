@@ -139,9 +139,17 @@ export const UPDATE_SALES_TRANSACTION = "/api/salesTransaction/composite";
 export const DELETE_SALES_TRANSACTION = "/api/salesTransaction";
 export const GET_SALES_TRANSACTION_DETAILS = "/api/salesTransaction";
 export const GET_PARTY_OUTSTANDING = "/api/salesTransaction/outstanding";
+export const POST_PARTY_RECALCULATE_RATE_ADJUSTMENT = "/api/party";
+export const GET_PARTY_CALCULATE_RATE_ADJUSTMENT = "/api/party";
+export const GET_PARTY_RATE_ADJUSTMENT_SUMMARY = "/api/party/rate-adjustment-summary";
+export const GET_PARTY_RATE_ADJUSTMENT_INVOICE_MISMATCHES = "/api/party/rate-adjustment-invoice-mismatches";
+export const GET_PARTY_RATE_ADJUSTMENT_CHANGES = "/api/party/rate-adjustment-changes";
+export const GET_SYSTEM_LOG_DATEWISE = "/api/dashboard/system-log-datewise";
 export const GET_STOCK_SUMMARY_REPORT = "/api/Report/stock-summary";
 // Developed by Hetak on 11-05-2026
 export const GET_STOCK_LEDGER_DATEWISE = "/api/Report/stock-ledger-datewise";
+
+export const GET_BELOW_PRICE_SALES_REPORT = "/api/Report/below-price-sales";
 
 // Payment & Receipt
 export const GET_PAYMENT_RECEIPTS = "/api/paymentReceipt/list";

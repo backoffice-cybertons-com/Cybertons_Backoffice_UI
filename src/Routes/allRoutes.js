@@ -80,6 +80,8 @@ import BankBookReport from "../pages/Reports/BankBookReport";
 import StockSummaryReport from "../pages/Reports/StockSummaryReport";
 // Developed by Hetak on 11-05-2026
 import StockLedgerDatewiseReport from "../pages/Reports/StockLedgerDatewiseReport";
+import BelowPriceSalesReport from "../pages/Reports/BelowPriceSalesReport";
+import PartyRateAdjustmentReport from "../pages/Reports/PartyRateAdjustmentReport";
 
 
 import SalePurInvWiseRpt from "../pages/Reports/SalePurInvWiseRpt";
@@ -406,6 +408,8 @@ const authProtectedRoutes = [
   { path: "/reports/stock-summary", component: <StockSummaryReport /> },
   // Developed by Hetak on 11-05-2026
   { path: "/reports/stock-ledger-datewise", component: <StockLedgerDatewiseReport /> },
+  { path: "/reports/below-price-sales", component: <BelowPriceSalesReport /> },
+  { path: "/reports/party-rate-adjustment", component: <PartyRateAdjustmentReport /> },
 
 
   { path: "/reports/sale-pur-invwise", component: <SalePurInvWiseRpt /> },

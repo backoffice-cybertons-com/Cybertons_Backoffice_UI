@@ -7,7 +7,17 @@ import BarLineChart from './BarLineChart';
 import TopClients from './TopClients';
 import ExpenseBreakdownDonut from './ExpenseBreakdownDonut';
 import InvoiceStatusList from './InvoiceStatusList';
+import BelowPriceSalesList from './BelowPriceSalesList';
+import PartyAddPriceDashboardCards from './PartyAddPriceDashboardCards';
+import { SHOW_PARTY_ADD_PRICE_DASHBOARD } from '../../config/dashboardFeatureFlags';
+import OutstandingNoInvoiceList from './OutstandingNoInvoiceList';
 import ZoneWiseBarChart from './ZoneWiseBarChart';
+import GoodsSummaryCard from './GoodsSummaryCard';
+import ItemWiseGoodsCard from './ItemWiseGoodsCard';
+import NewMastersCard from './NewMastersCard';
+import TransactionSummaryCard from './TransactionSummaryCard';
+import SalesProfitCard from './SalesProfitCard';
+import SystemLogDatewiseCard from './SystemLogDatewiseCard';
 import { useSelector, useDispatch } from "react-redux";
 import { getDashboardData } from "../../slices/dashboard/thunk";
 import { getPartyTypeMaster } from "../../helpers/fakebackend_helper";
@@ -16,7 +26,7 @@ const DashboardMain = () => {
     document.title = "Dashboard | SoftBook";
 
     const dispatch = useDispatch();
-    const [filter, setFilter] = useState("THIS_MONTH");
+    const [filter, setFilter] = useState("YESTERDAY");
     const [topLimit, setTopLimit] = useState(5);
     const [selectedPartyTypes, setSelectedPartyTypes] = useState([{ label: "Expense", value: "Expense" }]);
     const [invStatusPartyType, setInvStatusPartyType] = useState("Customer");
@@ -136,12 +146,31 @@ const DashboardMain = () => {
     };
 
     const filterLabels = {
+        "YESTERDAY": "Yesterday",
         "TODAY": "Today",
         "THIS_WEEK": "This Week",
         "THIS_MONTH": "This Month",
         "PREV_MONTH": "Previous Month",
         "THIS_YEAR": "Current Year",
         "CUSTOM": "Custom Date"
+    };
+
+    const filterSubtitles = {
+        "YESTERDAY": "Here's your business performance for yesterday.",
+        "TODAY": "Here's what's happening with your business today.",
+        "THIS_WEEK": "Here's your business performance for this week.",
+        "THIS_MONTH": "Here's your business performance for this month.",
+        "PREV_MONTH": "Here's your business performance for the previous month.",
+        "THIS_YEAR": "Here's your business performance for the current year.",
+        "CUSTOM": "Here's your business performance for the selected period.",
+    };
+
+    const getPeriodLabel = () => {
+        if (filter === "CUSTOM" && customFromDate && customToDate) {
+            const fmt = (d) => new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+            return `${fmt(customFromDate)} – ${fmt(customToDate)}`;
+        }
+        return filterLabels[filter] || filter;
     };
 
     // Build label for dropdown toggle button
@@ -164,7 +193,7 @@ const DashboardMain = () => {
                             <div className="d-flex align-items-lg-center flex-lg-row flex-column">
                                 <div className="flex-grow-1">
                                     <h4 className="fs-16 mb-1">Overview &amp; Statistics</h4>
-                                    <p className="text-muted mb-0">Here's what's happening with your business today.</p>
+                                    <p className="text-muted mb-0">{filterSubtitles[filter] || filterSubtitles.CUSTOM}</p>
                                 </div>
                                 <div className="mt-3 mt-lg-0">
                                     <div className="d-flex align-items-center hstack gap-2 flex-wrap">
@@ -231,6 +260,46 @@ const DashboardMain = () => {
                     </Row>
 
                     <Row className="mt-4">
+                        <NewMastersCard
+                            newMastersData={dashboardData?.new_masters_today}
+                            loading={loading && !isIndependentUpdate}
+                        />
+                        <TransactionSummaryCard
+                            transactionSummary={dashboardData?.transaction_summary}
+                            periodLabel={getPeriodLabel()}
+                            loading={loading && !isIndependentUpdate}
+                        />
+                    </Row>
+
+                    <Row className="mt-4">
+                        <SalesProfitCard
+                            salesProfitSummary={dashboardData?.sales_profit_summary}
+                            periodLabel={getPeriodLabel()}
+                            loading={loading && !isIndependentUpdate}
+                        />
+                        <SystemLogDatewiseCard
+                            filterType={filter}
+                            customFromDate={customFromDate}
+                            customToDate={customToDate}
+                            periodLabel={getPeriodLabel()}
+                            loading={loading && !isIndependentUpdate}
+                        />
+                    </Row>
+
+                    <Row className="mt-4">
+                        <GoodsSummaryCard
+                            goodsSummary={dashboardData?.goods_summary}
+                            periodLabel={getPeriodLabel()}
+                            loading={loading && !isIndependentUpdate}
+                        />
+                        <ItemWiseGoodsCard
+                            itemWiseGoods={dashboardData?.item_wise_goods}
+                            periodLabel={getPeriodLabel()}
+                            loading={loading && !isIndependentUpdate}
+                        />
+                    </Row>
+
+                    <Row className="mt-4">
                         <BarLineChart
                             seriesData={dashboardData?.bar_line_graph}
                             dataColors='["--vz-primary", "--vz-info", "--vz-warning", "--vz-success"]'
@@ -275,6 +344,32 @@ const DashboardMain = () => {
                             loading={loading && !isIndependentUpdate}
                         />
                     </Row>
+
+                    <Row className="mt-4">
+                        <OutstandingNoInvoiceList
+                            outstandingData={dashboardData?.outstanding_no_invoice}
+                            periodLabel={getPeriodLabel()}
+                            loading={loading && !isIndependentUpdate}
+                        />
+                    </Row>
+
+                    <Row className="mt-4">
+                        <BelowPriceSalesList
+                            belowPriceData={dashboardData?.below_price_sales}
+                            periodLabel={getPeriodLabel()}
+                            loading={loading && !isIndependentUpdate}
+                        />
+                    </Row>
+
+                    {SHOW_PARTY_ADD_PRICE_DASHBOARD && (
+                        <Row className="mt-4">
+                            <PartyAddPriceDashboardCards
+                                partyAddPriceData={dashboardData?.party_add_price ?? dashboardData?.partyAddPrice}
+                                periodLabel={getPeriodLabel()}
+                                loading={loading && !isIndependentUpdate}
+                            />
+                        </Row>
+                    )}
                 </Container>
             </div>
         </React.Fragment>

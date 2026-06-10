@@ -6,42 +6,38 @@
  * 
  * DESCRIPTION:
  * Handles user logout process.
+ * - Calls backend logout API (system log)
  * - Dispatches logoutUser action to clear Redux state and secure storage
  * - Redirects user to the login page
- * 
- * DEPENDENCIES:
- * - Redux: authSlice (logoutUser action)
- * - React Router: Navigate (for redirection)
  */
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import PropTypes from "prop-types";
 import { Navigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 
-// Helper for router props (if needed by HOCs, though Navigate is preferred in v6)
 import withRouter from "../../Components/Common/withRouter";
-
-// Auth action from our custom authSlice
 import { logoutUser } from "../../slices/authSlice";
+import { callLogoutApi } from "../../utils/performLogout";
 
-const Logout = (props) => {
+const Logout = () => {
   const dispatch = useDispatch();
-
-  // Get auth state to check if logout is complete
   const { isAuthenticated } = useSelector((state) => state.auth);
+  const [done, setDone] = useState(false);
 
   useEffect(() => {
-    // Trigger logout action on mount
-    dispatch(logoutUser());
+    const run = async () => {
+      await callLogoutApi();
+      dispatch(logoutUser());
+      setDone(true);
+    };
+    run();
   }, [dispatch]);
 
-  // Once isAuthenticated becomes false (or if it already is), redirect to login
-  if (!isAuthenticated) {
+  if (done || !isAuthenticated) {
     return <Navigate to="/login" />;
   }
 
-  // Render nothing while logging out
   return <></>;
 };
 

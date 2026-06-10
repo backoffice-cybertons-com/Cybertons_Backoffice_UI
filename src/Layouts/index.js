@@ -25,6 +25,7 @@ import {
 } from "../slices/thunks";
 
 import { logoutUser } from "../slices/authSlice";
+import { callLogoutApi } from "../utils/performLogout";
 
 //redux
 import { useSelector, useDispatch } from "react-redux";
@@ -153,11 +154,11 @@ const Layout = (props) => {
             if (timeout) clearTimeout(timeout);
 
             // 30 Minutes = 1,800,000 ms
-            timeout = setTimeout(() => {
+            timeout = setTimeout(async () => {
                 console.warn("[Idle Timeout] User inactive for 30 minutes. Auto-logging out to protect session integrity.");
+                await callLogoutApi();
                 dispatch(logoutUser());
-                // Redirect to login with expiry flag for UI feedback
-                window.location.href = "/login?expired=true"; 
+                window.location.href = "/login?expired=true";
             }, 1800000); 
         };
 
