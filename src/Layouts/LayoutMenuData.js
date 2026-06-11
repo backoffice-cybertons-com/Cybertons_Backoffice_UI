@@ -162,6 +162,23 @@ const useNavData = () => {
 
       // Check match
       return normalizedItemParentId === normalizedTargetId;
+    }).sort((a, b) => {
+      if (normalizedTargetId !== null) return 0; // Only sort root items
+
+      const getTabName = (item) => getVal(item, "tabName") || "";
+      const aName = getTabName(a);
+      const bName = getTabName(b);
+      
+      const aIsDash = aName === "Dashboard" || aName === "Home" || aName === "Overview";
+      const aIsKpi = aName === "KPI Dashboard" || aName === "Dashboard KPI";
+      
+      const bIsDash = bName === "Dashboard" || bName === "Home" || bName === "Overview";
+      const bIsKpi = bName === "KPI Dashboard" || bName === "Dashboard KPI";
+
+      const weightA = aIsDash ? 1 : (aIsKpi ? 2 : 3);
+      const weightB = bIsDash ? 1 : (bIsKpi ? 2 : 3);
+      
+      return weightA - weightB;
     });
 
     if (!items.length) return undefined;
@@ -249,6 +266,10 @@ const useNavData = () => {
       } else if (tabName === "Pay/Rec" || tabName === "Payment & Receipt") {
         // The old Payment & Receipt component
         finalLink = "/payment-receipt/list";
+      } else if (tabName === "Home" || tabName === "Dashboard" || tabName === "Overview") {
+        finalLink = "/dashboard";
+      } else if (tabName === "KPI Dashboard") {
+        finalLink = "/dashboard/kpi";
       }
 
       const mappedItem = {
@@ -285,11 +306,20 @@ const useNavData = () => {
           // Sync permissions to Redux for use in other components (e.g., GenericMasterList)
           dispatch(setPermissions(data));
 
+          // Force KPI Dashboard to be a top-level item to prevent the main Dashboard from becoming a non-clickable folder
+          const modifiedData = data.map(item => {
+            const tabName = item.tabName || item.TabName;
+            if (tabName === "KPI Dashboard" || tabName === "Dashboard KPI") {
+              return { ...item, parentId: null, ParentId: null };
+            }
+            return item;
+          });
+
           // Diagnostics: Check for orphans
-          data.forEach(item => {
+          modifiedData.forEach(item => {
             const pid = item.parentId || item.ParentId;
             if (pid) {
-              const parentExists = data.some(p => {
+              const parentExists = modifiedData.some(p => {
                 const pid_matches = (p.tabId || p.TabId).toString() === pid.toString();
                 return pid_matches;
               });
@@ -299,7 +329,7 @@ const useNavData = () => {
             }
           });
 
-          const tree = buildMenuTree(data, null);
+          const tree = buildMenuTree(modifiedData, null);
           
           const finalMenu = [
             { label: "Menu", isHeader: true },

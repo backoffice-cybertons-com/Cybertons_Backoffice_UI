@@ -496,8 +496,13 @@ export const getStockSummaryReport = (companyId, fromDate, toDate) =>
   api.get(url.GET_STOCK_SUMMARY_REPORT, { companyId, fromDate, toDate });
 
 // Developed by Hetak on 11-05-2026
-export const getStockLedgerDatewise = (companyId, fromDate, toDate, productId) =>
-  api.get(url.GET_STOCK_LEDGER_DATEWISE, { companyId, fromDate, toDate, productId });
+export const getStockLedgerDatewise = (companyId, fromDate, toDate, productId) => {
+  const params = { companyId, fromDate, toDate };
+  if (productId) {
+    params.productId = productId;
+  }
+  return api.get(url.GET_STOCK_LEDGER_DATEWISE, params);
+};
 
 export const getBelowPriceSalesReport = (companyId, fromDate, toDate, filterType = "all") =>
   api.get(url.GET_BELOW_PRICE_SALES_REPORT, { companyId, fromDate, toDate, filterType });

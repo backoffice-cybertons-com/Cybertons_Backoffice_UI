@@ -7,26 +7,17 @@ import BarLineChart from './BarLineChart';
 import TopClients from './TopClients';
 import ExpenseBreakdownDonut from './ExpenseBreakdownDonut';
 import InvoiceStatusList from './InvoiceStatusList';
-import BelowPriceSalesList from './BelowPriceSalesList';
-import PartyAddPriceDashboardCards from './PartyAddPriceDashboardCards';
-import { SHOW_PARTY_ADD_PRICE_DASHBOARD } from '../../config/dashboardFeatureFlags';
-import OutstandingNoInvoiceList from './OutstandingNoInvoiceList';
 import ZoneWiseBarChart from './ZoneWiseBarChart';
-import GoodsSummaryCard from './GoodsSummaryCard';
-import ItemWiseGoodsCard from './ItemWiseGoodsCard';
-import NewMastersCard from './NewMastersCard';
-import TransactionSummaryCard from './TransactionSummaryCard';
-import SalesProfitCard from './SalesProfitCard';
-import SystemLogDatewiseCard from './SystemLogDatewiseCard';
 import { useSelector, useDispatch } from "react-redux";
 import { getDashboardData } from "../../slices/dashboard/thunk";
 import { getPartyTypeMaster } from "../../helpers/fakebackend_helper";
 import secureStorage from "../../utils/secureStorage";
+import { getDashboardDateRange } from "../../utils/dashboardDateRange";
 const DashboardMain = () => {
     document.title = "Dashboard | SoftBook";
 
     const dispatch = useDispatch();
-    const [filter, setFilter] = useState("YESTERDAY");
+    const [filter, setFilter] = useState("THIS_MONTH");
     const [topLimit, setTopLimit] = useState(5);
     const [selectedPartyTypes, setSelectedPartyTypes] = useState([{ label: "Expense", value: "Expense" }]);
     const [invStatusPartyType, setInvStatusPartyType] = useState("Customer");
@@ -81,19 +72,16 @@ const DashboardMain = () => {
         if (filter === "CUSTOM") {
             if (!customFromDate || !customToDate) return;
             if (new Date(customFromDate) > new Date(customToDate)) return;
-
-            dispatch(getDashboardData({
-                ...requestParams,
-                filterType: null,
-                fromDate: customFromDate,
-                toDate: customToDate,
-            }));
-        } else {
-            dispatch(getDashboardData({
-                ...requestParams,
-                filterType: filter,
-            }));
         }
+
+        const { fromDate, toDate } = getDashboardDateRange(filter, customFromDate, customToDate);
+
+        dispatch(getDashboardData({
+            ...requestParams,
+            filterType: filter === "CUSTOM" ? null : filter,
+            fromDate,
+            toDate,
+        }));
     }, [dispatch, filter, companyId, topLimit, selectedPartyTypes, customFromDate, customToDate, invStatusPartyType]);
 
     const isIndependentUpdate = invStatusChanging || expenseChanging;
@@ -260,46 +248,6 @@ const DashboardMain = () => {
                     </Row>
 
                     <Row className="mt-4">
-                        <NewMastersCard
-                            newMastersData={dashboardData?.new_masters_today}
-                            loading={loading && !isIndependentUpdate}
-                        />
-                        <TransactionSummaryCard
-                            transactionSummary={dashboardData?.transaction_summary}
-                            periodLabel={getPeriodLabel()}
-                            loading={loading && !isIndependentUpdate}
-                        />
-                    </Row>
-
-                    <Row className="mt-4">
-                        <SalesProfitCard
-                            salesProfitSummary={dashboardData?.sales_profit_summary}
-                            periodLabel={getPeriodLabel()}
-                            loading={loading && !isIndependentUpdate}
-                        />
-                        <SystemLogDatewiseCard
-                            filterType={filter}
-                            customFromDate={customFromDate}
-                            customToDate={customToDate}
-                            periodLabel={getPeriodLabel()}
-                            loading={loading && !isIndependentUpdate}
-                        />
-                    </Row>
-
-                    <Row className="mt-4">
-                        <GoodsSummaryCard
-                            goodsSummary={dashboardData?.goods_summary}
-                            periodLabel={getPeriodLabel()}
-                            loading={loading && !isIndependentUpdate}
-                        />
-                        <ItemWiseGoodsCard
-                            itemWiseGoods={dashboardData?.item_wise_goods}
-                            periodLabel={getPeriodLabel()}
-                            loading={loading && !isIndependentUpdate}
-                        />
-                    </Row>
-
-                    <Row className="mt-4">
                         <BarLineChart
                             seriesData={dashboardData?.bar_line_graph}
                             dataColors='["--vz-primary", "--vz-info", "--vz-warning", "--vz-success"]'
@@ -344,32 +292,6 @@ const DashboardMain = () => {
                             loading={loading && !isIndependentUpdate}
                         />
                     </Row>
-
-                    <Row className="mt-4">
-                        <OutstandingNoInvoiceList
-                            outstandingData={dashboardData?.outstanding_no_invoice}
-                            periodLabel={getPeriodLabel()}
-                            loading={loading && !isIndependentUpdate}
-                        />
-                    </Row>
-
-                    <Row className="mt-4">
-                        <BelowPriceSalesList
-                            belowPriceData={dashboardData?.below_price_sales}
-                            periodLabel={getPeriodLabel()}
-                            loading={loading && !isIndependentUpdate}
-                        />
-                    </Row>
-
-                    {SHOW_PARTY_ADD_PRICE_DASHBOARD && (
-                        <Row className="mt-4">
-                            <PartyAddPriceDashboardCards
-                                partyAddPriceData={dashboardData?.party_add_price ?? dashboardData?.partyAddPrice}
-                                periodLabel={getPeriodLabel()}
-                                loading={loading && !isIndependentUpdate}
-                            />
-                        </Row>
-                    )}
                 </Container>
             </div>
         </React.Fragment>

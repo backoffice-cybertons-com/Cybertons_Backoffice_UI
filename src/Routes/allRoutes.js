@@ -11,6 +11,7 @@ import DashboardProject from "../pages/DashboardProject";
 import DashboardNFT from "../pages/DashboardNFT";
 import DashboardJob from "../pages/DashboardJob/";
 import DashboardMain from "../pages/DashboardMain";
+import KpiDashboard from "../pages/KpiDashboard";
 import SystemAnnouncements from "../pages/SystemAnnouncements";
 
 
@@ -328,6 +329,7 @@ const authProtectedRoutes = [
   { path: "/dashboard-analytics", component: <DashboardAnalytics /> },
   { path: "/dashboard-crm", component: <DashboardCrm /> },
   { path: "/dashboard", component: <DashboardMain /> },
+  { path: "/dashboard/kpi", component: <KpiDashboard /> },
   { path: "/index", component: <DashboardMain /> },
   { path: "/system-announcements", component: <SystemAnnouncements /> },
 

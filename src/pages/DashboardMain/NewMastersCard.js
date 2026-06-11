@@ -47,7 +47,7 @@ const normalizeParties = (items) =>
         createdOn: row.created_on ?? row.createdOn,
     }));
 
-const NewMastersCard = ({ newMastersData, loading }) => {
+const NewMastersCard = ({ newMastersData, periodLabel, loading }) => {
     const [modalType, setModalType] = useState(null);
 
     const productCount = Number(newMastersData?.product_count ?? newMastersData?.productCount ?? 0);
@@ -67,7 +67,7 @@ const NewMastersCard = ({ newMastersData, loading }) => {
         setModalType((prev) => (prev === type ? null : type));
     };
 
-    const todayLabel = new Date().toLocaleDateString('en-IN', {
+    const dateLabel = periodLabel || new Date().toLocaleDateString('en-IN', {
         day: '2-digit',
         month: 'short',
         year: 'numeric'
@@ -85,8 +85,8 @@ const NewMastersCard = ({ newMastersData, loading }) => {
                         )}
                         <div className="d-flex align-items-center mb-3">
                             <div className="flex-grow-1">
-                                <h4 className="card-title mb-1">New Masters Added Today</h4>
-                                <p className="text-muted mb-0 fs-12">{todayLabel}</p>
+                                <h4 className="card-title mb-1">New Masters Added</h4>
+                                <p className="text-muted mb-0 fs-12">{dateLabel}</p>
                             </div>
                             <div className="avatar-sm flex-shrink-0">
                                 <span className="avatar-title bg-soft-success rounded fs-3">

@@ -106,8 +106,11 @@ const StockLedgerDatewiseReport = () => {
 
     const handleExcel = () => {
         if (!rows.length) return;
-        const selectedProductObj = productList.find(p => p.productId?.toString() === selectedProductId?.toString());
-        const productName = selectedProductObj ? selectedProductObj.name : "All Products";
+        const selectedProductObj = productList.find(p => {
+            const pId = p.productId ?? p.ProductId ?? p.id;
+            return pId?.toString() === selectedProductId?.toString();
+        });
+        const productName = selectedProductObj ? (selectedProductObj.name ?? selectedProductObj.Name ?? selectedProductObj.productName ?? selectedProductObj.ProductName) : "All Products";
 
         const aoa = [
             [`STOCK LEDGER DATEWISE REPORT - ${productName}`, "", "", "", "", "", "", "", ""],
@@ -185,8 +188,11 @@ const StockLedgerDatewiseReport = () => {
     const handlePrint = () => {
         const content = document.getElementById('reportViewContainer');
         if (!content) return;
-        const selectedProductObj = productList.find(p => p.productId?.toString() === selectedProductId?.toString());
-        const productName = selectedProductObj ? selectedProductObj.name : "All Products";
+        const selectedProductObj = productList.find(p => {
+            const pId = p.productId ?? p.ProductId ?? p.id;
+            return pId?.toString() === selectedProductId?.toString();
+        });
+        const productName = selectedProductObj ? (selectedProductObj.name ?? selectedProductObj.Name ?? selectedProductObj.productName ?? selectedProductObj.ProductName) : "All Products";
         const w = window.open('', '_blank');
         w.document.write(`<html><head><title>Stock Ledger Datewise Report</title>
             <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
@@ -247,11 +253,15 @@ const StockLedgerDatewiseReport = () => {
                                                 onChange={(e) => setSelectedProductId(e.target.value)}
                                             >
                                                 <option value="">All Products</option>
-                                                {productList.map((prod) => (
-                                                    <option key={prod.productId} value={prod.productId}>
-                                                        {prod.name}
-                                                    </option>
-                                                ))}
+                                                {productList.map((prod) => {
+                                                    const pId = prod.productId ?? prod.ProductId ?? prod.id;
+                                                    const pName = prod.name ?? prod.Name ?? prod.productName ?? prod.ProductName;
+                                                    return (
+                                                        <option key={pId} value={pId}>
+                                                            {pName}
+                                                        </option>
+                                                    );
+                                                })}
                                             </Input>
                                         </Col>
 
