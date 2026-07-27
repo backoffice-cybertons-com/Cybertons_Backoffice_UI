@@ -121,15 +121,17 @@ const PartyAddPriceDashboardCards = ({ partyAddPriceData, periodLabel, loading }
                         </div>
                     </CardHeader>
                     <CardBody className="p-3">
-                        <Input
-                            type="text"
-                            size="sm"
-                            className="form-control-sm shadow-none fs-12 mb-2"
-                            placeholder="Search party..."
-                            value={summaryQuery}
-                            onChange={(e) => setSummaryQuery(e.target.value)}
-                            style={{ maxWidth: '320px' }}
-                        />
+                        <div className="mb-3 pb-1">
+                            <Input
+                                type="text"
+                                size="sm"
+                                className="form-control-sm border border-success border-opacity-50 rounded-pill px-3 fs-12"
+                                placeholder="Search party..."
+                                value={summaryQuery}
+                                onChange={(e) => setSummaryQuery(e.target.value)}
+                                style={{ maxWidth: '320px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}
+                            />
+                        </div>
                         <div className="table-responsive table-card" style={{ position: 'relative' }}>
                             <LoadingOverlay />
                             <Table className="table-sm table-nowrap align-middle mb-0" style={{ fontSize: '12px' }}>
@@ -138,6 +140,7 @@ const PartyAddPriceDashboardCards = ({ partyAddPriceData, periodLabel, loading }
                                         <th>Party</th>
                                         <th className="text-end">Outstanding</th>
                                         <th className="text-end">7 Days Sales</th>
+                                        <th className="text-end">7 Days Avg Sale</th>
                                         <th className="text-end">Avg O/S Days</th>
                                         <th className="text-end">Add Price</th>
                                         <th className="text-end">Stored</th>
@@ -149,6 +152,7 @@ const PartyAddPriceDashboardCards = ({ partyAddPriceData, periodLabel, loading }
                                             <td className="text-truncate" style={{ maxWidth: '160px' }} title={row.displayName}>{row.displayName}</td>
                                             <td className="text-end">{formatAmt(row.totalOutstanding)}</td>
                                             <td className="text-end">{formatAmt(row.last7DaysSales)}</td>
+                                            <td className="text-end text-primary fw-semibold">{formatAmt(row.avgSalePerDay)}</td>
                                             <td className="text-end">{formatDays(row.avgOutstandingDays)}</td>
                                             <td className="text-end fw-semibold text-success">{formatAmt(row.addPrice)}</td>
                                             <td className={`text-end ${row.addPrice !== row.storedRateDiff ? 'text-danger fw-semibold' : ''}`}>
@@ -157,7 +161,7 @@ const PartyAddPriceDashboardCards = ({ partyAddPriceData, periodLabel, loading }
                                         </tr>
                                     )) : (
                                         <tr>
-                                            <td colSpan="6" className="text-center py-4 text-muted fs-12">
+                                            <td colSpan="7" className="text-center py-4 text-muted fs-12">
                                                 {loading ? 'Fetching data...' : 'No parties with add price found.'}
                                             </td>
                                         </tr>
@@ -179,15 +183,17 @@ const PartyAddPriceDashboardCards = ({ partyAddPriceData, periodLabel, loading }
                         <Badge color="soft-danger" className="fs-11">Mismatches: {mismatchCount}</Badge>
                     </CardHeader>
                     <CardBody className="p-3">
-                        <Input
-                            type="text"
-                            size="sm"
-                            className="form-control-sm shadow-none fs-12 mb-2"
-                            placeholder="Search invoice or party..."
-                            value={mismatchQuery}
-                            onChange={(e) => setMismatchQuery(e.target.value)}
-                            style={{ maxWidth: '320px' }}
-                        />
+                        <div className="mb-3 pb-1">
+                            <Input
+                                type="text"
+                                size="sm"
+                                className="form-control-sm border border-danger border-opacity-50 rounded-pill px-3 fs-12"
+                                placeholder="Search invoice or party..."
+                                value={mismatchQuery}
+                                onChange={(e) => setMismatchQuery(e.target.value)}
+                                style={{ maxWidth: '320px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}
+                            />
+                        </div>
                         <div className="table-responsive table-card" style={{ position: 'relative' }}>
                             <LoadingOverlay />
                             <Table className="table-sm table-nowrap align-middle mb-0" style={{ fontSize: '12px' }}>
@@ -242,14 +248,15 @@ const PartyAddPriceDashboardCards = ({ partyAddPriceData, periodLabel, loading }
                         </div>
                     </CardHeader>
                     <CardBody className="p-3">
-                        <Row className="g-2 mb-2">
+                        <Row className="g-2 mb-3 pb-1">
                             <Col md={4}>
                                 <Input
                                     type="select"
                                     bsSize="sm"
-                                    className="form-control-sm shadow-none fs-12"
+                                    className="form-control-sm border border-warning border-opacity-50 rounded-pill px-3 fs-12"
                                     value={changeFilter}
                                     onChange={(e) => setChangeFilter(e.target.value)}
+                                    style={{ boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}
                                 >
                                     <option value="">All Changes</option>
                                     <option value="Upgraded">Upgraded (Price Decreased)</option>
@@ -260,10 +267,11 @@ const PartyAddPriceDashboardCards = ({ partyAddPriceData, periodLabel, loading }
                                 <Input
                                     type="text"
                                     size="sm"
-                                    className="form-control-sm shadow-none fs-12"
+                                    className="form-control-sm border border-warning border-opacity-50 rounded-pill px-3 fs-12"
                                     placeholder="Search party..."
                                     value={changeQuery}
                                     onChange={(e) => setChangeQuery(e.target.value)}
+                                    style={{ boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}
                                 />
                             </Col>
                         </Row>

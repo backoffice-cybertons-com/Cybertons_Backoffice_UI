@@ -124,19 +124,19 @@ const InvoiceStatusList = ({ invoiceStatusData, selectedPartyType, onPartyTypeCh
                                 </tr>
                                 <tr className="bg-soft-light border-bottom border-light">
                                     <th className="px-1 py-1">
-                                        <Input type="text" size="sm" className="form-control-sm shadow-none fs-10 p-1" placeholder="Filter..." value={filters.party_name} onChange={(e) => handleFilterChange('party_name', e.target.value)} />
+                                        <Input type="text" bsSize="sm" className="form-control-sm shadow-none fs-10 p-1" placeholder="Filter..." value={filters.party_name} onChange={(e) => handleFilterChange('party_name', e.target.value)} />
                                     </th>
                                     <th className="px-1 py-1">
-                                        <Input type="text" size="sm" className="form-control-sm shadow-none fs-10 p-1 text-end" placeholder="Filter..." value={filters.total_outstanding} onChange={(e) => handleFilterChange('total_outstanding', e.target.value)} />
+                                        <Input type="text" bsSize="sm" className="form-control-sm shadow-none fs-10 p-1 text-end" placeholder="Filter..." value={filters.total_outstanding} onChange={(e) => handleFilterChange('total_outstanding', e.target.value)} />
                                     </th>
                                     <th className="px-1 py-1">
-                                        <Input type="text" size="sm" className="form-control-sm shadow-none fs-10 p-1 text-end" placeholder="Filter..." value={filters.avg_daily_sale} onChange={(e) => handleFilterChange('avg_daily_sale', e.target.value)} />
+                                        <Input type="text" bsSize="sm" className="form-control-sm shadow-none fs-10 p-1 text-end" placeholder="Filter..." value={filters.avg_daily_sale} onChange={(e) => handleFilterChange('avg_daily_sale', e.target.value)} />
                                     </th>
                                     <th className="px-1 py-1">
-                                        <Input type="text" size="sm" className="form-control-sm shadow-none fs-10 p-1 text-end" placeholder="Filter..." value={filters.avg_monthly_sale} onChange={(e) => handleFilterChange('avg_monthly_sale', e.target.value)} />
+                                        <Input type="text" bsSize="sm" className="form-control-sm shadow-none fs-10 p-1 text-end" placeholder="Filter..." value={filters.avg_monthly_sale} onChange={(e) => handleFilterChange('avg_monthly_sale', e.target.value)} />
                                     </th>
                                     <th className="px-1 py-1">
-                                        <Input type="text" size="sm" className="form-control-sm shadow-none fs-10 p-1 text-end" placeholder="Filter..." value={filters.terms} onChange={(e) => handleFilterChange('terms', e.target.value)} />
+                                        <Input type="text" bsSize="sm" className="form-control-sm shadow-none fs-10 p-1 text-end" placeholder="Filter..." value={filters.terms} onChange={(e) => handleFilterChange('terms', e.target.value)} />
                                     </th>
                                 </tr>
                             </thead>

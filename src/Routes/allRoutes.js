@@ -59,6 +59,8 @@ import InvoiceDetails from "../pages/Invoices/InvoiceDetails";
 
 // Sales Invoice
 import SalesInvoice from "../pages/SalesTransaction/SalesInvoice";
+import SalesInvoiceMrp from "../pages/SalesTransaction/SalesInvoiceMrp";
+import SalesInvoiceUpdated from "../pages/SalesTransaction/SalesInvoiceUpdated";
 
 // Reports
 import LedgerReport from "../pages/Reports/LedgerReport";
@@ -92,6 +94,7 @@ import SalePurchaseRegisterPartywise from "../pages/Reports/SalePurchaseRegister
 import SaleRegisterReport from "../pages/Reports/SaleRegisterReport";
 import PurchaseRegisterReport from "../pages/Reports/PurchaseRegisterReport";
 import SalePurTransactionWiseRpt from "../pages/Reports/SalePurTransactionWiseRpt";
+import GstReportCa from "../pages/Reports/GstReportCa";
 
 // Support Tickets
 import ListView from '../pages/SupportTickets/ListView';
@@ -309,6 +312,7 @@ import PurchaseInvoice from "../pages/PurchaseTransaction/PurchaseInvoice";
 // Sales Transaction
 import SalesTransactionList from "../pages/SalesTransaction/SalesTransactionList";
 import SalesTransactionCreate from "../pages/SalesTransaction/SalesTransactionCreate";
+import SalesTransactionCreateRevised from "../pages/SalesTransaction/SalesTransactionCreateRevised";
 
 // Payment & Receipt
 import PaymentReceiptList from "../pages/PaymentReceipt/PaymentReceiptList";
@@ -323,8 +327,12 @@ const authProtectedRoutes = [
   { path: "/sales-order", component: <SalesTransactionList /> },
   { path: "/Sale/SaleOrderList", component: <SalesTransactionList /> },
   { path: "/Sale/SaleOrdersList", component: <SalesTransactionList /> },
+  // Old Sales Order Form (keep for reference)
   { path: "/sales-order/create", component: <SalesTransactionCreate /> },
   { path: "/sales-order/edit/:id", component: <SalesTransactionCreate /> },
+  // Revised Sales Order Form (new, with all extra fields)
+  { path: "/revised-sales-order/create", component: <SalesTransactionCreateRevised /> },
+  { path: "/revised-sales-order/edit/:id", component: <SalesTransactionCreateRevised /> },
 
   { path: "/dashboard-analytics", component: <DashboardAnalytics /> },
   { path: "/dashboard-crm", component: <DashboardCrm /> },
@@ -421,6 +429,7 @@ const authProtectedRoutes = [
   { path: "/Sale/Sale-Register-Report", component: <SaleRegisterReport /> },
   { path: "/purchase/Purchase-Register-Report", component: <PurchaseRegisterReport /> },
   { path: "/reports/sale-purchase-register-transactionwise", component: <SalePurTransactionWiseRpt /> },
+  { path: "/reports/gst-report-ca", component: <GstReportCa /> },
 
   //Supports Tickets
   { path: "/apps-tickets-list", component: <ListView /> },
@@ -549,7 +558,6 @@ const authProtectedRoutes = [
   { path: "/pages-pricing", component: <Pricing /> },
   { path: "/pages-sitemap", component: <SiteMap /> },
   { path: "/pages-search-results", component: <SearchResults /> },
-  { path: "/pages-privacy-policy", component: <PrivecyPolicy /> },
   { path: "/pages-terms-condition", component: <TermsCondition /> },
   { path: "/pages-blog-list", component: <BlogListView /> },
   { path: "/pages-blog-grid", component: <BlogGridView /> },
@@ -599,9 +607,13 @@ const authProtectedRoutes = [
   { path: "/purchase-transaction/edit/:id", component: <PurchaseTransactionCreate /> },
   { path: "/purchase-transaction/invoice/:id", component: <PurchaseInvoice /> },
 
-  // Sales Transaction
+  // Sales Transaction (extra routes block - keep in sync with top block)
   { path: "/sales-order/edit/:id", component: <SalesTransactionCreate /> },
+  { path: "/revised-sales-order/create", component: <SalesTransactionCreateRevised /> },
+  { path: "/revised-sales-order/edit/:id", component: <SalesTransactionCreateRevised /> },
   { path: "/sales-order/invoice/:id", component: <SalesInvoice /> },
+  { path: "/sales-order/mrp-invoice/:id", component: <SalesInvoiceMrp /> },
+  { path: "/sales-order/updated-invoice/:id", component: <SalesInvoiceUpdated /> },
 
   // Payment & Receipt
   { path: "/payment-receipt", component: <PaymentReceiptList /> },
@@ -658,6 +670,8 @@ const publicRoutes = [
   { path: "/landing", component: <OnePage /> },
   { path: "/nft-landing", component: <NFTLanding /> },
   { path: "/job-landing", component: <JobLanding /> },
+  
+  { path: "/pages-privacy-policy", component: <PrivecyPolicy /> },
 
   { path: "/auth-pass-change-basic", component: <BasicPasswCreate /> },
   { path: "/auth-pass-change-cover", component: <CoverPasswCreate /> },

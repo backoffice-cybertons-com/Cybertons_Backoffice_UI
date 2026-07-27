@@ -1,5 +1,4 @@
 import React, { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
 import {
     Badge,
     Card,
@@ -93,7 +92,6 @@ const OutstandingNoInvoiceList = ({ outstandingData, periodLabel, loading }) => 
                                     <th>Party Name</th>
                                     <th>Phone</th>
                                     <th className="text-end">Outstanding</th>
-                                    <th></th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -104,19 +102,10 @@ const OutstandingNoInvoiceList = ({ outstandingData, periodLabel, loading }) => 
                                         <td className="text-end fw-semibold text-danger">
                                             ₹{formatAmt(row.outstanding)}
                                         </td>
-                                        <td className="text-end">
-                                            <Link
-                                                to="/sales-order/create"
-                                                state={{ partyId: row.partyId }}
-                                                className="btn btn-soft-primary btn-sm"
-                                            >
-                                                Create Invoice
-                                            </Link>
-                                        </td>
                                     </tr>
                                 )) : (
                                     <tr>
-                                        <td colSpan="4" className="text-center py-5 text-muted fs-12">
+                                        <td colSpan="3" className="text-center py-5 text-muted fs-12">
                                             {loading
                                                 ? 'Fetching data...'
                                                 : 'No customers with receivable outstanding and missing sales invoice for this period.'}

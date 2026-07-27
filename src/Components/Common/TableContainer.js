@@ -250,7 +250,7 @@ const TableContainer = ({
         wrap: true,
         width: col.width || (isActionLike ? "90px" : undefined),
         minWidth: col.minWidth,
-        maxWidth: col.maxWidth,
+        // maxWidth: col.maxWidth, // Commented out to prevent styled-components DOM warning
         grow: typeof col.grow === "number" ? col.grow : (isActionLike ? 0 : 1),
         cell: (row) => {
           const rendered = (() => {

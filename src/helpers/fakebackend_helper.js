@@ -516,3 +516,5 @@ export const getCashBook = (companyId, fromDate, toDate) =>
 
 export const getBankBook = (companyId, fromDate, toDate) =>
   api.get(url.GET_BANK_BOOK, { companyId, fromDate, toDate });
+
+export const syncMobileOrders = () => api.create(url.SYNC_MOBILE_ORDERS);

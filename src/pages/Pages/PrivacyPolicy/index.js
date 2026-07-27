@@ -5,7 +5,7 @@ import BreadCrumb from "../../../Components/Common/BreadCrumb";
 import FeatherIcon from "feather-icons-react";
 
 const PrivacyPolicy = () => {
-  document.title = "Privacy Policy | SoftBook - React Admin & Dashboard Template";
+  document.title = "Privacy Policy | Cybertones";
   return (
     <React.Fragment>
       <div className="page-content">
@@ -19,35 +19,10 @@ const PrivacyPolicy = () => {
                     <div className="text-center">
                       <h3>Privacy Policy</h3>
                       <p className="mb-0 text-muted">
-                        Last update: 16 Sept, 2022
+                        Last updated: September 15, 2024
                       </p>
                     </div>
                   </CardBody>
-                  {/* <div className="shape">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      version="1.1"
-                      xmlnsXlink="http://www.w3.org/1999/xlink"
-                      // xmlns:svgjs="http://svgjs.com/svgjs"
-                      width="1440"
-                      height="60"
-                      preserveAspectRatio="none"
-                      viewBox="0 0 1440 60"
-                    >
-                      <g mask='url("#SvgjsMask1001")' fill="none">
-                        <path
-                          d="M 0,4 C 144,13 432,48 720,49 C 1008,50 1296,17 1440,9L1440 60L0 60z"
-                          style={{ fill: "var(--vz-card-bg-custom)" }}
-                        ></path>
-                      </g>
-                      <defs>
-                        <mask id="SvgjsMask1001">
-                          <rect width="1440" height="60" fill="#ffffff"></rect>
-                        </mask>
-                      </defs>
-                    </svg>
-                  </div> */}
-
                   <div className="shape">
                     <svg xmlns="http://www.w3.org/2000/svg" version="1.1" xmlnsxlink="http://www.w3.org/1999/xlink" xmlnssvgjs="http://svgjs.com/svgjs" width="1440" height="60" preserveAspectRatio="none" viewBox="0 0 1440 60">
                       <g mask="url(&quot;#SvgjsMask1001&quot;)" fill="none">
@@ -60,7 +35,6 @@ const PrivacyPolicy = () => {
                       </defs>
                     </svg>
                   </div>
-
                 </div>
                 <CardBody className="p-4">
                   <div className="d-flex">
@@ -71,157 +45,62 @@ const PrivacyPolicy = () => {
                       />
                     </div>
                     <div className="flex-grow-1">
-                      <h5>Privacy Policy for SoftBook</h5>
+                      <h5>Privacy Policy for Cybertones</h5>
                       <p className="text-muted">
-                        At Website Name, accessible at Website.com, one of our
-                        main priorities is the privacy of our visitors. This
-                        Privacy Policy document contains types of information
-                        that is collected and recorded by Website Name and how
-                        we use it.
+                        This Privacy Policy describes Our policies and procedures on the collection, use and disclosure of Your information when You use the Service and tells You about Your privacy rights and how the law protects You.
                       </p>
                       <p className="text-muted">
-                        If you have additional questions or require more
-                        information about our Privacy Policy, do not hesitate to
-                        contact us through email at Email@Website.com
+                        We use Your Personal data to provide and improve the Service. By using the Service, you agree to the collection and use of information in accordance with this Privacy Policy.
                       </p>
+
+                      <h5 className="mt-4">Interpretation and Definitions</h5>
+                      <h6>Interpretation</h6>
                       <p className="text-muted">
-                        This privacy policy applies only to our online
-                        activities and is valid for visitors to our website with
-                        regards to the information that they shared and/or
-                        collect in Website Name. This policy is not applicable
-                        to any information collected offline or via channels
-                        other than this website.
+                        The words of which the initial letter is capitalized have meanings defined under the following conditions. The following definitions shall have the same meaning regardless of whether they appear in singular or in plural.
                       </p>
-                      <p className="text-muted">How we use your information:</p>
+
+                      <h6>Definitions</h6>
+                      <p className="text-muted">For the purposes of this Privacy Policy:</p>
                       <ul className="text-muted">
-                        <li>
-                          <p>
-                            There are many variations of passages of Lorem Ipsum
-                            available, but the majority have suffered alteration
-                            in some form, by injected humour, or randomised
-                            words which don't look even slightly believable.
-                          </p>
-                        </li>
-                        <li>
-                          <p>
-                            If you are going to use a passage of Lorem Ipsum,
-                            you need to be sure there isn't anything
-                            embarrassing hidden in the middle of text. All the
-                            Lorem Ipsum generators on the Internet tend to
-                            repeat predefined chunks as necessary, making this
-                            the first true generator on the Internet.
-                          </p>
-                        </li>
-                        <li>
-                          <p>
-                            On the other hand, we denounce with righteous
-                            indignation and dislike men who are so beguiled and
-                            demoralized by the charms of pleasure of the moment.
-                          </p>
-                        </li>
-                        <li>
-                          <p>
-                            It uses a dictionary of over 200 Latin words,
-                            combined with a handful of model sentence
-                            structures, to generate Lorem Ipsum which looks
-                            reasonable. The generated Lorem Ipsum is therefore
-                            always free from repetition, injected humour, or
-                            non-characteristic words etc.
-                          </p>
-                        </li>
+                        <li><strong>Account</strong> means a unique account created for You to access our Service or parts of our Service.</li>
+                        <li><strong>Affiliate</strong> means an entity that controls, is controlled by or is under common control with a party.</li>
+                        <li><strong>Application</strong> refers to Cybertones, the software program provided by the Company.</li>
+                        <li><strong>Company</strong> (referred to as either "the Company", "We", "Us" or "Our" in this Agreement) refers to Cybertones.</li>
+                        <li><strong>Country</strong> refers to: Gujarat, India</li>
+                        <li><strong>Device</strong> means any device that can access the Service such as a computer, a cell phone or a digital tablet.</li>
+                        <li><strong>Personal Data</strong> is any information that relates to an identified or identifiable individual.</li>
+                        <li><strong>Service</strong> refers to the Application.</li>
+                        <li><strong>Service Provider</strong> means any natural or legal person who processes the data on behalf of the Company.</li>
+                        <li><strong>Usage Data</strong> refers to data collected automatically, either generated by the use of the Service or from the Service infrastructure itself.</li>
+                        <li><strong>You</strong> mean the individual accessing or using the Service, or the company, or other legal entity on behalf of which such individual is accessing or using the Service, as applicable.</li>
                       </ul>
-                    </div>
-                  </div>
 
-                  <div className="d-flex">
-                    <div className="flex-shrink-0 me-3">
-                      <FeatherIcon
-                        icon="check-circle"
-                        className="text-success icon-dual-success icon-xs"
-                      />
-                    </div>
-                    <div className="flex-grow-1">
-                      <h5>How we use your information</h5>
+                      <h5 className="mt-4">Collecting and Using Your Personal Data</h5>
+                      <h6>Types of Data Collected</h6>
+                      <strong>Personal Data</strong>
                       <p className="text-muted">
-                        If you contact us directly, we may receive additional
-                        information about you such as your name, email address,
-                        phone number, the contents of the message and/or
-                        attachments you may send us, and any other information
-                        you may choose to provide.
+                        While using Our Service, we may ask You to provide Us with certain personally identifiable information that can be used to contact or identify You. Personally identifiable information may include, but is not limited to: First name and last name, Phone number, Address, State, Province, ZIP/Postal code, City, Usage Data.
                       </p>
+
+                      <strong>Usage Data</strong>
                       <p className="text-muted">
-                        Communicate with you, either directly or through one of
-                        our partners, including for customer service, to provide
-                        you with updates and other information relating to the
-                        website, and for marketing and promotional purposes.
+                        Usage Data is collected automatically when using the Service. Usage Data may include information such as Your Device's Internet Protocol address (e.g. IP address), browser type, browser version, the pages of our Service that You visit, the time and date of Your visit, the time spent on those pages, unique device identifiers and other diagnostic data.
                       </p>
-                      <p className="text-muted">
-                        When you register for an Account, we may ask for your
-                        contact information, including items such as name,
-                        company name, address, email address, and telephone
-                        number.
-                      </p>
-                      <p className="text-muted">
-                        We use the information we collect in various ways,
-                        including to:
-                      </p>
-                      <ul className="text-muted vstack gap-2">
-                        <li>Provide, operate, and maintain our website</li>
-                        <li>Improve, personalize, and expand our website</li>
-                        <li>Understand and analyze how you use our website</li>
-                        <li>
-                          Develop new products, services, features, and
-                          functionality
-                        </li>
-                        <li>Send you emails</li>
-                        <li>Find and prevent fraud</li>
+
+                      <h5 className="mt-4">Use of Your Personal Data</h5>
+                      <ul className="text-muted">
+                        <li><strong>To provide and maintain our Service</strong>, including to monitor the usage of our Service.</li>
+                        <li><strong>To manage Your Account:</strong> to manage Your registration as a user of the Service.</li>
+                        <li><strong>For the performance of a contract:</strong> the development, compliance and undertaking of the purchase contract.</li>
+                        <li><strong>To contact You:</strong> To contact You by email, telephone calls, SMS, or other equivalent forms of electronic communication.</li>
                       </ul>
-                      <p className="text-muted">
-                        Like any other website, Website Name uses ‘cookies'.
-                        These cookies are used to store information including
-                        visitors' preferences, and the pages on the website that
-                        the visitor accessed or visited. The information is used
-                        to optimize the users' experience by customizing our web
-                        page content based on visitors' browser type and/or
-                        other information.
-                      </p>
-                    </div>
-                  </div>
 
-                  <div className="d-flex">
-                    <div className="flex-shrink-0 me-3">
-                      <FeatherIcon
-                        icon="check-circle"
-                        className="text-success icon-dual-success icon-xs"
-                      />
-                    </div>
-                    <div className="flex-grow-1">
+                      <h5 className="mt-4">Contact Us</h5>
                       <p className="text-muted">
-                        Some of advertisers on our site may use cookies and web
-                        beacons. Our advertising partners are listed below. Each
-                        of our advertising partners has their own Privacy Policy
-                        for their policies on user data. For easier access, we
-                        hyperlinked to their Privacy Policies below.
-                      </p>
-                      <p className="text-muted">
-                        <b>
-                          Website Name's Privacy Policy does not apply to other
-                          advertisers or websites. Thus, we are advising you to
-                          consult the respective Privacy Policies of these
-                          third-party ad servers for more detailed information.
-                          It may include their practices and instructions about
-                          how to opt-out of certain options. You may find a
-                          complete list of these Privacy Policies and their
-                          links here: Privacy Policy Links.
-                        </b>
+                        If you have any questions about this Privacy Policy, you can contact us: <br/>
+                        By email: dailydoor.bipin@gmail.com
                       </p>
                     </div>
-                  </div>
-
-                  <div className="text-end">
-                    <Link to="#!" className="btn btn-danger">
-                      I'm Understand
-                    </Link>
                   </div>
                 </CardBody>
               </Card>

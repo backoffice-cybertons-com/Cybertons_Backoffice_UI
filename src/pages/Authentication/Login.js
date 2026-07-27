@@ -251,7 +251,8 @@ const Login = () => {
                                             </Form>
 
                                             <div className="text-center mt-4 text-muted fs-13">
-                                            Powered by SoftOnCloud 
+                                                Powered by SoftOnCloud <br />
+                                                <Link to="/pages-privacy-policy" className="text-muted fw-semibold">Privacy Policy</Link>
                                             </div>
 
                                         </div>

@@ -9,6 +9,9 @@ const formatQty = (num) =>
 const GoodsSummaryCard = ({ goodsSummary, periodLabel, loading }) => {
     const purchaseQty = Number(goodsSummary?.total_purchase_qty ?? goodsSummary?.totalPurchaseQty ?? 0);
     const salesQty = Number(goodsSummary?.total_sales_qty ?? goodsSummary?.totalSalesQty ?? 0);
+    const diff = purchaseQty - salesQty;
+    const diffColor = diff < 0 ? 'danger' : diff > 0 ? 'success' : 'secondary';
+    const diffIcon = diff < 0 ? 'ri-arrow-down-line' : 'ri-arrow-up-line';
 
     return (
         <Col xl={4}>
@@ -63,6 +66,54 @@ const GoodsSummaryCard = ({ goodsSummary, periodLabel, loading }) => {
                             </div>
                         </Col>
                     </Row>
+
+                    <div className="mt-3">
+                        <p className="text-muted text-uppercase fs-12 fw-semibold mb-2">Qty Difference (Purchase − Sale)</p>
+                        <div
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '10px',
+                                background: diff < 0
+                                    ? 'linear-gradient(135deg,#f0654822,#f0654844)'
+                                    : diff > 0
+                                    ? 'linear-gradient(135deg,#0ab39c22,#0ab39c44)'
+                                    : 'linear-gradient(135deg,#adb5bd22,#adb5bd44)',
+                                border: `1.5px solid ${diff < 0 ? '#f06548' : diff > 0 ? '#0ab39c' : '#adb5bd'}`,
+                                borderRadius: '10px',
+                                padding: '8px 16px',
+                            }}
+                        >
+                            <i
+                                className={diffIcon}
+                                style={{
+                                    fontSize: '22px',
+                                    color: diff < 0 ? '#f06548' : diff > 0 ? '#0ab39c' : '#adb5bd',
+                                }}
+                            />
+                            <div>
+                                <h4
+                                    className="mb-0"
+                                    style={{
+                                        fontSize: '20px',
+                                        fontWeight: 700,
+                                        color: diff < 0 ? '#f06548' : diff > 0 ? '#0ab39c' : '#6c757d',
+                                    }}
+                                >
+                                    {formatQty(Math.abs(diff))}
+                                </h4>
+                                {diff < 0 && (
+                                    <p className="mb-0 fs-11 text-danger">Sold more than purchased</p>
+                                )}
+                                {diff > 0 && (
+                                    <p className="mb-0 fs-11 text-success">More purchased than sold</p>
+                                )}
+                                {diff === 0 && (
+                                    <p className="mb-0 fs-11 text-muted">Purchase = Sale</p>
+                                )}
+                            </div>
+                        </div>
+                    </div>
                 </CardBody>
             </Card>
         </Col>

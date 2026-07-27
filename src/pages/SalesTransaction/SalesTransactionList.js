@@ -13,7 +13,7 @@ import BreadCrumb from "../../Components/Common/BreadCrumb";
 import TableContainer from "../../Components/Common/TableContainer";
 import DeleteModal from "../../Components/Common/DeleteModal";
 import ExportButton from "../../Components/Common/ExportButton";
-import { getPartyCustomers, getSalesTransactionDetails } from "../../helpers/fakebackend_helper";
+import { getPartyCustomers, getSalesTransactionDetails, syncMobileOrders } from "../../helpers/fakebackend_helper";
 
 //Import actions
 import {
@@ -26,7 +26,7 @@ import { useSelector, useDispatch } from "react-redux";
 
 import Loader from "../../Components/Common/Loader";
 
-import { toast, ToastContainer } from 'react-toastify';
+import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { createSelector } from "reselect";
 import { formatToFourDecimals } from "../../utils/numberUtils";
@@ -111,6 +111,28 @@ const SalesTransactionList = () => {
         return moment(new Date(date)).format("DD MMM Y");
     };
 
+    const [isSyncing, setIsSyncing] = useState(false);
+    const handleSyncMobileOrders = async () => {
+        try {
+            setIsSyncing(true);
+            const res = await syncMobileOrders();
+            const result = res.data;  // DbResult: { success, data (message), error }
+            if (result?.success) {
+                toast.success(result.data || "Mobile orders synced successfully", { autoClose: 4000 });
+                dispatch(onGetSalesTransactions());
+            } else {
+                toast.error(result?.error || "Sync failed. Please check server logs.", { autoClose: 6000 });
+            }
+        } catch (error) {
+            toast.error(
+                error?.response?.data?.error || error?.response?.data?.message || "Failed to sync mobile orders. Check network or server.",
+                { autoClose: 5000 }
+            );
+        } finally {
+            setIsSyncing(false);
+        }
+    };
+
     //Column
     const columns = useMemo(
         () => [
@@ -118,16 +140,21 @@ const SalesTransactionList = () => {
                 header: "Action",
                 enableColumnFilter: false,
                 enableSorting: false,
-                width: "140px",
-                minWidth: "140px",
+                width: "290px",
+                minWidth: "290px",
                 grow: 0,
                 cell: (cellProps) => {
                     const code = cellProps.row.original.spUniqueCode;
                     return (
-                        <div className="d-flex align-items-center gap-1 flex-nowrap">
+                        <div className="d-flex align-items-center gap-1 flex-wrap">
                             {pagePermissions.canEdit && (
-                                <Link to={`/sales-order/edit/${code}`} className="btn btn-sm btn-soft-info" title="Edit">
+                                <Link to={`/sales-order/edit/${code}`} className="btn btn-sm btn-soft-info" title="Edit (Old Form)">
                                     <i className="ri-pencil-fill" />
+                                </Link>
+                            )}
+                            {pagePermissions.canEdit && (
+                                <Link to={`/revised-sales-order/edit/${code}`} className="btn btn-sm btn-soft-dark" title="Edit (Revised Form)">
+                                    <i className="ri-edit-2-line" />
                                 </Link>
                             )}
                             {pagePermissions.canAdd && (
@@ -135,8 +162,14 @@ const SalesTransactionList = () => {
                                     <i className="ri-file-copy-line" />
                                 </Link>
                             )}
-                            <Link to={`/sales-order/invoice/${code}`} className="btn btn-sm btn-soft-success" title="Invoice">
+                            <Link to={`/sales-order/invoice/${code}`} className="btn btn-sm btn-soft-success" title="Standard Tax Invoice">
                                 <i className="ri-printer-line" />
+                            </Link>
+                            <Link to={`/sales-order/mrp-invoice/${code}`} className="btn btn-sm btn-soft-secondary" title="MRP Tax Invoice">
+                                <i className="ri-file-text-line" />
+                            </Link>
+                            <Link to={`/sales-order/updated-invoice/${code}`} className="btn btn-sm btn-soft-primary" title="MRP Profit Statement (Internal)">
+                                <i className="ri-file-chart-line" />
                             </Link>
                             {pagePermissions.canDelete && (
                                 <button
@@ -157,7 +190,7 @@ const SalesTransactionList = () => {
                 accessorKey: "invNo",
                 enableColumnFilter: true,
                 cell: (cell) => {
-                    return <Link to={`/sales-order/edit/${cell.row.original.spUniqueCode}`} className="fw-medium link-primary">{cell.getValue() || "N/A"}</Link>;
+                    return <span className="fw-medium">{cell.getValue() || "N/A"}</span>;
                 },
             },
             {
@@ -186,12 +219,18 @@ const SalesTransactionList = () => {
                 header: "Type",
                 accessorKey: "invType",
                 enableColumnFilter: true,
+                width: "70px",
+                maxWidth: "80px",
+                grow: 0,
             },
             {
-                header: "Total Quantity",
+                header: "Tot Qty",
                 accessorKey: "totalQuantity",
                 enableColumnFilter: true,
                 right: true,
+                width: "90px",
+                maxWidth: "100px",
+                grow: 0,
                 filterFn: (row, columnId, filterValue) => {
                     const val = formatToFourDecimals(row.getValue(columnId));
                     return String(val).toLowerCase().includes(String(filterValue).toLowerCase());
@@ -272,12 +311,28 @@ const SalesTransactionList = () => {
                                                 fileName={`Sales_Transactions_${new Date().toISOString().slice(0, 10)}`}
                                                 iconOnly
                                             />
+                                            {/* {pagePermissions.canAdd && (
+                                                <button type="button" className="btn btn-primary" onClick={handleSyncMobileOrders} disabled={isSyncing} >
+                                                    <i className={`ri-refresh-line align-bottom me-1 ${isSyncing ? 'mdi-spin' : ''}`}></i>
+                                                    {isSyncing ? 'Syncing...' : 'Sync Mobile Orders'}
+                                                </button>
+                                            )} */}
                                             {pagePermissions.canAdd && (
                                                 <Link
                                                     to="/sales-order/create"
                                                     className="btn btn-danger"
+                                                    title="Old Sales Order Form"
                                                 >
-                                                    <i className="ri-add-line align-bottom me-1"></i> New Sales Order
+                                                    <i className="ri-add-line align-bottom me-1"></i> Sales Order
+                                                </Link>
+                                            )}
+                                            {pagePermissions.canAdd && (
+                                                <Link
+                                                    to="/revised-sales-order/create"
+                                                    className="btn btn-success"
+                                                    title="New Revised Sales Order Form"
+                                                >
+                                                    <i className="ri-add-line align-bottom me-1"></i> Revised Sales Order
                                                 </Link>
                                             )}
                                         </div>
@@ -298,7 +353,6 @@ const SalesTransactionList = () => {
                                             />
                                         ) : (<Loader error={error} />)
                                         }
-                                        <ToastContainer closeButton={false} limit={1} />
                                         <div className="mt-2 border rounded bg-light p-2">
                                             <div className="d-flex justify-content-end gap-4 fw-semibold">
                                                 <span>Total Quantity: {formatToFourDecimals(listTotals.totalQuantity)}</span>

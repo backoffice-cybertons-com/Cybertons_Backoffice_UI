@@ -1,0 +1,365 @@
+/* =========================================================
+   SalesInvoiceUpdated.css — MRP Profit Statement
+   ========================================================= */
+
+/* ── Loading ── */
+.siu-loading-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 300px;
+    gap: 16px;
+}
+.siu-spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid #e9ecef;
+    border-top-color: #405189;
+    border-radius: 50%;
+    animation: siu-spin 0.8s linear infinite;
+}
+@keyframes siu-spin { to { transform: rotate(360deg); } }
+.siu-loading-text { color: #6c757d; font-size: 14px; }
+
+/* ── Error ── */
+.siu-error-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 300px;
+    gap: 12px;
+    color: #dc3545;
+}
+.siu-error-icon { font-size: 48px; }
+.siu-btn-back {
+    margin-top: 8px;
+    padding: 8px 20px;
+    border: 1px solid #6c757d;
+    border-radius: 6px;
+    background: #fff;
+    cursor: pointer;
+    color: #495057;
+}
+
+/* ── Toolbar ── */
+.siu-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+    gap: 8px;
+}
+.siu-toolbar-left, .siu-toolbar-right { display: flex; gap: 8px; }
+
+.siu-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 16px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    text-decoration: none;
+    transition: all 0.15s;
+}
+.siu-btn-ghost {
+    background: transparent;
+    border: 1px solid #ced4da;
+    color: #495057;
+}
+.siu-btn-ghost:hover { background: #f8f9fa; }
+.siu-btn-outline {
+    background: transparent;
+    border: 1px solid #0ab39c;
+    color: #0ab39c;
+}
+.siu-btn-outline:hover { background: #0ab39c; color: #fff; }
+.siu-btn-primary {
+    background: #405189;
+    color: #fff;
+    border: 1px solid #405189;
+}
+.siu-btn-primary:hover { background: #384784; }
+
+/* ── Document shell ── */
+.siu-document {
+    background: #fff;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    overflow: hidden;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+}
+
+/* ── Document header band ── */
+.siu-doc-header {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: start;
+    padding: 18px 24px 14px;
+    background: linear-gradient(135deg, #405189 0%, #2e3f7a 100%);
+    color: #fff;
+}
+.siu-doc-company-name {
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+}
+.siu-doc-company-sub {
+    font-size: 11px;
+    opacity: 0.8;
+    margin-top: 3px;
+}
+.siu-doc-gst { font-style: italic; }
+
+.siu-doc-title-block {
+    text-align: center;
+    border-left: 1px solid rgba(255,255,255,0.2);
+    border-right: 1px solid rgba(255,255,255,0.2);
+    padding: 0 24px;
+}
+.siu-doc-title {
+    font-size: 16px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+}
+.siu-doc-subtitle {
+    font-size: 10px;
+    opacity: 0.7;
+    margin-top: 4px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.siu-doc-ref { text-align: right; }
+.siu-doc-ref-row {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    font-size: 12px;
+    margin-bottom: 4px;
+}
+.siu-doc-ref-label { opacity: 0.75; }
+.siu-doc-ref-value { font-weight: 600; }
+
+/* ── Meta info grid ── */
+.siu-meta-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr auto;
+    gap: 0;
+    border-bottom: 2px solid #e9ecef;
+    background: #f8f9fa;
+}
+.siu-meta-cell {
+    padding: 12px 20px;
+    border-right: 1px solid #e9ecef;
+}
+.siu-meta-cell:last-child { border-right: none; }
+.siu-meta-cell-right { text-align: right; min-width: 200px; }
+
+.siu-meta-label {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: #6c757d;
+    margin-bottom: 3px;
+}
+.siu-meta-value { font-size: 14px; color: #212529; }
+.siu-meta-prominent { font-weight: 700; font-size: 15px; }
+.siu-meta-sub { font-size: 11px; color: #6c757d; margin-top: 3px; }
+.siu-meta-grand {
+    font-size: 20px;
+    font-weight: 700;
+    color: #405189;
+    line-height: 1.2;
+}
+
+/* ── Table wrapper ── */
+.siu-table-wrap {
+    overflow-x: auto;
+    padding: 0;
+}
+
+/* ── Main table ── */
+.siu-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11.5px;
+    min-width: 960px;
+}
+
+/* Header rows */
+.siu-thead-group th,
+.siu-thead-sub th {
+    padding: 7px 8px;
+    text-align: right;
+    vertical-align: middle;
+    border: 1px solid #c8ced7;
+    white-space: nowrap;
+    font-weight: 600;
+    font-size: 11px;
+    line-height: 1.3;
+}
+.siu-th-left { text-align: left !important; }
+.siu-th-center { text-align: center !important; }
+.siu-th-unit { font-weight: 400; font-size: 10px; opacity: 0.75; }
+
+/* Group header colors */
+.siu-thead-group th {
+    background: #2e3f7a;
+    color: #fff;
+}
+.siu-th-group-comm {
+    background: #1e6f5c !important;
+    color: #fff !important;
+}
+.siu-th-group-total {
+    background: #7b2d8b !important;
+    color: #fff !important;
+}
+
+/* Sub-header */
+.siu-thead-sub th {
+    background: #f0f4ff;
+    color: #2e3f7a;
+    font-size: 10.5px;
+}
+.siu-th-sp { background: #eaf7f4 !important; color: #1e6f5c !important; }
+.siu-th-co { background: #fdf0ff !important; color: #7b2d8b !important; }
+.siu-th-inv { background: #fff8e6 !important; color: #856404 !important; }
+
+/* Column sizing */
+.siu-col-sr      { width: 34px; min-width: 34px; }
+.siu-col-product { min-width: 140px; }
+.siu-col-num     { min-width: 78px; }
+.siu-col-mrp     { font-weight: 600; }
+.siu-col-adj     { }
+.siu-col-sale    { font-weight: 600; }
+
+/* Body cells */
+.siu-td-center   { text-align: center; }
+.siu-td-left     { text-align: left; }
+.siu-td-right    { text-align: right; }
+.siu-td-sr       { color: #6c757d; font-size: 11px; }
+
+.siu-table tbody td {
+    padding: 6px 8px;
+    border: 1px solid #dee2e6;
+    vertical-align: middle;
+}
+
+/* SP / Co comm coloring */
+.siu-td-sp { background: rgba(30,111,92,0.05); color: #1e6f5c; font-weight: 500; }
+.siu-td-co { background: rgba(123,45,139,0.05); color: #7b2d8b; font-weight: 500; }
+.siu-td-inv { background: rgba(255,193,7,0.1); color: #856404; }
+
+/* Row striping */
+.siu-row-even { background: #fff; }
+.siu-row-odd  { background: #fafbff; }
+
+/* Footer row */
+.siu-tfoot-row td {
+    padding: 8px;
+    border: 1px solid #c8ced7;
+    background: #2e3f7a;
+    color: #fff;
+    font-weight: 700;
+}
+.siu-tfoot-row .siu-td-sp { background: #1e6f5c; color: #fff; }
+.siu-tfoot-row .siu-td-co { background: #7b2d8b; color: #fff; }
+.siu-tfoot-row .siu-td-inv { background: #e59900; color: #fff; }
+
+/* ── Summary cards ── */
+.siu-summary {
+    padding: 16px 20px;
+    border-top: 2px solid #e9ecef;
+    background: #f8f9fa;
+}
+.siu-summary-cards {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 16px;
+}
+.siu-sum-card {
+    border-radius: 8px;
+    padding: 12px 16px;
+    border: 1px solid transparent;
+}
+.siu-sum-card-inv  { background: #fff8e6; border-color: #ffc107; }
+.siu-sum-card-sp   { background: #eaf7f4; border-color: #0ab39c; }
+.siu-sum-card-co   { background: #fdf0ff; border-color: #b36bad; }
+.siu-sum-card-bill { background: #eaf0fb; border-color: #405189; }
+
+.siu-sum-label  { font-size: 11px; font-weight: 600; color: #6c757d; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+.siu-sum-amount { font-size: 18px; font-weight: 700; color: #212529; }
+.siu-sum-amount-bill { color: #405189; font-size: 20px; }
+
+/* ── Formula legend ── */
+.siu-legend {
+    border-top: 1px solid #e9ecef;
+    padding-top: 12px;
+}
+.siu-legend-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: #495057;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+}
+.siu-legend-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 4px 24px;
+    font-size: 11.5px;
+    color: #6c757d;
+}
+.siu-legend-key {
+    font-weight: 600;
+    color: #405189;
+}
+
+/* ── Footer ── */
+.siu-doc-footer {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 20px;
+    background: #2e3f7a;
+    color: rgba(255,255,255,0.7);
+    font-size: 10.5px;
+}
+.siu-footer-confidential {
+    font-style: italic;
+    color: rgba(255,255,255,0.5);
+    letter-spacing: 0.5px;
+}
+
+/* =========================================================
+   PRINT STYLES
+   ========================================================= */
+@media print {
+    .si-no-print { display: none !important; }
+    .page-content { padding: 0 !important; }
+
+    .siu-document {
+        box-shadow: none;
+        border: none;
+    }
+    .siu-doc-header {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+    .siu-table { font-size: 10px; }
+    .siu-table tbody td { padding: 4px 6px; }
+    .siu-thead-group th { font-size: 10px; }
+    .siu-summary-cards { grid-template-columns: repeat(4,1fr); }
+    .siu-sum-card { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .siu-tfoot-row td { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .siu-legend { display: none; }
+}

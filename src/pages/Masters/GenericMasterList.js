@@ -82,6 +82,7 @@ const GenericMasterList = () => {
     const [deleteId, setDeleteId] = useState(null);
     const [globalSearch, setGlobalSearch] = useState("");
     const [columnFilters, setColumnFilters] = useState({});
+    const [rolesMap, setRolesMap] = useState({});
 
     // State for Result Modal (Centered Popup)
     const [resultModal, setResultModal] = useState({
@@ -224,6 +225,21 @@ const GenericMasterList = () => {
         }
     }, [name, currentConfig, permissions]);
 
+    useEffect(() => {
+        if (name === 'users') {
+            apiClient.get('/api/Master/roles').then(res => {
+                const map = {};
+                (res?.data || res || []).forEach(r => {
+                    // Support both camelCase and PascalCase keys
+                    const id = r.roleId ?? r.RoleId ?? r.id ?? r.Id;
+                    const label = r.roleName ?? r.RoleName ?? r.name ?? r.Name;
+                    if (id !== undefined) map[id] = label;
+                });
+                setRolesMap(map);
+            }).catch(console.error);
+        }
+    }, [name]);
+
     const fetchData = async () => {
         setLoading(true);
         try {
@@ -248,7 +264,9 @@ const GenericMasterList = () => {
     // Column metadata: from config when available, else inferred from data
     const columnMeta = useMemo(() => {
         if (currentConfig && currentConfig.fields) {
-            return currentConfig.fields.map(field => ({
+            return currentConfig.fields
+                .filter(field => !field.virtual && field.type !== 'password')
+                .map(field => ({
                 label: field.label,
                 accessor: field.name,
                 type: field.type || "text"
@@ -395,6 +413,9 @@ const GenericMasterList = () => {
                             {raw}
                         </div>
                     );
+                }
+                if (name === 'users' && (col.accessor === 'RoleId' || col.accessor === 'roleId')) {
+                    return <div style={{ whiteSpace: 'nowrap' }}>{rolesMap[raw] || raw}</div>;
                 }
                 if (col.type === "number") {
                     return <div className="w-100 text-end">{formatToTwoDecimals(raw)}</div>;

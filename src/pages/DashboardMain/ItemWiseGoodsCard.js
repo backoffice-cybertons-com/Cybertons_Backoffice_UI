@@ -14,6 +14,7 @@ const ItemWiseGoodsCard = ({ itemWiseGoods, periodLabel, loading }) => {
             product_name: item.product_name ?? item.productName ?? 'Unknown Item',
             purchase_qty: Number(item.purchase_qty ?? item.purchaseQty ?? 0),
             sales_qty: Number(item.sales_qty ?? item.salesQty ?? 0),
+            diff: Number(item.purchase_qty ?? item.purchaseQty ?? 0) - Number(item.sales_qty ?? item.salesQty ?? 0),
         }));
     }, [itemWiseGoods]);
 
@@ -34,8 +35,9 @@ const ItemWiseGoodsCard = ({ itemWiseGoods, periodLabel, loading }) => {
             (acc, item) => ({
                 purchase: acc.purchase + item.purchase_qty,
                 sales: acc.sales + item.sales_qty,
+                diff: acc.diff + item.diff,
             }),
-            { purchase: 0, sales: 0 }
+            { purchase: 0, sales: 0, diff: 0 }
         );
     }, [normalizedItems]);
 
@@ -71,8 +73,9 @@ const ItemWiseGoodsCard = ({ itemWiseGoods, periodLabel, loading }) => {
                                 <tr>
                                     <th style={{ width: '8%' }}>#</th>
                                     <th>Item Name</th>
-                                    <th className="text-end" style={{ width: '18%' }}>Purchase Qty</th>
-                                    <th className="text-end" style={{ width: '18%' }}>Sales Qty</th>
+                                    <th className="text-end" style={{ width: '16%' }}>Purchase Qty</th>
+                                    <th className="text-end" style={{ width: '16%' }}>Sales Qty</th>
+                                    <th className="text-end" style={{ width: '16%' }}>Difference</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -83,11 +86,16 @@ const ItemWiseGoodsCard = ({ itemWiseGoods, periodLabel, loading }) => {
                                             <td className="fw-medium">{item.product_name || 'Unknown Item'}</td>
                                             <td className="text-end text-info">{formatQty(item.purchase_qty)}</td>
                                             <td className="text-end text-success">{formatQty(item.sales_qty)}</td>
+                                            <td className={`text-end fw-semibold ${item.diff < 0 ? 'text-danger' : item.diff > 0 ? 'text-success' : 'text-muted'}`}>
+                                                {item.diff < 0 && <i className="ri-arrow-down-line me-1" />}
+                                                {item.diff > 0 && <i className="ri-arrow-up-line me-1" />}
+                                                {formatQty(Math.abs(item.diff))}
+                                            </td>
                                         </tr>
                                     ))
                                 ) : (
                                     <tr>
-                                        <td colSpan="4" className="text-center text-muted py-4">
+                                        <td colSpan="5" className="text-center text-muted py-4">
                                             No item transactions found for this period.
                                         </td>
                                     </tr>
@@ -99,6 +107,9 @@ const ItemWiseGoodsCard = ({ itemWiseGoods, periodLabel, loading }) => {
                                         <th colSpan="2" className="text-end">Total</th>
                                         <th className="text-end text-info">{formatQty(totals.purchase)}</th>
                                         <th className="text-end text-success">{formatQty(totals.sales)}</th>
+                                        <th className={`text-end fw-bold ${totals.diff < 0 ? 'text-danger' : totals.diff > 0 ? 'text-success' : 'text-muted'}`}>
+                                            {formatQty(Math.abs(totals.diff))}
+                                        </th>
                                     </tr>
                                 </tfoot>
                             )}

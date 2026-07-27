@@ -24,6 +24,7 @@ const MastersDashboard = () => {
                 { id: "paymentTerm", label: "Payment Term" },
                 { id: "transporters", label: "Transporter" },
                 { id: "vehicles", label: "Vehicle" },
+                { id: "zones", label: "Zone" },
                 { id: "vouchertype", label: "Voucher Type" },
                 { id: "ledgersettings", label: "Ledger Settings", customRoute: "/masters/ledger-settings" }
             ]
@@ -68,7 +69,8 @@ const MastersDashboard = () => {
         {
             category: "Sales",
             items: [
-                { id: "salespersons", label: "Salesperson" }
+                { id: "salespersons", label: "Salesperson" },
+                { id: "addPrices", label: "Add Price" }
             ]
         }
     ];
@@ -88,6 +90,7 @@ const MastersDashboard = () => {
         costCenters: "Define cost centers for expense tracking and allocations.",
         roles: "Define user roles and permission sets.",
         salespersons: "Manage sales staff and commission structures.",
+        addPrices: "Configure add price slabs by average outstanding days for party rate adjustment.",
         taxGroups: "Group multiple taxes for simplified application.",
         configureTax: "Map individual taxes into tax groups.",
         tcs: "Tax Collected at Source configurations.",
@@ -103,6 +106,7 @@ const MastersDashboard = () => {
         project: "Configure job/project codes for tracking.",
         accountgroup: "Define accounting groups for profit/loss and balance sheet structure.",
         vouchertype: "Manage numbering and prefixes for different voucher types.",
+        zones: "Define geographic zones to classify parties by territory.",
         ledgersettings: "Configure default accounts for automated transactions (Sales, Tax, etc.)."
     };
 

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Container, Row, Col, Dropdown, DropdownToggle, DropdownMenu, DropdownItem } from 'reactstrap';
 import BreadCrumb from '../../Components/Common/BreadCrumb';
 import NewMastersCard from '../DashboardMain/NewMastersCard';
@@ -24,21 +24,34 @@ const KpiDashboard = () => {
     const [customFromDate, setCustomFromDate] = useState('');
     const [customToDate, setCustomToDate] = useState('');
     const [dateError, setDateError] = useState('');
+    const [lastRefreshed, setLastRefreshed] = useState(null);
+    const autoRefreshRef = useRef(null);
+
+    const AUTO_REFRESH_MS = 20 * 60 * 1000; // 20 minutes
 
     const { dashboardData, loading } = useSelector((state) => state.Dashboard);
     const companyId = secureStorage.getPlain('companyId');
 
     const toggleDropdown = () => setDropdownOpen((prevState) => !prevState);
 
-    useEffect(() => {
-        if (!companyId) return;
-
+    const fetchData = (filterVal, fromDate, toDate) => {
         const requestParams = {
             companyId: parseInt(companyId),
             topLimit: 5,
             expensePartyTypes: null,
             invStatusPartyType: 'Customer',
         };
+        dispatch(getDashboardData({
+            ...requestParams,
+            filterType: filterVal === 'CUSTOM' ? null : filterVal,
+            fromDate,
+            toDate,
+        }));
+        setLastRefreshed(new Date());
+    };
+
+    useEffect(() => {
+        if (!companyId) return;
 
         if (filter === 'CUSTOM') {
             if (!customFromDate || !customToDate) return;
@@ -46,13 +59,18 @@ const KpiDashboard = () => {
         }
 
         const { fromDate, toDate } = getDashboardDateRange(filter, customFromDate, customToDate);
+        fetchData(filter, fromDate, toDate);
 
-        dispatch(getDashboardData({
-            ...requestParams,
-            filterType: filter === 'CUSTOM' ? null : filter,
-            fromDate,
-            toDate,
-        }));
+        // Set up auto-refresh every 20 minutes
+        if (autoRefreshRef.current) clearInterval(autoRefreshRef.current);
+        autoRefreshRef.current = setInterval(() => {
+            const { fromDate: fd, toDate: td } = getDashboardDateRange(filter, customFromDate, customToDate);
+            fetchData(filter, fd, td);
+        }, AUTO_REFRESH_MS);
+
+        return () => {
+            if (autoRefreshRef.current) clearInterval(autoRefreshRef.current);
+        };
     }, [dispatch, filter, companyId, customFromDate, customToDate]);
 
     const handleFilterChange = (selectedFilter) => {
@@ -126,7 +144,35 @@ const KpiDashboard = () => {
                         <Col xs={12}>
                             <div className="d-flex align-items-lg-center flex-lg-row flex-column">
                                 <div className="flex-grow-1">
-                                    <h4 className="fs-16 mb-1">KPI Overview</h4>
+                                    <div className="d-flex align-items-center flex-wrap gap-2">
+                                        <h4 className="fs-16 mb-0">KPI Overview</h4>
+                                        {lastRefreshed && (
+                                            <span
+                                                style={{
+                                                    background: 'linear-gradient(90deg,#405189,#0ab39c)',
+                                                    color: '#fff',
+                                                    borderRadius: '20px',
+                                                    padding: '2px 12px',
+                                                    fontSize: '11px',
+                                                    fontWeight: 600,
+                                                    letterSpacing: '0.3px',
+                                                    display: 'inline-flex',
+                                                    alignItems: 'center',
+                                                    gap: '4px',
+                                                }}
+                                            >
+                                                <i className="ri-refresh-line"></i>
+                                                Last Refreshed:&nbsp;
+                                                {lastRefreshed.toLocaleTimeString('en-IN', {
+                                                    hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true
+                                                })}
+                                                &nbsp;—&nbsp;
+                                                {lastRefreshed.toLocaleDateString('en-IN', {
+                                                    day: '2-digit', month: 'short', year: 'numeric'
+                                                })}
+                                            </span>
+                                        )}
+                                    </div>
                                     <p className="text-muted mb-0">{filterSubtitles[filter] || filterSubtitles.CUSTOM}</p>
                                 </div>
                                 <div className="mt-3 mt-lg-0">

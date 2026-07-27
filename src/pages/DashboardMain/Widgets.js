@@ -136,7 +136,7 @@ const Widgets = ({ kpiData, loading }) => {
                                             <div className="flex-grow-1 ms-3">
                                                 <h2 className={`mb-0 fs-20 ${(item.label.includes("Profit") && item.counter < 0) ? "text-danger" :
                                                     (item.label.includes("Profit") && item.counter > 0) ? "text-success" : ""
-                                                    }`} id={`kpi-tooltip-${key}`}>
+                                                    }`} id={`kpi-tooltip-${key}`} title={`${item.prefix || ""}${item.counter.toLocaleString('en-IN', { minimumFractionDigits: 2 })} ${item.suffix || ""}`}>
                                                     <span className="counter-value">
                                                         {item.prefix}
                                                         <CountUp
@@ -149,9 +149,6 @@ const Widgets = ({ kpiData, loading }) => {
                                                         {item.suffix}
                                                     </span>
                                                 </h2>
-                                                <UncontrolledTooltip placement="top" target={`kpi-tooltip-${key}`}>
-                                                    {item.prefix}{item.counter.toLocaleString('en-IN', { minimumFractionDigits: 2 })} {item.suffix}
-                                                </UncontrolledTooltip>
                                             </div>
                                         </div>
                                         <div className="d-flex align-items-center justify-content-between mt-3">

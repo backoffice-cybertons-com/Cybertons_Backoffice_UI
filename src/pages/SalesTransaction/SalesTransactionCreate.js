@@ -19,10 +19,69 @@ import {
 import { resetSalesTransactionCreated } from "../../slices/salesTransaction/reducer";
 import { getVendors, getPartyCustomers, getProductsForSales, getPartyDetails, getTransporters, getUnits, getSalesTransactionDetails, getDeliveryChallans, getSalesTransactions, getBanks, getCompanies, getPartyOutstanding, getVehicles } from "../../helpers/fakebackend_helper";
 import { getSelectedFiscalYearId } from "../../utils/fiscalYearStorage";
+import { APIClient } from "../../helpers/api_helper";
+
+const apiClient = new APIClient();
+
+const calcLineProfitFields = (line) => {
+    const qty = parseFloat(line.crt ?? line.quantity) || 0;
+    const rate = parseFloat(line.rate) || 0;
+    const rateDiff = parseFloat(line.rateDiff) || 0;
+    const mrp = parseFloat(line.mrp) || 0;
+    const dealerPrice = parseFloat(line.dealerPrice) || (rate - rateDiff);
+    const spCommUnit = parseFloat(line.spCommUnit ?? line.spCommUnit) || 0;
+    const companyCommUnit = mrp - rate - spCommUnit;
+    return {
+        dealerPrice,
+        spCommUnit,
+        companyCommUnit,
+        invAmountMrp: qty * mrp,
+        spCommTotal: qty * spCommUnit,
+        companyCommTotal: qty * companyCommUnit
+    };
+};
 
 const isSalesRecord = (order) => {
     const invType = (order.invType || order.InvType || "").toString().trim().toLowerCase();
     return !invType || invType === "sales";
+};
+
+/** Map DB line to UI grid: Sub Qty = 1, Qty (crt) = actual ordered quantity. */
+const normalizeSalesOrderLine = (line, { isCopy = false, today = null, parseDate = null } = {}) => {
+    const dbQty = parseFloat(line.quantity ?? line.Quantity) || 0;
+    const dbCrt = parseFloat(line.crt ?? line.Crt) || 0;
+    const crt = dbCrt > 0 ? dbCrt : dbQty;
+    const subUnitQuantity = parseFloat(line.subUnitQuantity ?? line.SubUnitQuantity) || 1;
+    const packing = parseFloat(line.packing ?? line.Packing) || (crt * subUnitQuantity);
+    const rawBatchDate = line.batchDate ?? line.BatchDate;
+    const batchDate = isCopy
+        ? today
+        : (parseDate ? parseDate(rawBatchDate) : rawBatchDate);
+
+    return {
+        ...line,
+        spUniqueCode: isCopy ? 0 : (line.spUniqueCode || line.SpUniqueCode || 0),
+        productId: line.productId || line.ProductId || "",
+        batchNo: line.batchNo || line.BatchNo || "",
+        batchDate,
+        unit: line.unit || line.Unit || "",
+        subUnit: line.subUnit || line.SubUnit || "",
+        subUnitQuantity,
+        crt,
+        quantity: crt,
+        packing,
+        rate: line.rate || line.Rate || 0,
+        mrp: line.mrp || line.Mrp || 0,
+        cgstPercent: line.cgstPercent || line.CgstPercent || 0,
+        sgstPercent: line.sgstPercent || line.SgstPercent || 0,
+        amount: line.amount || line.Amount || 0,
+        totalAmount: line.totalAmount || line.TotalAmount || 0,
+        originalRate: (line.dealerPrice ?? line.DealerPrice) || ((line.rate || line.Rate || 0) - (line.rateDiff || line.RateDiff || 0)),
+        rateDiff: line.rateDiff || line.RateDiff || 0,
+        dealerPrice: line.dealerPrice ?? line.DealerPrice ?? ((line.rate || line.Rate || 0) - (line.rateDiff || line.RateDiff || 0)),
+        spCommUnit: line.spCommUnit ?? line.SpCommUnit ?? 0,
+        cogs: line.cogs || line.Cogs || 0
+    };
 };
 
 const getNextSalesOrderNumber = (orders = []) => {
@@ -86,6 +145,7 @@ const SalesTransactionCreate = () => {
     const [companies, setCompanies] = useState([]);
     const [deliveryChallanOptions, setDeliveryChallanOptions] = useState([]);
     const [vehicleOptions, setVehicleOptions] = useState([]);
+    const [salespersons, setSalespersons] = useState([]);
     const [allSalesOrders, setAllSalesOrders] = useState([]);
     const [customerRateDiff, setCustomerRateDiff] = useState(0);
     const itemTableScrollRef = useRef(null);
@@ -247,6 +307,18 @@ const SalesTransactionCreate = () => {
                     }
                 } catch (e) { console.error("[SalesOrder] Company fetch failed:", e); }
 
+                // Salespersons
+                try {
+                    const spRes = await apiClient.get('/api/salesperson');
+                    const spData = Array.isArray(spRes) ? spRes : (spRes?.data || []);
+                    if (Array.isArray(spData)) {
+                        setSalespersons(spData.map(s => ({
+                            label: s.salespersonName || s.SalespersonName || s.salesperson_name || s.name || "Salesperson",
+                            value: s.salespersonId || s.SalespersonId || s.salesperson_id || s.id
+                        })));
+                    }
+                } catch (e) { console.error("[SalesOrder] Salesperson fetch failed:", e); }
+
                 if (isEdit || isCopy) {
                     const fetchId = isEdit ? id : copyId;
                     const editData = await getSalesTransactionDetails(fetchId);
@@ -271,28 +343,11 @@ const SalesTransactionCreate = () => {
                             poOrderDate: isCopy ? today : (parseDate(header.poOrderDate || header.PoOrderDate) || ""),
                             deliveryDate: isCopy ? today : (parseDate(header.deliveryDate || header.DeliveryDate) || ""),
                             spUniqueCode: isCopy ? 0 : (header.spUniqueCode || header.SpUniqueCode || 0),
-                            lines: (editData.lines || editData.Lines || []).map(line => ({
-                                ...line,
-                                spUniqueCode: isCopy ? 0 : (line.spUniqueCode || line.SpUniqueCode || 0),
-                                productId: line.productId || line.ProductId || "",
-                                batchNo: line.batchNo || line.BatchNo || "",
-                                batchDate: isCopy ? today : (parseDate(line.batchDate || line.BatchDate) || ""),
-                                unit: line.unit || line.Unit || "",
-                                subUnit: line.subUnit || line.SubUnit || "",
-                                subUnitQuantity: line.subUnitQuantity || line.SubUnitQuantity || 0,
-                                crt: line.crt || line.Crt || 0,
-                                packing: line.packing || line.Packing || 0,
-                                rate: line.rate || line.Rate || 0,
-                                mrp: line.mrp || line.Mrp || 0,
-                                cgstPercent: line.cgstPercent || line.CgstPercent || 0,
-                                sgstPercent: line.sgstPercent || line.SgstPercent || 0,
-                                amount: line.amount || line.Amount || 0,
-                                totalAmount: line.totalAmount || line.TotalAmount || 0,
-                                originalRate: line.rate || line.Rate || 0,
-                                rateDiff: line.rateDiff || line.RateDiff || 0,
-                                cogs: line.cogs || line.Cogs || 0
-                            }))
+                            lines: (editData.lines || editData.Lines || []).map(line =>
+                                normalizeSalesOrderLine(line, { isCopy, today: isCopy ? today : null, parseDate })
+                            )
                         });
+                        validation.setFieldValue("salespersonId", header.salespersonId || header.SalespersonId || "");
                         handleCustomerChange({ value: header.partyId || header.PartyId }, true);
                     }
                 }
@@ -319,6 +374,7 @@ const SalesTransactionCreate = () => {
         deliveryDate: today,
         vehicleNo: "",
         transporterId: "",
+        salespersonId: "",
         partyId: "",
         billingAddress: "",
         billingAddress1: "",
@@ -367,6 +423,8 @@ const SalesTransactionCreate = () => {
                 totalAmount: "0.00",
                 originalRate: "0.00",
                 rateDiff: "0.00",
+                dealerPrice: "0.00",
+                spCommUnit: "0.00",
                 cogs: "0.00"
             }
         ]
@@ -439,6 +497,7 @@ const SalesTransactionCreate = () => {
                     deliveryDate: formatDate(values.deliveryDate),
                     deliveryNo: values.deliveryNo ? parseInt(values.deliveryNo) : null,
                     transporterId: values.transporterId ? parseInt(values.transporterId) : null,
+                    salespersonId: values.salespersonId ? parseInt(values.salespersonId) : null,
                     bankId: values.bankId ? parseInt(values.bankId) : null,
                     invoiceSeriesIncrementNumber: values.invoiceSeriesIncrementNumber ? parseInt(values.invoiceSeriesIncrementNumber) : null,
                     spUniqueCode: id ? parseInt(id) : 0,
@@ -462,6 +521,8 @@ const SalesTransactionCreate = () => {
                     amount: line.amount ? parseFloat(line.amount) : 0,
                     totalAmount: line.totalAmount ? parseFloat(line.totalAmount) : 0,
                     rateDiff: line.rateDiff ? parseFloat(line.rateDiff) : 0,
+                    dealerPrice: line.dealerPrice ? parseFloat(line.dealerPrice) : (parseFloat(line.rate || 0) - parseFloat(line.rateDiff || 0)),
+                    spCommUnit: line.spCommUnit ? parseFloat(line.spCommUnit) : 0,
                     cogs: line.cogs ? parseFloat(line.cogs) : 0
                 }))
             };
@@ -552,7 +613,9 @@ const SalesTransactionCreate = () => {
                 amount: amount,
                 cgstAmount: lineCgst,
                 sgstAmount: lineSgst,
-                totalAmount: amount + lineCgst + lineSgst
+                totalAmount: amount + lineCgst + lineSgst,
+                dealerPrice: parseFloat(line.dealerPrice) || (rate - (parseFloat(line.rateDiff) || 0)),
+                ...calcLineProfitFields({ ...line, rate, dealerPrice: parseFloat(line.dealerPrice) || (rate - (parseFloat(line.rateDiff) || 0)) })
             };
         });
 
@@ -619,7 +682,7 @@ const SalesTransactionCreate = () => {
                 productId: "", productDetails: "", description: "", batchNo: "", batchDate: today, mrp: 0,
                 subUnit: "", subUnitQuantity: 0, unit: "",
                 crt: 1, packing: 0, rate: 0, amount: 0, cgstPercent: 0, cgstAmount: 0, sgstPercent: 0, sgstAmount: 0, totalAmount: 0,
-                originalRate: 0,
+                originalRate: 0, dealerPrice: 0, spCommUnit: 0,
                 rateDiff: customerRateDiff
             }
         ];
@@ -672,7 +735,8 @@ const SalesTransactionCreate = () => {
                 lines[index].unit = packingUnitId || "";
                 lines[index].subUnit = baseUnitId || "";
                 lines[index].subUnitQuantity = crtValue || 1;
-                lines[index].originalRate = selectedProd.rate; // Store the master selling price
+                lines[index].originalRate = selectedProd.rate; // Store the master selling price (dealer price)
+                lines[index].dealerPrice = selectedProd.rate;
                 lines[index].rate = selectedProd.rate;
                 lines[index].mrp = selectedProd.mrp || 0;
                 lines[index].hsnCode = selectedProd.hsnCode;
@@ -779,12 +843,12 @@ const SalesTransactionCreate = () => {
 
             // Automatically apply new RateDiff to all existing lines
             const updatedLines = (validation.values.lines || []).map(line => {
-                const baseRate = parseFloat(line.originalRate) || parseFloat(line.rate) || 0;
-                // If originalRate was never set (e.g. legacy data), we assume current rate was the base
+                const baseRate = parseFloat(line.originalRate) || parseFloat(line.dealerPrice) || (parseFloat(line.rate) - (parseFloat(line.rateDiff) || 0)) || 0;
                 const newRate = baseRate + rateDiff;
                 return {
                     ...line,
                     rateDiff: rateDiff,
+                    dealerPrice: baseRate,
                     rate: newRate,
                     originalRate: baseRate,
                     cgstPercent: line.cgstPercent || 0,
@@ -835,6 +899,13 @@ const SalesTransactionCreate = () => {
             acc.cgstPercent += Number(line?.cgstPercent || 0);
             acc.sgstPercent += Number(line?.sgstPercent || 0);
             acc.totalAmount += Number(line?.totalAmount || 0);
+            const profit = calcLineProfitFields(line);
+            acc.dealerPrice += profit.dealerPrice;
+            acc.spCommUnit += profit.spCommUnit;
+            acc.companyCommUnit += profit.companyCommUnit;
+            acc.invAmountMrp += profit.invAmountMrp;
+            acc.spCommTotal += profit.spCommTotal;
+            acc.companyCommTotal += profit.companyCommTotal;
             return acc;
         }, {
             subUnitQuantity: 0,
@@ -845,7 +916,13 @@ const SalesTransactionCreate = () => {
             mrp: 0,
             cgstPercent: 0,
             sgstPercent: 0,
-            totalAmount: 0
+            totalAmount: 0,
+            dealerPrice: 0,
+            spCommUnit: 0,
+            companyCommUnit: 0,
+            invAmountMrp: 0,
+            spCommTotal: 0,
+            companyCommTotal: 0
         });
     }, [validation.values.lines]);
 
@@ -904,28 +981,11 @@ const SalesTransactionCreate = () => {
                     poOrderDate: today,
                     deliveryDate: today,
                     spUniqueCode: 0,
-                    lines: (editData.lines || editData.Lines || []).map(line => ({
-                        ...line,
-                        spUniqueCode: 0,
-                        productId: line.productId || line.ProductId || "",
-                        batchNo: line.batchNo || line.BatchNo || "",
-                        batchDate: today,
-                        unit: line.unit || line.Unit || "",
-                        subUnit: line.subUnit || line.SubUnit || "",
-                        subUnitQuantity: line.subUnitQuantity || line.SubUnitQuantity || 0,
-                        crt: line.crt || line.Crt || 0,
-                        packing: line.packing || line.Packing || 0,
-                        rate: line.rate || line.Rate || 0,
-                        mrp: line.mrp || line.Mrp || 0,
-                        cgstPercent: line.cgstPercent || line.CgstPercent || 0,
-                        sgstPercent: line.sgstPercent || line.SgstPercent || 0,
-                        amount: line.amount || line.Amount || 0,
-                        totalAmount: line.totalAmount || line.TotalAmount || 0,
-                        originalRate: line.rate || line.Rate || 0,
-                        rateDiff: line.rateDiff || line.RateDiff || 0,
-                        cogs: line.cogs || line.Cogs || 0
-                    }))
+                    lines: (editData.lines || editData.Lines || []).map(line =>
+                        normalizeSalesOrderLine(line, { isCopy: true, today })
+                    )
                 });
+                validation.setFieldValue("salespersonId", header.salespersonId || header.SalespersonId || "");
                 handleCustomerChange({ value: header.partyId || header.PartyId }, true);
                 setIsCopyPreviousModalOpen(false);
             }
@@ -1157,7 +1217,7 @@ const SalesTransactionCreate = () => {
                                             ref={itemTableScrollRef}
                                             style={{ maxHeight: "600px", overflowY: "auto", overflowX: "auto" }}
                                         >
-                                            <Table className="table-nowrap align-middle mb-0 border" style={{ minWidth: "1500px" }}>
+                                            <Table className="table-nowrap align-middle mb-0 border" style={{ minWidth: "1200px" }}>
                                                 <thead className="table-light">
                                                     <tr>
                                                         <th scope="col" style={{ minWidth: '250px', position: "sticky", top: 0, zIndex: 2, background: "#f3f6f9" }}>Item Details</th>
@@ -1168,9 +1228,7 @@ const SalesTransactionCreate = () => {
                                                         <th scope="col" style={{ minWidth: '100px', position: "sticky", top: 0, zIndex: 2, background: "#f3f6f9" }}>Sub Qty</th>
                                                         <th scope="col" style={{ minWidth: '80px', position: "sticky", top: 0, zIndex: 2, background: "#f3f6f9" }}>Qty</th>
                                                         <th scope="col" style={{ minWidth: '100px', position: "sticky", top: 0, zIndex: 2, background: "#f3f6f9" }}>Packing</th>
-                                                        <th scope="col" style={{ minWidth: '80px', position: "sticky", top: 0, zIndex: 2, background: "#f3f6f9" }}>Adj.</th>
                                                         <th scope="col" style={{ minWidth: '120px', position: "sticky", top: 0, zIndex: 2, background: "#f3f6f9" }}>Rate</th>
-                                                        <th scope="col" style={{ minWidth: '100px', position: "sticky", top: 0, zIndex: 2, background: "#f3f6f9" }}>MRP</th>
                                                         <th scope="col" style={{ minWidth: '80px', position: "sticky", top: 0, zIndex: 2, background: "#f3f6f9" }}>CGST %</th>
                                                         <th scope="col" style={{ minWidth: '80px', position: "sticky", top: 0, zIndex: 2, background: "#f3f6f9" }}>SGST %</th>
                                                         <th scope="col" style={{ minWidth: '120px', position: "sticky", top: 0, zIndex: 2, background: "#f3f6f9" }}>Amount</th>
@@ -1182,6 +1240,7 @@ const SalesTransactionCreate = () => {
                                                         const lineErrors = (validation.errors.lines && validation.errors.lines[index]) || {};
                                                         const lineTouched = (validation.touched.lines && validation.touched.lines[index]) || {};
                                                         const showErr = (field) => (lineTouched[field] || validation.submitCount > 0) && lineErrors[field];
+                                                        const profit = calcLineProfitFields(line);
                                                         return (
                                                             <tr key={index}>
                                                                 <td>
@@ -1257,25 +1316,6 @@ const SalesTransactionCreate = () => {
                                                                 </td>
                                                                 <td><Input type="number" value={formatToFourDecimals(line.packing)} readOnly className="bg-light no-spin-input" /></td>
                                                                 <td>
-                                                                    <Input 
-                                                                        type="number" 
-                                                                        value={line.rateDiff} 
-                                                                        placeholder="0"
-                                                                        className="text-center fw-medium no-spin-input"
-                                                                        disabled={isEdit || isView}
-                                                                        style={{ 
-                                                                            color: (parseFloat(line.rateDiff) || 0) >= 0 ? '#0ab39c' : '#f06548',
-                                                                            borderColor: (parseFloat(line.rateDiff) || 0) < 0 ? '#f06548' : ''
-                                                                        }}
-                                                                        onChange={(e) => {
-                                                                            const newDiff = parseFloat(e.target.value) || 0;
-                                                                            const baseRate = parseFloat(line.originalRate) || parseFloat(line.rate) - (parseFloat(line.rateDiff) || 0);
-                                                                            handleLineChange(index, "rateDiff", newDiff);
-                                                                            handleLineChange(index, "rate", baseRate + newDiff);
-                                                                        }}
-                                                                    />
-                                                                </td>
-                                                                <td>
                                                                     <Input type="number" value={line.rate}
                                                                         disabled={isView}
                                                                         className="no-spin-input"
@@ -1287,7 +1327,6 @@ const SalesTransactionCreate = () => {
                                                                         style={{ borderColor: showErr('rate') ? '#f06548' : '' }} />
                                                                     {showErr('rate') && <div className="text-danger" style={{ fontSize: '11px' }}>{lineErrors.rate}</div>}
                                                                 </td>
-                                                                <td><Input type="number" value={line.mrp} onChange={(e) => handleLineChange(index, "mrp", e.target.value)} onBlur={(e) => handleLineChange(index, "mrp", formatToTwoDecimals(e.target.value))} disabled={isView} className="no-spin-input" /></td>
                                                                 <td>
                                                                     <Input type="number" value={line.cgstPercent}
                                                                         disabled={isView}
@@ -1325,7 +1364,7 @@ const SalesTransactionCreate = () => {
                                                     })}
                                                     {!isView && (
                                                         <tr>
-                                                            <td colSpan={15} className="py-2" style={{ background: "#fff" }}>
+                                                            <td colSpan={13} className="py-2" style={{ background: "#fff" }}>
                                                                 <Button
                                                                     type="button"
                                                                     color="link"
@@ -1346,9 +1385,7 @@ const SalesTransactionCreate = () => {
                                                         <td style={stickyFooterCellStyle}>{formatToFourDecimals(itemTotals.subUnitQuantity)}</td>
                                                         <td style={stickyFooterCellStyle}>{formatToFourDecimals(itemTotals.crt)}</td>
                                                         <td style={stickyFooterCellStyle}>{formatToFourDecimals(itemTotals.packing)}</td>
-                                                        <td style={stickyFooterCellStyle}>{formatToTwoDecimals(itemTotals.rateDiff)}</td>
                                                         <td style={stickyFooterCellStyle}>{formatToTwoDecimals(itemTotals.rate)}</td>
-                                                        <td style={stickyFooterCellStyle}>{formatToTwoDecimals(itemTotals.mrp)}</td>
                                                         <td style={stickyFooterCellStyle}>{formatToTwoDecimals(itemTotals.cgstPercent)}</td>
                                                         <td style={stickyFooterCellStyle}>{formatToTwoDecimals(itemTotals.sgstPercent)}</td>
                                                         <td style={stickyFooterCellStyle}>{formatToTwoDecimals(itemTotals.totalAmount)}</td>

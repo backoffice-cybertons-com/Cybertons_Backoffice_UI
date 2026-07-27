@@ -248,6 +248,8 @@ const useNavData = () => {
         finalLink = "/reports/sale-purchase-register-partywise";
       } else if (tabName === "Stock Summary") {
         finalLink = "/reports/stock-summary";
+      } else if (tabName === "GST REPORT FOR CA" || tabName === "GST Report for CA") {
+        finalLink = "/reports/gst-report-ca";
       // Developed by Hetak on 11-05-2026
       } else if (tabName === "Stock Ledger Datewise" || tabName === "Stock Ledger") {
         finalLink = "/reports/stock-ledger-datewise";

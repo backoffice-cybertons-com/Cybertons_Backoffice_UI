@@ -62,6 +62,9 @@ const GenericMasterModal = ({ isOpen, toggle, masterId, isEdit = false, selected
                 validator = Yup.string().email('Please enter a valid email');
             } else if (field.type === 'password') {
                 validator = Yup.string().min(6, 'Password must be at least 6 characters');
+                if (fieldName === 'ConfirmPassword') {
+                    validator = validator.oneOf([Yup.ref('PasswordHash'), null], 'Passwords must match');
+                }
             } else {
                 validator = Yup.string();
             }
@@ -144,6 +147,11 @@ const GenericMasterModal = ({ isOpen, toggle, masterId, isEdit = false, selected
                 const cleanValues = { ...values };
 
                 currentConfig?.fields.forEach(field => {
+                    if (field.virtual) {
+                        delete cleanValues[field.name];
+                        return;
+                    }
+
                     // Convert numeric fields from string if needed
                     if ((field.type === 'number' || field.type === 'select') && cleanValues[field.name] !== null && cleanValues[field.name] !== undefined) {
                         const val = String(cleanValues[field.name]);
@@ -245,10 +253,21 @@ const GenericMasterModal = ({ isOpen, toggle, masterId, isEdit = false, selected
                                                 styles={{
                                                     control: (base) => ({
                                                         ...base,
+                                                        minHeight: '38px',
+                                                        fontSize: '13px',
+                                                        borderRadius: '0.25rem',
                                                         borderColor: formik.touched[field.name] && formik.errors[field.name] ? "#f06548" : base.borderColor,
                                                         '&:hover': {
                                                             borderColor: formik.touched[field.name] && formik.errors[field.name] ? "#f06548" : base.borderColor
                                                         }
+                                                    }),
+                                                    singleValue: (base) => ({
+                                                        ...base,
+                                                        fontSize: '13px'
+                                                    }),
+                                                    menu: (base) => ({
+                                                        ...base,
+                                                        fontSize: '13px'
                                                     })
                                                 }}
                                             />

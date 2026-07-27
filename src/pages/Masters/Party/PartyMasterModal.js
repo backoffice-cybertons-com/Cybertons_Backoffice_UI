@@ -27,6 +27,9 @@ const PartyMasterModal = ({ isOpen, toggle, partyId, isEdit, onSuccess, defaultT
         paymentTerms: [],
         banks: [],
         branches: [],
+        salespersons: [],
+        transporters: [],
+        zones: [],
         gstTreatments: [
             { id: 'Registered Business - Regular', name: 'Registered Business - Regular' },
             { id: 'Registered Business - Composition', name: 'Registered Business - Composition' },
@@ -67,7 +70,23 @@ const PartyMasterModal = ({ isOpen, toggle, partyId, isEdit, onSuccess, defaultT
             Department: '',
             Remarks: '',
             PartyProfile: '',
-            RateDiff: "0.00"
+            RateDiff: "0.00",
+            KamMobile: '',
+            RecoveryMobile: '',
+            Kam: '',
+            RecoveryAgent: '',
+            SalespersonId: null,
+            SalespersonMobile: '',
+            TransporterId: null,
+            TransporterMobile: '',
+            SumulIncharge: '',
+            SumulInchargeMobile: '',
+            RetailerCode: '',
+            SumulDepoCode: '',
+            ZoneId: null,
+            PanDocPath: '',
+            AadhaarDocPath: '',
+            GstCertPath: ''
         },
         Addresses: [
             { AddressType: 'Billing', Attention: '', Country: 'India', Street1: '', Street2: '', City: '', State: '', PinCode: '', Phone: '', FaxNumber: '', IsDefault: true },
@@ -96,16 +115,49 @@ const PartyMasterModal = ({ isOpen, toggle, partyId, isEdit, onSuccess, defaultT
         if (activeTab !== tab) setActiveTab(tab);
     };
 
+    const handleDocumentUpload = async (e, fieldName, bankIdx = null) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        setIsUploading(true);
+        const formData = new FormData();
+        formData.append("file", file);
+
+        try {
+            const response = await apiClient.create('/api/party/upload-document', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
+            if (response && response.filePath) {
+                if (bankIdx !== null) {
+                    const updatedBanks = [...form.BankDetails];
+                    updatedBanks[bankIdx] = { ...updatedBanks[bankIdx], [fieldName]: response.filePath };
+                    setForm({ ...form, BankDetails: updatedBanks });
+                } else {
+                    setForm({ ...form, Party: { ...form.Party, [fieldName]: response.filePath } });
+                }
+                toast.success('Document uploaded successfully!');
+            }
+        } catch (error) {
+            console.error("Document upload failed", error);
+            toast.error('Failed to upload document');
+        } finally {
+            setIsUploading(false);
+        }
+    };
+
     useEffect(() => {
         const fetchDropdowns = async () => {
             try {
-                const [pTypes, currs, accs, pTerms, banks, branches] = await Promise.all([
+                const [pTypes, currs, accs, pTerms, banks, branches, sp, tp, zones] = await Promise.all([
                     apiClient.get('/api/partytypemaster'),
                     apiClient.get('/api/currency'),
                     apiClient.get('/api/account'),
                     apiClient.get('/api/paymentterm'),
                     apiClient.get('/api/bank'),
-                    apiClient.get('/api/branch')
+                    apiClient.get('/api/branch'),
+                    apiClient.get('/api/salesperson'),
+                    apiClient.get('/api/transporter'),
+                    apiClient.get('/api/master/tab_zone_master').catch(() => [])
                 ]);
                 setDropdowns(prev => ({
                     ...prev,
@@ -115,6 +167,9 @@ const PartyMasterModal = ({ isOpen, toggle, partyId, isEdit, onSuccess, defaultT
                     paymentTerms: Array.isArray(pTerms) ? pTerms : [],
                     banks: Array.isArray(banks) ? banks : [],
                     branches: Array.isArray(branches) ? branches : [],
+                    salespersons: Array.isArray(sp) ? sp : [],
+                    transporters: Array.isArray(tp) ? tp : [],
+                    zones: Array.isArray(zones) ? zones : [],
                 }));
             } catch (err) {
                 console.error("Error fetching dropdowns:", err);
@@ -210,7 +265,23 @@ const PartyMasterModal = ({ isOpen, toggle, partyId, isEdit, onSuccess, defaultT
                         Department: p.Department ?? p.department ?? '',
                         Remarks: p.Remarks ?? p.remarks ?? '',
                         PartyProfile: p.PartyProfile ?? p.partyProfile ?? '',
-                        RateDiff: p.RateDiff ?? p.rateDiff ?? 0
+                        RateDiff: p.RateDiff ?? p.rateDiff ?? 0,
+                        KamMobile: p.KamMobile ?? p.kamMobile ?? p.kam_mobile ?? '',
+                        RecoveryMobile: p.RecoveryMobile ?? p.recoveryMobile ?? p.recovery_mobile ?? '',
+                        SumulIncharge: p.SumulIncharge ?? p.sumulIncharge ?? p.sumul_incharge ?? '',
+                        SumulInchargeMobile: p.SumulInchargeMobile ?? p.sumulInchargeMobile ?? p.sumul_incharge_mobile ?? '',
+                        RetailerCode: p.RetailerCode ?? p.retailerCode ?? p.retailer_code ?? '',
+                        SumulDepoCode: p.SumulDepoCode ?? p.sumulDepoCode ?? p.sumul_depo_code ?? '',
+                        PanDocPath: p.PanDocPath ?? p.panDocPath ?? p.pan_doc_path ?? '',
+                        AadhaarDocPath: p.AadhaarDocPath ?? p.aadhaarDocPath ?? p.aadhaar_doc_path ?? '',
+                        GstCertPath: p.GstCertPath ?? p.gstCertPath ?? p.gst_cert_path ?? '',
+                        SalespersonId: p.SalespersonId ?? p.salespersonId ?? p.salesperson_id ?? null,
+                        SalespersonMobile: p.SalespersonMobile ?? p.salespersonMobile ?? p.salesperson_mobile ?? '',
+                        Kam: p.Kam ?? p.kam ?? '',
+                        RecoveryAgent: p.RecoveryAgent ?? p.recoveryAgent ?? p.recovery_agent ?? '',
+                        TransporterId: p.TransporterId ?? p.transporterId ?? p.transporter_id ?? null,
+                        TransporterMobile: p.TransporterMobile ?? p.transporterMobile ?? p.transporter_mobile ?? '',
+                        ZoneId: p.ZoneId ?? p.zoneId ?? p.zone_id ?? null
                     },
                     Addresses: finalAddresses,
                     BankDetails: bnk.map(b => ({
@@ -221,7 +292,8 @@ const PartyMasterModal = ({ isOpen, toggle, partyId, isEdit, onSuccess, defaultT
                         IFSC: b.IFSC ?? b.ifsc ?? '',
                         Branch: b.Branch ?? b.branch ?? '',
                         MICR: b.MICR ?? b.micr ?? '',
-                        IsDefault: b.IsDefault ?? b.isDefault ?? false
+                        IsDefault: b.IsDefault ?? b.isDefault ?? false,
+                        CancelChequePath: b.CancelChequePath ?? b.cancelChequePath ?? b.cancel_cheque_path ?? ''
                     })),
                     ContactPersons: cp.map(c => ({
                         ContactPersonId: c.ContactPersonId ?? c.contactPersonId ?? 0,
@@ -360,7 +432,7 @@ const PartyMasterModal = ({ isOpen, toggle, partyId, isEdit, onSuccess, defaultT
     const addBankDetail = () => {
         setForm(prev => ({
             ...prev,
-            BankDetails: [...prev.BankDetails, { AccountHolderName: '', BankName: '', AccountNumber: '', IFSC: '', Branch: '', MICR: '', IsDefault: false }]
+            BankDetails: [...prev.BankDetails, { AccountHolderName: '', BankName: '', AccountNumber: '', IFSC: '', Branch: '', MICR: '', IsDefault: false, CancelChequePath: '' }]
         }));
     };
 
@@ -427,7 +499,10 @@ const PartyMasterModal = ({ isOpen, toggle, partyId, isEdit, onSuccess, defaultT
                     AccountsPayableAccount: form.Party.AccountsPayableAccount ? parseInt(form.Party.AccountsPayableAccount) : null,
                     OpeningBalance: parseFloat(form.Party.OpeningBalance) || 0,
                     PartyId: parseInt(form.Party.PartyId) || 0,
-                    RateDiff: parseFloat(form.Party.RateDiff) || 0
+                    RateDiff: parseFloat(form.Party.RateDiff) || 0,
+                    SalespersonId: form.Party.SalespersonId ? parseInt(form.Party.SalespersonId) : null,
+                    TransporterId: form.Party.TransporterId ? parseInt(form.Party.TransporterId) : null,
+                    ZoneId: form.Party.ZoneId ? parseInt(form.Party.ZoneId) : null
                 },
                 Addresses: form.Addresses.map(a => ({
                     ...a,
@@ -490,7 +565,10 @@ const PartyMasterModal = ({ isOpen, toggle, partyId, isEdit, onSuccess, defaultT
                         <NavLink className={classnames({ active: activeTab === '4' })} onClick={() => toggleTab('4')}>Bank Details</NavLink>
                     </NavItem>
                     <NavItem>
-                        <NavLink className={classnames({ active: activeTab === '5' })} onClick={() => toggleTab('5')}>Remarks</NavLink>
+                        <NavLink className={classnames({ active: activeTab === '5' })} onClick={() => toggleTab('5')}>Extended Info</NavLink>
+                    </NavItem>
+                    <NavItem>
+                        <NavLink className={classnames({ active: activeTab === '6' })} onClick={() => toggleTab('6')}>Remarks</NavLink>
                     </NavItem>
                 </Nav>
 
@@ -903,6 +981,22 @@ const PartyMasterModal = ({ isOpen, toggle, partyId, isEdit, onSuccess, defaultT
                                             </FormGroup>
                                         </Col>
                                         <Col md={4} className="d-flex align-items-end"><FormGroup check className="mb-2"><Label check><Input type="checkbox" name="IsDefault" checked={bank.IsDefault} onChange={(e) => handleBankChange(idx, e)} /> Default Bank</Label></FormGroup></Col>
+                                        <Col md={12}>
+                                            <FormGroup>
+                                                <Label size="sm">Cancel Cheque (File)</Label>
+                                                <div className="d-flex align-items-center gap-2">
+                                                    <Input type="file" bsSize="sm" accept="image/*,.pdf" onChange={(e) => handleDocumentUpload(e, 'CancelChequePath', idx)} disabled={isUploading} />
+                                                    {bank.CancelChequePath && (
+                                                        <>
+                                                            <Input type="text" bsSize="sm" value={bank.CancelChequePath.split('/').pop()} readOnly title={bank.CancelChequePath} />
+                                                            <a href={api.API_URL + '/' + bank.CancelChequePath} target="_blank" rel="noopener noreferrer" className="btn btn-sm btn-soft-info" title="View Document">
+                                                                <i className="ri-eye-line"></i>
+                                                            </a>
+                                                        </>
+                                                    )}
+                                                </div>
+                                            </FormGroup>
+                                        </Col>
                                     </Row>
                                 </CardBody>
                             </Card>
@@ -911,6 +1005,192 @@ const PartyMasterModal = ({ isOpen, toggle, partyId, isEdit, onSuccess, defaultT
                     </TabPane>
 
                     <TabPane tabId="5">
+                        <Row className="g-3">
+                            <Col md={4}>
+                                <FormGroup>
+                                    <Label>Sales Person</Label>
+                                    <Input
+                                        type="select"
+                                        name="SalespersonId"
+                                        value={form.Party.SalespersonId || ''}
+                                        onChange={(e) => {
+                                            const selectedId = e.target.value;
+                                            const sp = dropdowns.salespersons.find(s => String(s.salespersonId || s.SalespersonId) === String(selectedId));
+                                            setForm(prev => ({
+                                                ...prev,
+                                                Party: {
+                                                    ...prev.Party,
+                                                    SalespersonId: selectedId ? parseInt(selectedId) : null,
+                                                    SalespersonMobile: sp && (sp.phone || sp.Phone) ? (sp.phone || sp.Phone) : ''
+                                                }
+                                            }));
+                                        }}
+                                    >
+                                        <option value="">Select Sales Person</option>
+                                        {dropdowns.salespersons.map(s => (
+                                            <option key={`sp-${s.salespersonId || s.SalespersonId}`} value={s.salespersonId || s.SalespersonId}>
+                                                {s.salespersonName || s.SalespersonName}
+                                            </option>
+                                        ))}
+                                    </Input>
+                                </FormGroup>
+                            </Col>
+                            <Col md={4}>
+                                <FormGroup>
+                                    <Label>Sales Person Mobile</Label>
+                                    <Input name="SalespersonMobile" value={form.Party.SalespersonMobile || ''} readOnly className="bg-light" />
+                                </FormGroup>
+                            </Col>
+                            <Col md={4}>
+                                <FormGroup>
+                                    <Label>KAM</Label>
+                                    <Input name="Kam" value={form.Party.Kam || ''} onChange={handlePartyChange} />
+                                </FormGroup>
+                            </Col>
+                            <Col md={4}>
+                                <FormGroup>
+                                    <Label>KAM Mobile</Label>
+                                    <Input name="KamMobile" value={form.Party.KamMobile || ''} onChange={handlePartyChange} />
+                                </FormGroup>
+                            </Col>
+                            <Col md={4}>
+                                <FormGroup>
+                                    <Label>Recovery Agent</Label>
+                                    <Input name="RecoveryAgent" value={form.Party.RecoveryAgent || ''} onChange={handlePartyChange} />
+                                </FormGroup>
+                            </Col>
+                            <Col md={4}>
+                                <FormGroup>
+                                    <Label>Recovery Agent Mobile</Label>
+                                    <Input name="RecoveryMobile" value={form.Party.RecoveryMobile || ''} onChange={handlePartyChange} />
+                                </FormGroup>
+                            </Col>
+                            <Col md={4}>
+                                <FormGroup>
+                                    <Label>Transporter</Label>
+                                    <Input
+                                        type="select"
+                                        name="TransporterId"
+                                        value={form.Party.TransporterId || ''}
+                                        onChange={(e) => {
+                                            const selectedId = e.target.value;
+                                            const tp = dropdowns.transporters.find(t => String(t.transporterId || t.TransporterId) === String(selectedId));
+                                            setForm(prev => ({
+                                                ...prev,
+                                                Party: {
+                                                    ...prev.Party,
+                                                    TransporterId: selectedId ? parseInt(selectedId) : null,
+                                                    TransporterMobile: tp && (tp.phone || tp.Phone) ? (tp.phone || tp.Phone) : ''
+                                                }
+                                            }));
+                                        }}
+                                    >
+                                        <option value="">Select Transporter</option>
+                                        {dropdowns.transporters.map(t => (
+                                            <option key={`tp-${t.transporterId || t.TransporterId}`} value={t.transporterId || t.TransporterId}>
+                                                {t.transporterName || t.TransporterName}
+                                            </option>
+                                        ))}
+                                    </Input>
+                                </FormGroup>
+                            </Col>
+                            <Col md={4}>
+                                <FormGroup>
+                                    <Label>Transporter Mobile</Label>
+                                    <Input name="TransporterMobile" value={form.Party.TransporterMobile || ''} readOnly className="bg-light" />
+                                </FormGroup>
+                            </Col>
+                            <Col md={4}>
+                                <FormGroup>
+                                    <Label>Sumul Area Incharge</Label>
+                                    <Input name="SumulIncharge" value={form.Party.SumulIncharge || ''} onChange={handlePartyChange} />
+                                </FormGroup>
+                            </Col>
+                            <Col md={4}>
+                                <FormGroup>
+                                    <Label>Sumul Area Incharge Mobile</Label>
+                                    <Input name="SumulInchargeMobile" value={form.Party.SumulInchargeMobile || ''} onChange={handlePartyChange} />
+                                </FormGroup>
+                            </Col>
+                            <Col md={4}>
+                                <FormGroup>
+                                    <Label>Retailer Code</Label>
+                                    <Input name="RetailerCode" value={form.Party.RetailerCode || ''} onChange={handlePartyChange} />
+                                </FormGroup>
+                            </Col>
+                            <Col md={4}>
+                                <FormGroup>
+                                    <Label>Zone</Label>
+                                    <Select
+                                        name="ZoneId"
+                                        value={dropdowns.zones
+                                            .map(z => ({ label: z.zone_name || z.ZoneName || z.zoneName, value: z.zone_id || z.ZoneId || z.zoneId }))
+                                            .find(opt => opt.value === form.Party.ZoneId) || null
+                                        }
+                                        onChange={(opt) => setForm(prev => ({ ...prev, Party: { ...prev.Party, ZoneId: opt ? opt.value : null } }))}
+                                        options={dropdowns.zones.map(z => ({
+                                            label: z.zone_name || z.ZoneName || z.zoneName,
+                                            value: z.zone_id || z.ZoneId || z.zoneId
+                                        }))}
+                                        placeholder="Select Zone"
+                                        isSearchable
+                                        isClearable
+                                    />
+                                </FormGroup>
+                            </Col>
+                            <Col md={4}>
+                                <FormGroup>
+                                    <Label>Sumul Depot Code</Label>
+                                    <Input name="SumulDepoCode" value={form.Party.SumulDepoCode || ''} onChange={handlePartyChange} />
+                                </FormGroup>
+                            </Col>
+                            <Col md={12}><hr /><h6 className="text-primary">Document Paths</h6></Col>
+                            <Col md={4}>
+                                <FormGroup>
+                                    <Label>PAN Card</Label>
+                                    <div className="d-flex align-items-center gap-2">
+                                        <Input type="file" accept="image/*,.pdf" onChange={(e) => handleDocumentUpload(e, 'PanDocPath')} disabled={isUploading} />
+                                        {form.Party.PanDocPath && (
+                                            <>
+                                                <Input type="text" bsSize="sm" value={form.Party.PanDocPath.split('/').pop()} readOnly title={form.Party.PanDocPath} />
+                                                <a href={api.API_URL + '/' + form.Party.PanDocPath} target="_blank" rel="noopener noreferrer" className="btn btn-soft-info px-2" title="View Document"><i className="ri-eye-line"></i></a>
+                                            </>
+                                        )}
+                                    </div>
+                                </FormGroup>
+                            </Col>
+                            <Col md={4}>
+                                <FormGroup>
+                                    <Label>Aadhaar Card</Label>
+                                    <div className="d-flex align-items-center gap-2">
+                                        <Input type="file" accept="image/*,.pdf" onChange={(e) => handleDocumentUpload(e, 'AadhaarDocPath')} disabled={isUploading} />
+                                        {form.Party.AadhaarDocPath && (
+                                            <>
+                                                <Input type="text" bsSize="sm" value={form.Party.AadhaarDocPath.split('/').pop()} readOnly title={form.Party.AadhaarDocPath} />
+                                                <a href={api.API_URL + '/' + form.Party.AadhaarDocPath} target="_blank" rel="noopener noreferrer" className="btn btn-soft-info px-2" title="View Document"><i className="ri-eye-line"></i></a>
+                                            </>
+                                        )}
+                                    </div>
+                                </FormGroup>
+                            </Col>
+                            <Col md={4}>
+                                <FormGroup>
+                                    <Label>GST Certificate</Label>
+                                    <div className="d-flex align-items-center gap-2">
+                                        <Input type="file" accept="image/*,.pdf" onChange={(e) => handleDocumentUpload(e, 'GstCertPath')} disabled={isUploading} />
+                                        {form.Party.GstCertPath && (
+                                            <>
+                                                <Input type="text" bsSize="sm" value={form.Party.GstCertPath.split('/').pop()} readOnly title={form.Party.GstCertPath} />
+                                                <a href={api.API_URL + '/' + form.Party.GstCertPath} target="_blank" rel="noopener noreferrer" className="btn btn-soft-info px-2" title="View Document"><i className="ri-eye-line"></i></a>
+                                            </>
+                                        )}
+                                    </div>
+                                </FormGroup>
+                            </Col>
+                        </Row>
+                    </TabPane>
+
+                    <TabPane tabId="6">
                         <FormGroup>
                             <Label>Internal Remarks</Label>
                             <Input type="textarea" rows="10" name="Remarks" value={form.Party.Remarks} onChange={handlePartyChange} placeholder="Add any internal notes about this party..." />

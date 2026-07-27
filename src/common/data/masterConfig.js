@@ -195,7 +195,11 @@ export const masterConfig = {
         label: "Salesperson",
         fields: [
             { name: "SalespersonName", label: "Name", type: "text", required: true },
-            { name: "Email", label: "Email", type: "email" }
+            { name: "Gstin", label: "GSTIN", type: "text" },
+            { name: "ContactPerson", label: "Contact Person", type: "text" },
+            { name: "Phone", label: "Phone", type: "text" },
+            { name: "Email", label: "Email", type: "email" },
+            { name: "Address", label: "Address", type: "textarea" }
         ]
     },
     // 13. Tax Group -> tab_tax_group_master (group_name, description, supply_type, cgst_per, sgst_per, igst_per)
@@ -258,7 +262,18 @@ export const masterConfig = {
             { name: "GstNumber", label: "GSTIN", type: "text" },
             { name: "ContactPerson", label: "Contact Person", type: "text" },
             { name: "Phone", label: "Phone", type: "text" },
-            { name: "Address", label: "Address", type: "text" }
+            { name: "Address", label: "Address", type: "text" },
+            { name: "is_block", label: "Blocked", type: "checkbox" }
+        ]
+    },
+    // Zone Master -> tab_zone_master (zone_name, is_active)
+    zones: {
+        pk: "ZoneId",
+        label: "Zone",
+        fetchUrl: "/api/master/tab_zone_master",
+        fields: [
+            { name: "ZoneName", label: "Zone Name", type: "text", required: true },
+            { name: "IsActive", label: "Active", type: "checkbox" }
         ]
     },
     // 19. Bank -> tab_bank_master (bank_name, branch, account_number, ifsc, micr)
@@ -379,6 +394,17 @@ export const masterConfig = {
             { name: "MaxDay", label: "Max Day", type: "number", required: true },
             { name: "ColorCode", label: "Color Code", type: "color", required: true },
             { name: "BgColor", label: "BG Color", type: "color", required: true }
+        ]
+    },
+    // 30. Add Price -> tab_add_price (outstanding days range → add price for party rate adjustment)
+    addPrices: {
+        pk: "Rowid",
+        label: "Add Price",
+        fields: [
+            { name: "FromDue", label: "From Due (Days)", type: "number", required: true },
+            { name: "ToDue", label: "To Due (Days)", type: "number", required: true },
+            { name: "AddPrice", label: "Add Price", type: "number", required: true },
+            { name: "SalePerComission", label: "Sale Per Commission", type: "number" }
         ]
     }
 };

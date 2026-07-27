@@ -124,7 +124,7 @@ export const DELETE_PURCHASE_TRANSACTION = "/api/purchaseTransaction";
 export const GET_PURCHASE_TRANSACTION_DETAILS = "/api/purchaseTransaction";
 // Parties & Products for Purchase
 export const GET_VENDORS = "/api/party/type/Vendor,Trader";
-export const GET_PARTY_CUSTOMERS = "/api/party/type/Customer,Trader";
+export const GET_PARTY_CUSTOMERS = "/api/party/type/Customer,Trader,Dock_Manager";
 export const GET_PARTIES = "/api/party";
 export const GET_PARTY_DETAILS = "/api/party/composite";
 export const UPLOAD_PARTY_PROFILE = "/api/party/upload-profile";
@@ -383,3 +383,4 @@ export const GET_API_KEY = "/api-key";
 export const GET_DAY_BOOK = "/api/Report/day-book";
 export const GET_CASH_BOOK = "/api/Report/cash-book";
 export const GET_BANK_BOOK = "/api/Report/bank-book";
+export const SYNC_MOBILE_ORDERS = "/api/mobile-orders/sync";

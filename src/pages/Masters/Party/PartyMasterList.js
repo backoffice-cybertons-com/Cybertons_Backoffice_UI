@@ -210,11 +210,11 @@ const PartyMasterList = () => {
             name: renderHeader("Opening Balance", "opening_balance"),
             selector: row => pickField(row, "opening_balance", "openingBalance", "OpeningBalance"),
             sortable: true,
-            right: true,
+            // right: true,
             width: "140px",
             cell: row => {
                 const val = parseFloat(pickField(row, "opening_balance", "openingBalance", "OpeningBalance")) || 0;
-                return val.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                return <div className="w-100 text-end">{val.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>;
             }
         },
         {

@@ -356,10 +356,10 @@ const LedgerReport = () => {
                     <Row className="g-0 mt-2 align-items-center">
                         <Col lg={8} md={7} sm={8}></Col>
                         <Col lg={2} md={2} sm={4} className="text-end pe-3">
-                            <span className="text-muted fs-11 fw-medium text-nowrap">Closing Balance</span>
+                            <h6 className="mb-0 fw-bold text-dark text-uppercase fs-12 text-nowrap">Closing Balance</h6>
                         </Col>
                         <Col lg={2} md={3} sm={4} className="text-end">
-                             <span className={`fw-bold fs-13 ${balClass(totals.closing)}`}>{balanceLabel(totals.closing)}</span>
+                             <h5 className="mb-0 fw-bold fs-14 text-dark">{balanceLabel(totals.closing)}</h5>
                         </Col>
                     </Row>
                 </div>
@@ -374,14 +374,24 @@ const LedgerReport = () => {
                         <h6 className="mb-0 fw-bold text-uppercase fs-12">Total Debit</h6>
                         <h5 className="mb-0 fw-bold text-success">{fmtMoney(totals.dr)}</h5>
                     </div>
-                    {totals.closing < 0 && (<div className="d-flex justify-content-between align-items-center mt-2 text-muted fs-11"><span>By Closing Balance</span><span>{fmtMoney(Math.abs(totals.closing))}</span></div>)}
+                    {totals.closing < 0 && (
+                        <div className="d-flex justify-content-between align-items-center mt-2 text-dark text-uppercase">
+                            <h6 className="mb-0 fw-bold fs-12">By Closing Balance</h6>
+                            <h5 className="mb-0 fw-bold">{fmtMoney(Math.abs(totals.closing))}</h5>
+                        </div>
+                    )}
                 </Col>
                 <Col lg={6} className="py-2 px-3">
                     <div className="d-flex justify-content-between align-items-center">
                         <h6 className="mb-0 fw-bold text-uppercase fs-12">Total Credit</h6>
                         <h5 className="mb-0 fw-bold text-danger">{fmtMoney(totals.cr)}</h5>
                     </div>
-                    {totals.closing >= 0 && (<div className="d-flex justify-content-between align-items-center mt-2 text-muted fs-11"><span>To Closing Balance</span><span>{fmtMoney(Math.abs(totals.closing))}</span></div>)}
+                    {totals.closing >= 0 && (
+                        <div className="d-flex justify-content-between align-items-center mt-2 text-dark text-uppercase">
+                            <h6 className="mb-0 fw-bold fs-12">To Closing Balance</h6>
+                            <h5 className="mb-0 fw-bold">{fmtMoney(Math.abs(totals.closing))}</h5>
+                        </div>
+                    )}
                 </Col>
             </Row>
         );

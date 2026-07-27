@@ -27,6 +27,7 @@ const SalesProfitCard = ({ salesProfitSummary, periodLabel, loading }) => {
     );
 
     const profitColor = grossProfit > 0 ? 'success' : grossProfit < 0 ? 'danger' : 'muted';
+    const profitPct = saleAtCog > 0 ? ((grossProfit / saleAtCog) * 100).toFixed(2) : null;
 
     const items = [
         {
@@ -94,6 +95,30 @@ const SalesProfitCard = ({ salesProfitSummary, periodLabel, loading }) => {
                                     <UncontrolledTooltip placement="top" target={item.tooltipId}>
                                         ₹{formatAmt(item.value)}
                                     </UncontrolledTooltip>
+                                    {item.key === 'gross-profit' && profitPct !== null && (
+                                        <div className="mt-3">
+                                            <span
+                                                style={{
+                                                    display: 'inline-flex',
+                                                    alignItems: 'center',
+                                                    gap: '6px',
+                                                    background: grossProfit >= 0
+                                                        ? 'linear-gradient(135deg,#0ab39c22,#0ab39c44)'
+                                                        : 'linear-gradient(135deg,#f0654822,#f0654844)',
+                                                    border: `1.5px solid ${grossProfit >= 0 ? '#0ab39c' : '#f06548'}`,
+                                                    borderRadius: '10px',
+                                                    padding: '6px 16px',
+                                                    fontSize: '15px',
+                                                    fontWeight: 700,
+                                                    color: grossProfit >= 0 ? '#0ab39c' : '#f06548',
+                                                    letterSpacing: '0.3px',
+                                                }}
+                                            >
+                                                <i className={`ri-${grossProfit >= 0 ? 'arrow-up' : 'arrow-down'}-line`} style={{ fontSize: '16px' }}></i>
+                                                {profitPct}% Profit Margin
+                                            </span>
+                                        </div>
+                                    )}
                                 </div>
                             </Col>
                         ))}
