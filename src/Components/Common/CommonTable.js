@@ -80,6 +80,8 @@ const CommonTable = forwardRef(({
     currentPage = 1,
     rowsPerPage = "all",
     customRowRender,
+    expandedRowIds = new Set(),
+    renderExpandedRow,
 }, ref) => {
     /* ── state ── */
     const [columnFilters, setColumnFilters] = useState({});
@@ -372,8 +374,12 @@ const CommonTable = forwardRef(({
                             ) : (
                                 customRowRender
                                     ? customRowRender(displayData, columns)
-                                    : displayData.map((row, rowIdx) => (
-                                        <tr key={row.id ?? row.spUniqueCode ?? rowIdx}>
+                                    : displayData.map((row, rowIdx) => {
+                                        const rowKey = row.id ?? row.spUniqueCode ?? row.displayName ?? rowIdx;
+                                        const isExpanded = expandedRowIds.has(rowKey);
+                                        return (
+                                        <React.Fragment key={rowKey}>
+                                          <tr>
                                             {columns.map((col) => {
                                                 const cellValue = row[col.key] ?? "";
                                                 const isSimple = !col.cell;
@@ -417,8 +423,17 @@ const CommonTable = forwardRef(({
                                                     </td>
                                                 );
                                             })}
-                                        </tr>
-                                    ))
+                                          </tr>
+                                          {isExpanded && renderExpandedRow && (
+                                              <tr className="ct-expanded-row">
+                                                  <td colSpan={columns.length} className="p-0 border-0">
+                                                      {renderExpandedRow(row)}
+                                                  </td>
+                                              </tr>
+                                          )}
+                                        </React.Fragment>
+                                        );
+                                    })
                             )}
                         </tbody>
 

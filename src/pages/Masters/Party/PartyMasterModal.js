@@ -71,6 +71,9 @@ const PartyMasterModal = ({ isOpen, toggle, partyId, isEdit, onSuccess, defaultT
             Remarks: '',
             PartyProfile: '',
             RateDiff: "0.00",
+            DailySaleLimit: "",
+            CreditLimit: "",
+            IsActive: true,
             KamMobile: '',
             RecoveryMobile: '',
             Kam: '',
@@ -266,6 +269,9 @@ const PartyMasterModal = ({ isOpen, toggle, partyId, isEdit, onSuccess, defaultT
                         Remarks: p.Remarks ?? p.remarks ?? '',
                         PartyProfile: p.PartyProfile ?? p.partyProfile ?? '',
                         RateDiff: p.RateDiff ?? p.rateDiff ?? 0,
+                        DailySaleLimit: p.DailySaleLimit ?? p.dailySaleLimit ?? '',
+                        CreditLimit: p.CreditLimit ?? p.creditLimit ?? '',
+                        IsActive: p.IsActive ?? p.isActive ?? true,
                         KamMobile: p.KamMobile ?? p.kamMobile ?? p.kam_mobile ?? '',
                         RecoveryMobile: p.RecoveryMobile ?? p.recoveryMobile ?? p.recovery_mobile ?? '',
                         SumulIncharge: p.SumulIncharge ?? p.sumulIncharge ?? p.sumul_incharge ?? '',
@@ -498,8 +504,15 @@ const PartyMasterModal = ({ isOpen, toggle, partyId, isEdit, onSuccess, defaultT
                     AccountsReceivableAccount: form.Party.AccountsReceivableAccount ? parseInt(form.Party.AccountsReceivableAccount) : null,
                     AccountsPayableAccount: form.Party.AccountsPayableAccount ? parseInt(form.Party.AccountsPayableAccount) : null,
                     OpeningBalance: parseFloat(form.Party.OpeningBalance) || 0,
-                    PartyId: parseInt(form.Party.PartyId) || 0,
+                    PartyId: parseInt(form.Party.PartyId || partyId) || 0,
                     RateDiff: parseFloat(form.Party.RateDiff) || 0,
+                    DailySaleLimit: form.Party.DailySaleLimit === '' || form.Party.DailySaleLimit == null
+                        ? null
+                        : (parseFloat(form.Party.DailySaleLimit) || 0),
+                    CreditLimit: form.Party.CreditLimit === '' || form.Party.CreditLimit == null
+                        ? null
+                        : (parseFloat(form.Party.CreditLimit) || 0),
+                    IsActive: form.Party.IsActive !== false,
                     SalespersonId: form.Party.SalespersonId ? parseInt(form.Party.SalespersonId) : null,
                     TransporterId: form.Party.TransporterId ? parseInt(form.Party.TransporterId) : null,
                     ZoneId: form.Party.ZoneId ? parseInt(form.Party.ZoneId) : null
@@ -795,6 +808,68 @@ const PartyMasterModal = ({ isOpen, toggle, partyId, isEdit, onSuccess, defaultT
                                     >
                                         Preview Calculated Add Price
                                     </Button>
+                                </FormGroup>
+                            </Col>
+                            <Col md={4}>
+                                <FormGroup>
+                                    <Label>Daily Sale Limit</Label>
+                                    <Input
+                                        type="number"
+                                        step="any"
+                                        min="0"
+                                        name="DailySaleLimit"
+                                        value={form.Party.DailySaleLimit}
+                                        onChange={handlePartyChange}
+                                        onBlur={(e) => {
+                                            if (e.target.value === '') return;
+                                            const val = formatToTwoDecimals(e.target.value);
+                                            handlePartyChange({ target: { name: 'DailySaleLimit', value: val } });
+                                        }}
+                                        placeholder="0 = no limit"
+                                        className="no-spin-input"
+                                    />
+                                    <p className="text-muted small mb-0">
+                                        Blocks sales order if today&apos;s sales for this customer would exceed this amount.
+                                    </p>
+                                </FormGroup>
+                            </Col>
+                            <Col md={4}>
+                                <FormGroup>
+                                    <Label>Credit Limit</Label>
+                                    <Input
+                                        type="number"
+                                        step="any"
+                                        min="0"
+                                        name="CreditLimit"
+                                        value={form.Party.CreditLimit}
+                                        onChange={handlePartyChange}
+                                        onBlur={(e) => {
+                                            if (e.target.value === '') return;
+                                            const val = formatToTwoDecimals(e.target.value);
+                                            handlePartyChange({ target: { name: 'CreditLimit', value: val } });
+                                        }}
+                                        placeholder="0 = no limit"
+                                        className="no-spin-input"
+                                    />
+                                    <p className="text-muted small mb-0">
+                                        Blocks sales order if outstanding + this bill would exceed credit limit.
+                                    </p>
+                                </FormGroup>
+                            </Col>
+                            <Col md={4}>
+                                <FormGroup check className="mt-4 pt-2">
+                                    <Label check>
+                                        <Input
+                                            type="checkbox"
+                                            name="IsActive"
+                                            checked={form.Party.IsActive !== false}
+                                            onChange={handlePartyChange}
+                                        />{' '}
+                                        Active Customer
+                                    </Label>
+                                    <p className="text-muted small mb-0 mt-1">
+                                        Unchecked customers are hidden when creating sales orders.
+                                    </p>
                                 </FormGroup>
                             </Col>
                             <Col md={12}>

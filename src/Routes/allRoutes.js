@@ -84,6 +84,8 @@ import StockSummaryReport from "../pages/Reports/StockSummaryReport";
 // Developed by Hetak on 11-05-2026
 import StockLedgerDatewiseReport from "../pages/Reports/StockLedgerDatewiseReport";
 import BelowPriceSalesReport from "../pages/Reports/BelowPriceSalesReport";
+import CustomerOrderPaymentReport from "../pages/Reports/CustomerOrderPaymentReport";
+import MonthlyCommissionReport from "../pages/Reports/MonthlyCommissionReport";
 import PartyRateAdjustmentReport from "../pages/Reports/PartyRateAdjustmentReport";
 
 
@@ -307,12 +309,14 @@ import DeliveryChallanCreate from "../pages/DeliveryChallan/DeliveryChallanCreat
 // Purchase Transaction
 import PurchaseTransactionList from "../pages/PurchaseTransaction/PurchaseTransactionList";
 import PurchaseTransactionCreate from "../pages/PurchaseTransaction/PurchaseTransactionCreate";
+import OtherPurchaseCreate from "../pages/PurchaseTransaction/OtherPurchaseCreate";
 import PurchaseInvoice from "../pages/PurchaseTransaction/PurchaseInvoice";
 
 // Sales Transaction
 import SalesTransactionList from "../pages/SalesTransaction/SalesTransactionList";
 import SalesTransactionCreate from "../pages/SalesTransaction/SalesTransactionCreate";
 import SalesTransactionCreateRevised from "../pages/SalesTransaction/SalesTransactionCreateRevised";
+import OtherSaleCreate from "../pages/SalesTransaction/OtherSaleCreate";
 
 // Payment & Receipt
 import PaymentReceiptList from "../pages/PaymentReceipt/PaymentReceiptList";
@@ -330,6 +334,8 @@ const authProtectedRoutes = [
   // Old Sales Order Form (keep for reference)
   { path: "/sales-order/create", component: <SalesTransactionCreate /> },
   { path: "/sales-order/edit/:id", component: <SalesTransactionCreate /> },
+  { path: "/sales-transaction/other/create", component: <OtherSaleCreate /> },
+  { path: "/sales-transaction/other/edit/:id", component: <OtherSaleCreate /> },
   // Revised Sales Order Form (new, with all extra fields)
   { path: "/revised-sales-order/create", component: <SalesTransactionCreateRevised /> },
   { path: "/revised-sales-order/edit/:id", component: <SalesTransactionCreateRevised /> },
@@ -419,6 +425,8 @@ const authProtectedRoutes = [
   // Developed by Hetak on 11-05-2026
   { path: "/reports/stock-ledger-datewise", component: <StockLedgerDatewiseReport /> },
   { path: "/reports/below-price-sales", component: <BelowPriceSalesReport /> },
+  { path: "/reports/customer-order-payment", component: <CustomerOrderPaymentReport /> },
+  { path: "/reports/monthly-commission", component: <MonthlyCommissionReport /> },
   { path: "/reports/party-rate-adjustment", component: <PartyRateAdjustmentReport /> },
 
 
@@ -604,7 +612,9 @@ const authProtectedRoutes = [
   // Purchase Transaction
   { path: "/purchase-transaction/list", component: <PurchaseTransactionList /> },
   { path: "/purchase-transaction/create", component: <PurchaseTransactionCreate /> },
+  { path: "/purchase-transaction/other/create", component: <OtherPurchaseCreate /> },
   { path: "/purchase-transaction/edit/:id", component: <PurchaseTransactionCreate /> },
+  { path: "/purchase-transaction/other/edit/:id", component: <OtherPurchaseCreate /> },
   { path: "/purchase-transaction/invoice/:id", component: <PurchaseInvoice /> },
 
   // Sales Transaction (extra routes block - keep in sync with top block)

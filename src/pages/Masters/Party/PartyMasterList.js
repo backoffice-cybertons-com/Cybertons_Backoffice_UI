@@ -197,6 +197,24 @@ const PartyMasterList = () => {
             width: "140px"
         },
         {
+            name: "Status",
+            selector: row => {
+                const active = row.isActive ?? row.IsActive;
+                return active === false || active === 0 ? "Inactive" : "Active";
+            },
+            sortable: true,
+            width: "100px",
+            cell: row => {
+                const active = row.isActive ?? row.IsActive;
+                const isActive = !(active === false || active === 0);
+                return (
+                    <span className={`badge ${isActive ? "bg-success-subtle text-success" : "bg-danger-subtle text-danger"}`}>
+                        {isActive ? "Active" : "Inactive"}
+                    </span>
+                );
+            }
+        },
+        {
             name: renderHeader("Email", "email"),
             selector: row => pickField(row, "email", "Email"),
             sortable: true,

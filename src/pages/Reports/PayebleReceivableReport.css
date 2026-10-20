@@ -1,0 +1,266 @@
+/* Customer Order Limit Report — keep previous look; CommonTable only for filter/sort */
+
+.payrec-page .payrec-filter-card {
+  border: none;
+  box-shadow: 0 2px 12px rgba(30, 58, 110, 0.08);
+  border-radius: 10px;
+}
+
+.payrec-filter-card .card-body {
+  padding: 1rem 1.25rem;
+}
+
+.payrec-report-card {
+  overflow: hidden;
+  border: none;
+  border-radius: 12px;
+  box-shadow: 0 4px 24px rgba(30, 58, 110, 0.1);
+}
+
+.payrec-report-body {
+  padding: 0.75rem 1.25rem 1.25rem;
+}
+
+/* Summary stat strip */
+.payrec-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.payrec-stat {
+  position: relative;
+  padding: 0.85rem 1rem;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #f8fafc 0%, #eef2f7 100%);
+  border: 1px solid #d6deeb;
+  overflow: hidden;
+}
+
+.payrec-stat::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  border-radius: 10px 0 0 10px;
+  background: #465e80;
+}
+
+.payrec-stat--term::before {
+  background: linear-gradient(180deg, #f59e0b, #d97706);
+}
+
+.payrec-stat--payment::before {
+  background: linear-gradient(180deg, #10b981, #059669);
+}
+
+.payrec-stat--order::before {
+  background: linear-gradient(180deg, #3b82f6, #2563eb);
+}
+
+.payrec-stat-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #64748b;
+  margin-bottom: 0.25rem;
+}
+
+.payrec-stat-value {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #1e3a6e;
+  font-variant-numeric: tabular-nums;
+}
+
+.payrec-stat-meta {
+  font-size: 10px;
+  color: #94a3b8;
+  margin-top: 0.15rem;
+}
+
+/* Style CommonTable to match previous colr look */
+.payrec-page .ct-wrapper {
+  border-radius: 10px;
+  border: 1px solid #d6deeb;
+  box-shadow: 0 2px 10px rgba(30, 58, 110, 0.05);
+}
+
+.payrec-page .ct-table thead tr.ct-head-label th {
+  background: linear-gradient(180deg, #465e80 0%, #3d5270 100%) !important;
+  color: #fff !important;
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  border-right: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.payrec-page .ct-table thead tr.ct-head-label th:hover {
+  background: linear-gradient(180deg, #3d5270 0%, #354960 100%) !important;
+}
+
+/* Term Days = 5th column */
+.payrec-page .ct-table thead tr.ct-head-label th:nth-child(5) {
+  background: linear-gradient(180deg, #d97706 0%, #b45309 100%) !important;
+}
+
+.payrec-page .ct-table thead tr.ct-head-filter th {
+  background: #eef2f7 !important;
+  border-bottom: 1px solid #d6deeb;
+}
+
+.payrec-page .ct-filter-input {
+  background: #fff;
+  border: 1px solid #d6deeb;
+  border-radius: 6px;
+  color: #1e293b;
+}
+
+.payrec-page .ct-sort-icon {
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.payrec-page .ct-sort-icon.active {
+  color: #fff;
+  opacity: 1;
+}
+
+.payrec-page .ct-table tbody tr:nth-child(even) td {
+  background: #fafbfd;
+}
+
+.payrec-page .ct-table tbody tr:hover td {
+  background: #f0f4fa;
+}
+
+.payrec-page .ct-table tbody td {
+  border-color: #e8edf4;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.payrec-page .ct-table tbody td span {
+  font-weight: inherit;
+}
+
+.payrec-page .ct-table tbody td.payrec-td-term {
+  background: #fffbeb !important;
+  font-weight: 600;
+  color: #92400e;
+}
+
+.payrec-page .ct-table tbody td:nth-child(5) {
+  background: #fffbeb !important;
+}
+
+.payrec-page .ct-table tbody td.payrec-td-customer {
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.payrec-page .ct-table tbody td.payrec-td-order {
+  font-weight: 700;
+  color: #1e40af;
+}
+
+.payrec-page .ct-table tbody td.payrec-td-sr {
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.payrec-page .ct-table tfoot th {
+  background: #eef2f7 !important;
+  border-top: 2px solid #465e80 !important;
+  color: #1e3a6e !important;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Dark mode */
+.payrec-page--dark .payrec-filter-card,
+.payrec-page--dark .payrec-report-card {
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.25);
+}
+
+.payrec-page--dark .payrec-stat {
+  background: linear-gradient(135deg, #2a2f35 0%, #23272b 100%);
+  border-color: #3d4449;
+}
+
+.payrec-page--dark .payrec-stat-label {
+  color: #94a3b8;
+}
+
+.payrec-page--dark .payrec-stat-value {
+  color: #e2e8f0;
+}
+
+.payrec-page--dark .ct-wrapper {
+  border-color: #3d4449;
+  background: #212529;
+}
+
+.payrec-page--dark .ct-table thead tr.ct-head-filter th {
+  background: #2f343a !important;
+}
+
+.payrec-page--dark .ct-filter-input {
+  background: #262a2f;
+  border-color: #3d4449;
+  color: #ced4da;
+}
+
+.payrec-page--dark .ct-table tbody tr:nth-child(even) td {
+  background: #2a2f35;
+}
+
+.payrec-page--dark .ct-table tbody tr:hover td {
+  background: #32383e;
+}
+
+.payrec-page--dark .ct-table tbody td {
+  border-color: #3d4449;
+  color: #e2e8f0;
+  font-weight: 600;
+}
+
+.payrec-page--dark .ct-table tbody td.payrec-td-term {
+  background: rgba(217, 119, 6, 0.12) !important;
+  color: #fbbf24;
+}
+
+.payrec-page--dark .ct-table tbody td.payrec-td-customer {
+  color: #e2e8f0;
+}
+
+.payrec-page--dark .ct-table tbody td.payrec-td-order {
+  color: #93c5fd;
+}
+
+.payrec-page--dark .ct-table tfoot th {
+  background: #2f343a !important;
+  border-top-color: #465e80 !important;
+  color: #e2e8f0 !important;
+}
+
+@media print {
+  .payrec-filter-card {
+    display: none !important;
+  }
+
+  .payrec-report-card {
+    box-shadow: none !important;
+    border: none !important;
+  }
+
+  .payrec-stats {
+    break-inside: avoid;
+  }
+}

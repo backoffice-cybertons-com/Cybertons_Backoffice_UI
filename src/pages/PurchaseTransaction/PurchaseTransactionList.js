@@ -30,6 +30,14 @@ import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { createSelector } from "reselect";
 import { formatToFourDecimals } from "../../utils/numberUtils";
+import { isOtherPurchaseRecord } from "./OtherPurchaseCreate";
+
+const normalizePerm = (p) => ({
+    canAdd: !!(p?.canAdd ?? p?.CanAdd),
+    canEdit: !!(p?.canEdit ?? p?.CanEdit),
+    canDelete: !!(p?.canDelete ?? p?.CanDelete),
+    canView: !!(p?.canView ?? p?.CanView ?? true),
+});
 
 const PurchaseTransactionList = () => {
     const dispatch = useDispatch();
@@ -50,17 +58,24 @@ const PurchaseTransactionList = () => {
         purchaseTransactions, isPurchaseTransactionSuccess, error
     } = useSelector(selectPurchaseProperties);
 
-    // Permissions
-     const permissions = useSelector(state => state.auth.permissions || []);
-    // const pagePermissions = useMemo(() => {
-    //     const p = permissions.find(x => x.tabId === 15);
-    //     return p || { canAdd: false, canEdit: false, canDelete: false, canView: true };
-    // }, [permissions]);
-
-        const pagePermissions = useMemo(() => {
-        //--changes made on 27/04/2026 
-        const p = permissions.find(x => x.tabId === 26);
-        return p || { canAdd: false, canEdit: false, canDelete: false, canView: true };
+    // Permissions — resolve by URL/name first (tab IDs differ across tenants)
+    const permissions = useSelector(state => state.auth.permissions || []);
+    const pagePermissions = useMemo(() => {
+        const match = permissions.find((x) => {
+            const url = (x.tabUrl || x.TabUrl || "").toString().trim().toLowerCase();
+            const name = (x.tabName || x.TabName || "").toString().trim().toLowerCase();
+            const tabId = x.tabId ?? x.TabId;
+            return (
+                url.includes("purchase-transaction") ||
+                name === "bills" ||
+                name === "bill" ||
+                name === "purchase order" ||
+                name.includes("purchase transaction") ||
+                tabId === 26 ||
+                tabId === 15
+            );
+        });
+        return normalizePerm(match || { canAdd: false, canEdit: false, canDelete: false, canView: true });
     }, [permissions]);
 
 
@@ -123,10 +138,13 @@ const PurchaseTransactionList = () => {
                 grow: 0,
                 cell: (cellProps) => {
                     const code = cellProps.row.original.spUniqueCode;
+                    const editPath = isOtherPurchaseRecord(cellProps.row.original)
+                        ? `/purchase-transaction/other/edit/${code}`
+                        : `/purchase-transaction/edit/${code}`;
                     return (
                         <div className="d-flex align-items-center gap-1 flex-nowrap">
                             {pagePermissions.canEdit && (
-                                <Link to={`/purchase-transaction/edit/${code}`} className="btn btn-sm btn-soft-info" title="Edit">
+                                <Link to={editPath} className="btn btn-sm btn-soft-info" title="Edit">
                                     <i className="ri-pencil-fill" />
                                 </Link>
                             )}
@@ -157,7 +175,10 @@ const PurchaseTransactionList = () => {
                 accessorKey: "invNo",
                 enableColumnFilter: true,
                 cell: (cell) => {
-                    return <Link to={`/purchase-transaction/edit/${cell.row.original.spUniqueCode}`} className="fw-medium link-primary">{cell.getValue() || "N/A"}</Link>;
+                    const editPath = isOtherPurchaseRecord(cell.row.original)
+                        ? `/purchase-transaction/other/edit/${cell.row.original.spUniqueCode}`
+                        : `/purchase-transaction/edit/${cell.row.original.spUniqueCode}`;
+                    return <Link to={editPath} className="fw-medium link-primary">{cell.getValue() || "N/A"}</Link>;
                 },
             },
             {
@@ -186,6 +207,15 @@ const PurchaseTransactionList = () => {
                 header: "Type",
                 accessorKey: "invType",
                 enableColumnFilter: true,
+            },
+            {
+                header: "Category",
+                accessorKey: "invCategory",
+                enableColumnFilter: true,
+                cell: (cell) => {
+                    const val = cell.getValue() || cell.row.original.InvCategory || "";
+                    return val === "other_purchase" ? "Other Purchase" : (val || "Purchase Order");
+                },
             },
             {
                 header: "Total Quantity",
@@ -273,12 +303,20 @@ const PurchaseTransactionList = () => {
                                                 iconOnly
                                             />
                                             {pagePermissions.canAdd && (
-                                                <Link
-                                                    to="/purchase-transaction/create"
-                                                    className="btn btn-danger"
-                                                >
-                                                    <i className="ri-add-line align-bottom me-1"></i> New Purchase Order
-                                                </Link>
+                                                <>
+                                                    <Link
+                                                        to="/purchase-transaction/other/create"
+                                                        className="btn btn-soft-primary"
+                                                    >
+                                                        <i className="ri-add-line align-bottom me-1"></i> Other Purchase
+                                                    </Link>
+                                                    <Link
+                                                        to="/purchase-transaction/create"
+                                                        className="btn btn-danger"
+                                                    >
+                                                        <i className="ri-add-line align-bottom me-1"></i> New Purchase Order
+                                                    </Link>
+                                                </>
                                             )}
                                         </div>
                                     </div>

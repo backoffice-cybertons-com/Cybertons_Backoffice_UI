@@ -51,8 +51,12 @@ axios.interceptors.response.use(
       // If it's an object with an 'error' or 'message' property
       else if (data.error) {
         message = data.error;
+      } else if (data.Error) {
+        message = data.Error;
       } else if (data.message) {
         message = data.message;
+      } else if (data.Message) {
+        message = data.Message;
       }
       
       // Special handling for specific status codes if no message found

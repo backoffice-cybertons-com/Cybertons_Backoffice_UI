@@ -186,6 +186,11 @@ const PurchaseTransactionCreate = () => {
                     console.log(isEdit ? "Edit data fetched:" : "Copy data fetched:", editData);
                     if (editData && editData.header) {
                         const header = editData.header;
+                        const category = (header.invCategory || header.InvCategory || "").toLowerCase();
+                        if (category === "other_purchase") {
+                            history(`/purchase-transaction/other/edit/${isEdit ? id : copyId}${isView ? "?view=true" : ""}`);
+                            return;
+                        }
                         const parseDate = (val) => {
                             if (!val) return null;
                             const d = new Date(val);

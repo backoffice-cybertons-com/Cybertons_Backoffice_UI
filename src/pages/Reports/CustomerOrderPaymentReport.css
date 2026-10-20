@@ -1,0 +1,266 @@
+/* Customer Order Limit Report — keep previous look; CommonTable only for filter/sort */
+
+.colr-page .colr-filter-card {
+  border: none;
+  box-shadow: 0 2px 12px rgba(30, 58, 110, 0.08);
+  border-radius: 10px;
+}
+
+.colr-filter-card .card-body {
+  padding: 1rem 1.25rem;
+}
+
+.colr-report-card {
+  overflow: hidden;
+  border: none;
+  border-radius: 12px;
+  box-shadow: 0 4px 24px rgba(30, 58, 110, 0.1);
+}
+
+.colr-report-body {
+  padding: 0.75rem 1.25rem 1.25rem;
+}
+
+/* Summary stat strip */
+.colr-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.colr-stat {
+  position: relative;
+  padding: 0.85rem 1rem;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #f8fafc 0%, #eef2f7 100%);
+  border: 1px solid #d6deeb;
+  overflow: hidden;
+}
+
+.colr-stat::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  border-radius: 10px 0 0 10px;
+  background: #465e80;
+}
+
+.colr-stat--term::before {
+  background: linear-gradient(180deg, #f59e0b, #d97706);
+}
+
+.colr-stat--payment::before {
+  background: linear-gradient(180deg, #10b981, #059669);
+}
+
+.colr-stat--order::before {
+  background: linear-gradient(180deg, #3b82f6, #2563eb);
+}
+
+.colr-stat-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #64748b;
+  margin-bottom: 0.25rem;
+}
+
+.colr-stat-value {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #1e3a6e;
+  font-variant-numeric: tabular-nums;
+}
+
+.colr-stat-meta {
+  font-size: 10px;
+  color: #94a3b8;
+  margin-top: 0.15rem;
+}
+
+/* Style CommonTable to match previous colr look */
+.colr-page .ct-wrapper {
+  border-radius: 10px;
+  border: 1px solid #d6deeb;
+  box-shadow: 0 2px 10px rgba(30, 58, 110, 0.05);
+}
+
+.colr-page .ct-table thead tr.ct-head-label th {
+  background: linear-gradient(180deg, #465e80 0%, #3d5270 100%) !important;
+  color: #fff !important;
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  border-right: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.colr-page .ct-table thead tr.ct-head-label th:hover {
+  background: linear-gradient(180deg, #3d5270 0%, #354960 100%) !important;
+}
+
+/* Term Days = 5th column */
+.colr-page .ct-table thead tr.ct-head-label th:nth-child(5) {
+  background: linear-gradient(180deg, #d97706 0%, #b45309 100%) !important;
+}
+
+.colr-page .ct-table thead tr.ct-head-filter th {
+  background: #eef2f7 !important;
+  border-bottom: 1px solid #d6deeb;
+}
+
+.colr-page .ct-filter-input {
+  background: #fff;
+  border: 1px solid #d6deeb;
+  border-radius: 6px;
+  color: #1e293b;
+}
+
+.colr-page .ct-sort-icon {
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.colr-page .ct-sort-icon.active {
+  color: #fff;
+  opacity: 1;
+}
+
+.colr-page .ct-table tbody tr:nth-child(even) td {
+  background: #fafbfd;
+}
+
+.colr-page .ct-table tbody tr:hover td {
+  background: #f0f4fa;
+}
+
+.colr-page .ct-table tbody td {
+  border-color: #e8edf4;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.colr-page .ct-table tbody td span {
+  font-weight: inherit;
+}
+
+.colr-page .ct-table tbody td.colr-td-term {
+  background: #fffbeb !important;
+  font-weight: 600;
+  color: #92400e;
+}
+
+.colr-page .ct-table tbody td:nth-child(5) {
+  background: #fffbeb !important;
+}
+
+.colr-page .ct-table tbody td.colr-td-customer {
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.colr-page .ct-table tbody td.colr-td-order {
+  font-weight: 700;
+  color: #1e40af;
+}
+
+.colr-page .ct-table tbody td.colr-td-sr {
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.colr-page .ct-table tfoot th {
+  background: #eef2f7 !important;
+  border-top: 2px solid #465e80 !important;
+  color: #1e3a6e !important;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Dark mode */
+.colr-page--dark .colr-filter-card,
+.colr-page--dark .colr-report-card {
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.25);
+}
+
+.colr-page--dark .colr-stat {
+  background: linear-gradient(135deg, #2a2f35 0%, #23272b 100%);
+  border-color: #3d4449;
+}
+
+.colr-page--dark .colr-stat-label {
+  color: #94a3b8;
+}
+
+.colr-page--dark .colr-stat-value {
+  color: #e2e8f0;
+}
+
+.colr-page--dark .ct-wrapper {
+  border-color: #3d4449;
+  background: #212529;
+}
+
+.colr-page--dark .ct-table thead tr.ct-head-filter th {
+  background: #2f343a !important;
+}
+
+.colr-page--dark .ct-filter-input {
+  background: #262a2f;
+  border-color: #3d4449;
+  color: #ced4da;
+}
+
+.colr-page--dark .ct-table tbody tr:nth-child(even) td {
+  background: #2a2f35;
+}
+
+.colr-page--dark .ct-table tbody tr:hover td {
+  background: #32383e;
+}
+
+.colr-page--dark .ct-table tbody td {
+  border-color: #3d4449;
+  color: #e2e8f0;
+  font-weight: 600;
+}
+
+.colr-page--dark .ct-table tbody td.colr-td-term {
+  background: rgba(217, 119, 6, 0.12) !important;
+  color: #fbbf24;
+}
+
+.colr-page--dark .ct-table tbody td.colr-td-customer {
+  color: #e2e8f0;
+}
+
+.colr-page--dark .ct-table tbody td.colr-td-order {
+  color: #93c5fd;
+}
+
+.colr-page--dark .ct-table tfoot th {
+  background: #2f343a !important;
+  border-top-color: #465e80 !important;
+  color: #e2e8f0 !important;
+}
+
+@media print {
+  .colr-filter-card {
+    display: none !important;
+  }
+
+  .colr-report-card {
+    box-shadow: none !important;
+    border: none !important;
+  }
+
+  .colr-stats {
+    break-inside: avoid;
+  }
+}

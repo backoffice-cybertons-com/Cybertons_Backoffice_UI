@@ -270,6 +270,12 @@ export const deleteSalesTransaction = salesTransaction => api.delete(url.DELETE_
 export const getSalesTransactionDetails = (id) => api.get(`${url.GET_SALES_TRANSACTION_DETAILS}/${id}`);
 export const getPartyOutstanding = (partyId) => api.get(`${url.GET_PARTY_OUTSTANDING}/${partyId}`);
 
+export const getGstIrnSettings = () => api.get(url.GET_GST_IRN_SETTINGS);
+export const saveGstIrnSettings = (data) => api.post(url.SAVE_GST_IRN_SETTINGS, data);
+export const getGstIrnStatus = (spUniqueCode) => api.get(url.GET_GST_IRN_STATUS(spUniqueCode));
+export const getGstIrnJson = (spUniqueCode) => api.get(url.GET_GST_IRN_JSON(spUniqueCode), { responseType: "text" });
+export const generateGstIrn = (spUniqueCode) => api.post(url.GENERATE_GST_IRN(spUniqueCode));
+
 /** Virtual calculation only — does not update tab_party_master.rate_diff. */
 export const calculatePartyRateAdjustment = (partyId) =>
   api.get(`${url.GET_PARTY_CALCULATE_RATE_ADJUSTMENT}/${partyId}/calculate-rate-adjustment`);
@@ -506,6 +512,18 @@ export const getStockLedgerDatewise = (companyId, fromDate, toDate, productId) =
 
 export const getBelowPriceSalesReport = (companyId, fromDate, toDate, filterType = "all") =>
   api.get(url.GET_BELOW_PRICE_SALES_REPORT, { companyId, fromDate, toDate, filterType });
+
+export const getCustomerOrderPaymentReport = (companyId, reportDate, partyId = null) => {
+  const params = { companyId, reportDate };
+  if (partyId) params.partyId = partyId;
+  return api.get(url.GET_CUSTOMER_ORDER_PAYMENT_REPORT, params);
+};
+
+export const getMonthlyCommissionReport = (companyId, fromDate, toDate, partyId = null, groupBy = "date") => {
+  const params = { companyId, fromDate, toDate, groupBy };
+  if (partyId) params.partyId = partyId;
+  return api.get(url.GET_MONTHLY_COMMISSION_REPORT, params);
+};
 
 // Code developed by Hetak Modi 290526
 export const getDayBook = (companyId, fromDate, toDate) =>

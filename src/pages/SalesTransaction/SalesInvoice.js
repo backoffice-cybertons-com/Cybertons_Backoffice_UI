@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { getCompanyProfile, getSalesTransactionDetails, getPartyCustomers } from "../../helpers/fakebackend_helper";
+import { getCompanyProfile, getSalesTransactionDetails, getPartyCustomers, getGstIrnStatus, getGstIrnJson, generateGstIrn } from "../../helpers/fakebackend_helper";
 import "./SalesInvoice.css";
 import HeaderForAllReport from "../../Components/Common/HeaderForAllRpt";
 import FooterForAllRpt from "../../Components/Common/FooterForAllRpt";
@@ -57,6 +57,9 @@ const SalesInvoice = () => {
     const [partyMaster, setPartyMaster] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [irnStatus, setIrnStatus] = useState(null);
+    const [irnBusy, setIrnBusy] = useState(false);
+    const [irnMessage, setIrnMessage] = useState("");
 
     const fetchData = useCallback(async () => {
         try {
@@ -85,6 +88,16 @@ const SalesInvoice = () => {
                     String(c.partyId ?? c.PartyId) === String(partyId)
                 );
                 setPartyMaster(found || null);
+
+                try {
+                    const irnRaw = await getGstIrnStatus(id);
+                    const irnData = irnRaw?.data || irnRaw;
+                    if (irnData && (irnData.irn || irnData.Irn)) {
+                        setIrnStatus(irnData);
+                    }
+                } catch {
+                    // No IRN yet — not an error
+                }
             } else {
                 setError("Invoice data not found.");
             }
@@ -130,6 +143,51 @@ const SalesInvoice = () => {
         window.print();
         setTimeout(cleanup, 1500);
     };
+
+    const handlePreviewIrnJson = async () => {
+        try {
+            setIrnBusy(true);
+            setIrnMessage("");
+            const json = await getGstIrnJson(id);
+            const text = typeof json === "string" ? json : JSON.stringify(json, null, 2);
+            const blob = new Blob([text], { type: "application/json" });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = `IRN_${id}.json`;
+            link.click();
+            URL.revokeObjectURL(link.href);
+            setIrnMessage("E-Invoice JSON downloaded.");
+        } catch (e) {
+            setIrnMessage(e?.response?.data?.message || e?.message || "Failed to build JSON.");
+        } finally {
+            setIrnBusy(false);
+        }
+    };
+
+    const handleGenerateIrn = async () => {
+        try {
+            setIrnBusy(true);
+            setIrnMessage("");
+            const res = await generateGstIrn(id);
+            const data = res?.data || res;
+            if (data?.success === false) {
+                setIrnMessage(data.message || "E-Invoice generation failed.");
+                return;
+            }
+            setIrnStatus(data);
+            setIrnMessage(data.message || "E-Invoice generated successfully.");
+        } catch (e) {
+            const msg = e?.response?.data?.message || e?.message || "E-Invoice generation failed.";
+            setIrnMessage(msg);
+        } finally {
+            setIrnBusy(false);
+        }
+    };
+
+    const irnValue = irnStatus?.irn || irnStatus?.Irn || "";
+    const ackNo = irnStatus?.ackNo || irnStatus?.AckNo || "";
+    const qrImageBase64 = irnStatus?.qrImageBase64 || irnStatus?.QrImageBase64 || "";
+    const isMockIrn = irnStatus?.isMock ?? irnStatus?.IsMock ?? irnStatus?.mode === "Mock";
 
     /* ─── computed totals ─────────────────────────────────────────── */
     const totCrt = lines.reduce((s, l) => s + Number(l.crt || 0), 0);
@@ -190,7 +248,27 @@ const SalesInvoice = () => {
             <div className="si-no-print si-actions" style={{ marginBottom: '16px' }}>
                 <button onClick={() => navigate(-1)} className="btn btn-secondary">← Back to List</button>
                 <button onClick={handlePrint} className="btn btn-primary ms-2">🖨 Print / Save PDF</button>
+                <button onClick={handlePreviewIrnJson} className="btn btn-outline-secondary ms-2" disabled={irnBusy}>
+                    Preview E-Invoice JSON
+                </button>
+                <button onClick={handleGenerateIrn} className="btn btn-success ms-2" disabled={irnBusy}>
+                    {irnBusy ? "Processing…" : "Generate E-Invoice (Mock)"}
+                </button>
             </div>
+            {irnMessage && (
+                <div className="si-no-print alert alert-info" style={{ marginBottom: '12px' }}>{irnMessage}</div>
+            )}
+            {irnValue && (
+                <div className="si-no-print alert alert-success" style={{ marginBottom: '12px' }}>
+                    <div><strong>IRN:</strong> {irnValue} {isMockIrn ? <span className="badge bg-warning text-dark ms-2">MOCK</span> : null}</div>
+                    {ackNo ? <div><strong>Ack No:</strong> {ackNo}</div> : null}
+                    {qrImageBase64 ? (
+                        <div style={{ marginTop: '8px' }}>
+                            <img alt="E-Invoice QR" src={`data:image/png;base64,${qrImageBase64}`} style={{ width: 120, height: 120 }} />
+                        </div>
+                    ) : null}
+                </div>
+            )}
 
             <div className="si-page" style={{ overflow: "hidden" }}>
                 <div className="si-ledger-wrapper">

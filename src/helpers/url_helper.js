@@ -139,6 +139,13 @@ export const UPDATE_SALES_TRANSACTION = "/api/salesTransaction/composite";
 export const DELETE_SALES_TRANSACTION = "/api/salesTransaction";
 export const GET_SALES_TRANSACTION_DETAILS = "/api/salesTransaction";
 export const GET_PARTY_OUTSTANDING = "/api/salesTransaction/outstanding";
+
+// GST E-Invoice (IRN)
+export const GET_GST_IRN_SETTINGS = "/api/gst-irn/settings";
+export const SAVE_GST_IRN_SETTINGS = "/api/gst-irn/settings";
+export const GET_GST_IRN_STATUS = (spUniqueCode) => `/api/gst-irn/${spUniqueCode}`;
+export const GET_GST_IRN_JSON = (spUniqueCode) => `/api/gst-irn/${spUniqueCode}/json`;
+export const GENERATE_GST_IRN = (spUniqueCode) => `/api/gst-irn/${spUniqueCode}/generate`;
 export const POST_PARTY_RECALCULATE_RATE_ADJUSTMENT = "/api/party";
 export const GET_PARTY_CALCULATE_RATE_ADJUSTMENT = "/api/party";
 export const GET_PARTY_RATE_ADJUSTMENT_SUMMARY = "/api/party/rate-adjustment-summary";
@@ -150,6 +157,8 @@ export const GET_STOCK_SUMMARY_REPORT = "/api/Report/stock-summary";
 export const GET_STOCK_LEDGER_DATEWISE = "/api/Report/stock-ledger-datewise";
 
 export const GET_BELOW_PRICE_SALES_REPORT = "/api/Report/below-price-sales";
+export const GET_CUSTOMER_ORDER_PAYMENT_REPORT = "/api/Report/customer-order-payment";
+export const GET_MONTHLY_COMMISSION_REPORT = "/api/Report/monthly-commission";
 
 // Payment & Receipt
 export const GET_PAYMENT_RECEIPTS = "/api/paymentReceipt/list";

@@ -1,12 +1,15 @@
 /**
  * Returns true when the logged-in user has the Admin role (from sidebar permissions).
+ * Checks every permission row — roleName is present on each item from the API.
  */
 export const isAdminUser = (permissions) => {
     if (!Array.isArray(permissions) || permissions.length === 0) {
         return false;
     }
-    const roleName = permissions[0]?.roleName || permissions[0]?.RoleName || '';
-    return String(roleName).toLowerCase() === 'admin';
+    return permissions.some((item) => {
+        const roleName = String(item?.roleName || item?.RoleName || '').trim().toLowerCase();
+        return roleName === 'admin' || roleName === 'administrator';
+    });
 };
 
 export default isAdminUser;

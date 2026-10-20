@@ -20,26 +20,32 @@ export const getSalesTransactions = createAsyncThunk("SalesTransaction/getSalesT
     }
 });
 
-export const addNewSalesTransaction = createAsyncThunk("SalesTransaction/addNewSalesTransaction", async (SalesTransaction) => {
+export const addNewSalesTransaction = createAsyncThunk("SalesTransaction/addNewSalesTransaction", async (SalesTransaction, { rejectWithValue }) => {
     try {
         const response = await addNewSalesTransactionApi(SalesTransaction);
         toast.success("Sales Transaction Added Successfully", { autoClose: 3000 });
         return response;
     } catch (error) {
+        const message = typeof error === "string"
+            ? error
+            : (error?.error || error?.Error || error?.message || "Sales Transaction Addition Failed");
         console.error("Add New Sales Transaction Error:", error);
-        toast.error(error || "Sales Transaction Addition Failed", { autoClose: 3000 });
-        return error;
+        toast.error(message, { autoClose: 7000 });
+        return rejectWithValue(message);
     }
 });
 
-export const updateSalesTransaction = createAsyncThunk("SalesTransaction/updateSalesTransaction", async (SalesTransaction) => {
+export const updateSalesTransaction = createAsyncThunk("SalesTransaction/updateSalesTransaction", async (SalesTransaction, { rejectWithValue }) => {
     try {
         const response = await updateSalesTransactionApi(SalesTransaction);
         toast.success("Sales Transaction Updated Successfully", { autoClose: 3000 });
         return response;
     } catch (error) {
-        toast.error("Sales Transaction Update Failed", { autoClose: 3000 });
-        return error;
+        const message = typeof error === "string"
+            ? error
+            : (error?.error || error?.Error || error?.message || "Sales Transaction Update Failed");
+        toast.error(message, { autoClose: 7000 });
+        return rejectWithValue(message);
     }
 });
 

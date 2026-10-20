@@ -4,17 +4,28 @@ import {
   Input, Button, Label, Spinner
 } from 'reactstrap';
 import Select from 'react-select';
+import { useSelector } from "react-redux";
+import { createSelector } from "reselect";
 import { APIClient } from "../../helpers/api_helper";
 import * as url from "../../helpers/url_helper";
 import CommonTable from "../../Components/Common/CommonTable";
 import ExportButton from "../../Components/Common/ExportButton";
 import "../../Components/Common/CommonTable.css";
+import "./PayebleReceivableReport.css";
 import HeaderForAllReport from "../../Components/Common/HeaderForAllRpt";
 import FooterForAllRpt from "../../Components/Common/FooterForAllRpt";
+
+const selectLayoutState = (state) => state.Layout;
+const selectLayoutProperties = createSelector(selectLayoutState, (layout) => ({
+  layoutModeType: layout.layoutModeType,
+}));
 
 const api = new APIClient();
 
 const PayebleReceivableReport = () => {
+  const { layoutModeType } = useSelector(selectLayoutProperties);
+  const isDarkMode = layoutModeType === "dark";
+
   const companyId = localStorage.getItem("companyId");
   const [companyInfo, setCompanyInfo] = useState(null);
 
@@ -47,10 +58,58 @@ const PayebleReceivableReport = () => {
   ], []);
 
   const [selectedGroupBy, setSelectedGroupBy] = useState(groupByOptions[0]);
+  const [selectedSubGroupFilter, setSelectedSubGroupFilter] = useState(null);
+
+  useEffect(() => {
+    setSelectedSubGroupFilter(null);
+  }, [selectedGroupBy]);
+
+  const subGroupOptions = useMemo(() => {
+    if (!selectedGroupBy || selectedGroupBy.value === "none") return [];
+    const groupKey = selectedGroupBy.value;
+    const propMap = {
+      zone: "zoneName",
+      kam: "kam",
+      recovery_agent: "recoveryAgent",
+      sales_person: "salespersonName",
+      transporter: "transporterName",
+      sumul_incharge: "sumulIncharge"
+    };
+    const targetProp = propMap[groupKey];
+    const uniqueValues = new Set();
+    reportData.forEach(row => {
+      const rawVal = row[targetProp] || row[targetProp.charAt(0).toUpperCase() + targetProp.slice(1)];
+      const groupVal = rawVal ? rawVal.toString().trim() : "Unassigned";
+      uniqueValues.add(groupVal);
+    });
+    return Array.from(uniqueValues).sort().map(v => ({ value: v, label: v }));
+  }, [reportData, selectedGroupBy]);
 
   const processedData = useMemo(() => {
-    if (!selectedGroupBy || selectedGroupBy.value === "none") {
-      return reportData;
+    let dataToProcess = reportData;
+
+    if (selectedGroupBy && selectedGroupBy.value !== "none" && selectedSubGroupFilter) {
+      const groupKey = selectedGroupBy.value;
+      const propMap = {
+        zone: "zoneName",
+        kam: "kam",
+        recovery_agent: "recoveryAgent",
+        sales_person: "salespersonName",
+        transporter: "transporterName",
+        sumul_incharge: "sumulIncharge"
+      };
+      const targetProp = propMap[groupKey];
+      dataToProcess = dataToProcess.filter(row => {
+        const rawVal = row[targetProp] || row[targetProp.charAt(0).toUpperCase() + targetProp.slice(1)];
+        const groupVal = rawVal ? rawVal.toString().trim() : "Unassigned";
+        return groupVal === selectedSubGroupFilter.value;
+      });
+    }
+
+    const isNone = !selectedGroupBy || selectedGroupBy.value === "none" || !!selectedSubGroupFilter;
+
+    if (isNone) {
+      return dataToProcess;
     }
 
     const groupKey = selectedGroupBy.value;
@@ -66,7 +125,7 @@ const PayebleReceivableReport = () => {
     const targetProp = propMap[groupKey];
     const groups = {};
 
-    reportData.forEach(row => {
+    dataToProcess.forEach(row => {
       const rawVal = row[targetProp] || row[targetProp.charAt(0).toUpperCase() + targetProp.slice(1)];
       const groupVal = rawVal ? rawVal.toString().trim() : "Unassigned";
 
@@ -80,7 +139,8 @@ const PayebleReceivableReport = () => {
           outstanding: 0,
           weekly: 0,
           monthly: 0,
-          count: 0
+          count: 0,
+          subRows: []
         };
       }
 
@@ -92,6 +152,7 @@ const PayebleReceivableReport = () => {
       g.weekly += Number(row.weekly || row.Weekly || 0);
       g.monthly += Number(row.monthly || row.Monthly || 0);
       g.count += 1;
+      g.subRows.push(row);
     });
 
     return Object.values(groups).map(g => {
@@ -114,7 +175,7 @@ const PayebleReceivableReport = () => {
 
       return g;
     });
-  }, [reportData, selectedGroupBy, selectedPartyType]);
+  }, [reportData, selectedGroupBy, selectedPartyType, selectedSubGroupFilter]);
 
   useEffect(() => {
     setTotalEntries(processedData.length);
@@ -125,6 +186,97 @@ const PayebleReceivableReport = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(100);
   const [totalEntries, setTotalEntries] = useState(0);
+
+  // Drill Down State
+  const [expandedRows, setExpandedRows] = useState(new Set());
+
+  const toggleRow = (rowKey) => {
+    setExpandedRows((prev) => {
+      const next = new Set(prev);
+      if (next.has(rowKey)) {
+        next.delete(rowKey);
+      } else {
+        next.add(rowKey);
+      }
+      return next;
+    });
+  };
+
+  const renderExpandedRow = (row) => {
+    if (!row.subRows || row.subRows.length === 0) return null;
+    
+    return (
+      <div className="p-3 bg-light border-bottom">
+        <h6 className="mb-2 text-primary">{row.displayName} - Parties</h6>
+        <div className="table-responsive" style={{ maxHeight: "300px", overflowY: "auto" }}>
+          <table className="table table-sm table-bordered table-nowrap align-middle mb-0 bg-white">
+            <thead className="table-light sticky-top">
+              <tr>
+                <th>Party</th>
+                <th>Zone</th>
+                <th>Sumul Area Incharge</th>
+                <th>Transporter</th>
+                <th className="text-end">Outstanding Amount</th>
+                <th className="text-end">D/C</th>
+                <th className="text-end">Weekly Avg</th>
+                <th className="text-end">Weekly Term</th>
+                <th className="text-end">Monthly Avg</th>
+                <th className="text-end">Monthly Term</th>
+              </tr>
+            </thead>
+            <tbody>
+              {row.subRows.map((sub, idx) => {
+                const subOut = Number(sub.outstanding || sub.Outstanding || 0);
+                const subWeek = Number(sub.weekly || sub.Weekly || 0);
+                const subMonth = Number(sub.monthly || sub.Monthly || 0);
+                
+                let cd = "";
+                if (selectedPartyType?.value === "Customer") {
+                  cd = subOut >= 0 ? "D" : "C";
+                } else {
+                  cd = subOut <= 0 ? "C" : "D";
+                }
+
+                const wTerm = subWeek > 0 ? subOut / subWeek : 0;
+                const mTerm = subMonth > 0 ? (subOut / subMonth) / 30.0 : 0;
+
+                return (
+                  <tr key={idx}>
+                    <td>
+                      <span 
+                        className="text-primary" 
+                        style={{ cursor: "pointer", textDecoration: "underline" }}
+                        onClick={() => {
+                          const date = new Date(asOfDate);
+                          const firstDay = new Date(date.getFullYear(), date.getMonth(), 1);
+                          const lastDay = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+                          const fromStr = `${firstDay.getFullYear()}-${String(firstDay.getMonth() + 1).padStart(2, '0')}-01`;
+                          const toStr = `${lastDay.getFullYear()}-${String(lastDay.getMonth() + 1).padStart(2, '0')}-${String(lastDay.getDate()).padStart(2, '0')}`;
+                          const url = `/report/daily-outstanding-report?viewMode=calendar&partyId=${sub.partyId || sub.PartyId}&fromDate=${fromStr}&toDate=${toStr}`;
+                          window.open(url, "_blank");
+                        }}
+                      >
+                        {sub.displayName || sub.DisplayName}
+                      </span>
+                    </td>
+                    <td>{sub.zoneName || sub.ZoneName}</td>
+                    <td>{sub.sumulIncharge || sub.SumulIncharge}</td>
+                    <td>{sub.transporterName || sub.TransporterName}</td>
+                    <td className="text-end">{subOut.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                    <td className="text-end">{cd}</td>
+                    <td className="text-end">{subWeek.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                    <td className="text-end">{wTerm.toLocaleString("en-IN", { minimumFractionDigits: 3, maximumFractionDigits: 3 })}</td>
+                    <td className="text-end">{subMonth.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                    <td className="text-end">{mTerm.toLocaleString("en-IN", { minimumFractionDigits: 3, maximumFractionDigits: 3 })}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  };
 
 
   useEffect(() => {
@@ -165,26 +317,42 @@ const PayebleReceivableReport = () => {
 
   /* ── excel export ── */
 
-  const exportColumns = useMemo(() => [
-    { 
-      accessor: "displayName", 
-      label: !selectedGroupBy || selectedGroupBy.value === "none" 
-        ? "Party" 
-        : selectedGroupBy.label.replace(" Wise", "") 
-    },
-    { 
-      accessor: "contact", 
-      label: !selectedGroupBy || selectedGroupBy.value === "none" 
-        ? "Contact" 
-        : "Party Count" 
-    },
-    { accessor: "outstanding", label: "Outstanding Amount" },
-    { accessor: "creditDebit", label: "D/C" },
-    { accessor: "weekly", label: "Weekly Avg" },
-    { accessor: "terms", label: "Weekly Term" },
-    { accessor: "monthly", label: "Monthly Avg" },
-    { accessor: "monthlyTerm", label: "Monthly Term" }
-  ], [selectedGroupBy]);
+  const exportColumns = useMemo(() => {
+    const isNone = !selectedGroupBy || selectedGroupBy.value === "none" || !!selectedSubGroupFilter;
+    const cols = [
+      { 
+        accessor: "displayName", 
+        label: isNone 
+          ? "Party" 
+          : selectedGroupBy.label.replace(" Wise", "") 
+      },
+      { 
+        accessor: "contact", 
+        label: isNone 
+          ? "Contact" 
+          : "Party Count" 
+      }
+    ];
+
+    if (isNone) {
+      cols.push(
+        { accessor: "zoneName", label: "Zone", accessorFn: (row) => row.zoneName || row.ZoneName || "" },
+        { accessor: "sumulIncharge", label: "Sumul Area Incharge", accessorFn: (row) => row.sumulIncharge || row.SumulIncharge || "" },
+        { accessor: "transporterName", label: "Transporter", accessorFn: (row) => row.transporterName || row.TransporterName || "" }
+      );
+    }
+
+    cols.push(
+      { accessor: "outstanding", label: "Outstanding Amount" },
+      { accessor: "creditDebit", label: "D/C" },
+      { accessor: "weekly", label: "Weekly Avg" },
+      { accessor: "terms", label: "Weekly Term" },
+      { accessor: "monthly", label: "Monthly Avg" },
+      { accessor: "monthlyTerm", label: "Monthly Term" }
+    );
+
+    return cols;
+  }, [selectedGroupBy, selectedSubGroupFilter]);
 
   const headerRows = useMemo(() => [
     [{ v: "Payable Receivable Report", s: { font: { bold: true, sz: 14 }, alignment: { horizontal: "center" } } }],
@@ -204,103 +372,158 @@ const PayebleReceivableReport = () => {
     setSelectedGroupBy(groupByOptions[0]);
     setTotalEntries(0);
     setCurrentPage(1);
+    setExpandedRows(new Set());
   };
 
-  const columns = useMemo(() => [
-    {
-      key: "displayName",
-      label: !selectedGroupBy || selectedGroupBy.value === "none"
-        ? "Party"
-        : selectedGroupBy.label.replace(" Wise", ""),
-      width: "280px",
-      align: "left",
-      sortType: "string",
-      cell: (row) => {
-        if (!selectedGroupBy || selectedGroupBy.value === "none") {
-          return (
-            <span 
-              className="text-primary" 
-              style={{ cursor: "pointer", textDecoration: "underline" }}
-              onClick={() => {
-                const date = new Date(asOfDate);
-                const firstDay = new Date(date.getFullYear(), date.getMonth(), 1);
-                const lastDay = new Date(date.getFullYear(), date.getMonth() + 1, 0);
-                
-                const fromStr = `${firstDay.getFullYear()}-${String(firstDay.getMonth() + 1).padStart(2, '0')}-01`;
-                const toStr = `${lastDay.getFullYear()}-${String(lastDay.getMonth() + 1).padStart(2, '0')}-${String(lastDay.getDate()).padStart(2, '0')}`;
-                
-                const url = `/report/daily-outstanding-report?viewMode=calendar&partyId=${row.partyId || row.PartyId}&fromDate=${fromStr}&toDate=${toStr}`;
-                window.open(url, "_blank");
-              }}
-            >
-              {row.displayName}
-            </span>
-          );
+  const columns = useMemo(() => {
+    const isNone = !selectedGroupBy || selectedGroupBy.value === "none" || !!selectedSubGroupFilter;
+    
+    const cols = [
+      {
+        key: "displayName",
+        label: isNone
+          ? "Party"
+          : selectedGroupBy.label.replace(" Wise", ""),
+        width: "280px",
+        align: "left",
+        sortType: "string",
+        cell: (row) => {
+          if (isNone) {
+            return (
+              <span 
+                className="text-primary" 
+                style={{ cursor: "pointer", textDecoration: "underline" }}
+                onClick={() => {
+                  const date = new Date(asOfDate);
+                  const firstDay = new Date(date.getFullYear(), date.getMonth(), 1);
+                  const lastDay = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+                  
+                  const fromStr = `${firstDay.getFullYear()}-${String(firstDay.getMonth() + 1).padStart(2, '0')}-01`;
+                  const toStr = `${lastDay.getFullYear()}-${String(lastDay.getMonth() + 1).padStart(2, '0')}-${String(lastDay.getDate()).padStart(2, '0')}`;
+                  
+                  const url = `/report/daily-outstanding-report?viewMode=calendar&partyId=${row.partyId || row.PartyId}&fromDate=${fromStr}&toDate=${toStr}`;
+                  window.open(url, "_blank");
+                }}
+              >
+                {row.displayName}
+              </span>
+            );
+          }
+          return <span>{row.displayName}</span>;
         }
-        return <span>{row.displayName}</span>;
+      },
+      {
+        key: "contact",
+        label: isNone ? "Contact" : "Party Count",
+        width: "130px",
+        align: "center",
+        sortType: "string",
+        cell: (row) => {
+          if (!isNone) {
+            const isExpanded = expandedRows.has(row.displayName);
+            return (
+              <span
+                className="text-primary fw-bold"
+                style={{ cursor: "pointer", textDecoration: "underline" }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleRow(row.displayName);
+                }}
+              >
+                {row.contact} {isExpanded ? "▲" : "▼"}
+              </span>
+            );
+          }
+          return <span>{row.contact}</span>;
+        }
       }
-    },
+    ];
 
-    {
-      key: "contact",
-      label: !selectedGroupBy || selectedGroupBy.value === "none" ? "Contact" : "Party Count",
-      width: "130px",
-      align: "center",
-      sortType: "string",
-    },
+    if (isNone) {
+      cols.push(
+        {
+          key: "zoneName",
+          label: "Zone",
+          width: "150px",
+          align: "left",
+          sortType: "string",
+          cell: (row) => <span>{row.zoneName || row.ZoneName || ""}</span>
+        },
+        {
+          key: "sumulIncharge",
+          label: "Sumul Area Incharge",
+          width: "200px",
+          align: "left",
+          sortType: "string",
+          cell: (row) => <span>{row.sumulIncharge || row.SumulIncharge || ""}</span>
+        },
+        {
+          key: "transporterName",
+          label: "Transporter",
+          width: "180px",
+          align: "left",
+          sortType: "string",
+          cell: (row) => <span>{row.transporterName || row.TransporterName || ""}</span>
+        }
+      );
+    }
 
-    {
-      key: "outstanding",
-      label: "Outstanding Amount",
-      width: "150px",
-      align: "right",
-      sortType: "number",
-      totalType: "sum",
-    },
-    {
-      key: "creditDebit",
-      label: "D/C",
-      width: "80px",
-      align: "right",
-      sortType: "string",
-    },
-    {
-      key: "weekly",
-      label: "Weekly Avg",
-      width: "140px",
-      align: "right",
-      sortType: "number",
-      totalType: "avg",
-    },
-    {
-      key: "terms",
-      label: "Weekly Term",
-      width: "110px",
-      align: "right",
-      sortType: "number",
-      totalFn: (t) => t.weekly > 0
-        ? t.outstanding / t.weekly
-        : 0
-    },
-    {
-      key: "monthly",
-      label: "Monthly Avg",
-      width: "140px",
-      align: "right",
-      sortType: "number",
-      totalType: "avg",
-    },
-    {
-      key: "monthlyTerm",
-      label: "Monthly Term",
-      width: "110px",
-      align: "right",
-      sortType: "number",
-      totalFn: (t) => t.monthly > 0
-        ? t.outstanding / t.monthly
-        : 0
-    },
-  ], [selectedGroupBy, asOfDate, selectedPartyType]);
+    cols.push(
+      {
+        key: "outstanding",
+        label: "Outstanding Amount",
+        width: "150px",
+        align: "right",
+        sortType: "number",
+        totalType: "sum",
+      },
+      {
+        key: "creditDebit",
+        label: "D/C",
+        width: "80px",
+        align: "right",
+        sortType: "string",
+      },
+      {
+        key: "weekly",
+        label: "Weekly Avg",
+        width: "140px",
+        align: "right",
+        sortType: "number",
+        totalType: "avg",
+      },
+      {
+        key: "terms",
+        label: "Weekly Term",
+        width: "110px",
+        align: "right",
+        sortType: "number",
+        totalFn: (t) => t.weekly > 0
+          ? t.outstanding / t.weekly
+          : 0
+      },
+      {
+        key: "monthly",
+        label: "Monthly Avg",
+        width: "140px",
+        align: "right",
+        sortType: "number",
+        totalType: "avg",
+      },
+      {
+        key: "monthlyTerm",
+        label: "Monthly Term",
+        width: "110px",
+        align: "right",
+        sortType: "number",
+        totalFn: (t) => t.monthly > 0
+          ? t.outstanding / t.monthly
+          : 0
+      }
+    );
+
+    return cols;
+  }, [selectedGroupBy, asOfDate, selectedPartyType, selectedSubGroupFilter, expandedRows]);
 
   const handleGenerate = async () => {
 
@@ -341,7 +564,7 @@ const PayebleReceivableReport = () => {
 
   return (
     <React.Fragment>
-      <div className="page-content">
+      <div className={`page-content payrec-page${isDarkMode ? " payrec-page--dark" : ""}`}>
         <Container fluid>
           <Row>
             <Col xs={12}>
@@ -351,7 +574,7 @@ const PayebleReceivableReport = () => {
             </Col>
           </Row>
 
-          <Card className="mb-3">
+          <Card className="mb-3 payrec-filter-card">
 
             <CardBody>
               <Row className="g-3">
@@ -431,6 +654,31 @@ const PayebleReceivableReport = () => {
                     }}
                   />
                 </Col>
+
+                {selectedGroupBy && selectedGroupBy.value !== "none" && (
+                  <Col xs={12} md={6} xl={3}>
+                    <Label>{selectedGroupBy.label.replace(" Wise", "")}</Label>
+                    <Select
+                      value={selectedSubGroupFilter}
+                      onChange={setSelectedSubGroupFilter}
+                      options={subGroupOptions}
+                      isClearable
+                      placeholder={`All ${selectedGroupBy.label.replace(" Wise", "")}s...`}
+                      menuPortalTarget={document.body}
+                      menuPosition="fixed"
+                      styles={{
+                        menuPortal: base => ({
+                          ...base,
+                          zIndex: 999999
+                        }),
+                        menu: base => ({
+                          ...base,
+                          zIndex: 999999
+                        })
+                      }}
+                    />
+                  </Col>
+                )}
               </Row>
               <Row className="mt-3 align-items-center">
                 <Col md={8}>
@@ -493,7 +741,10 @@ const PayebleReceivableReport = () => {
 
                   <Button
                     color="primary"
-                    onClick={handleGenerate}
+                    onClick={() => {
+                      setExpandedRows(new Set());
+                      handleGenerate();
+                    }}
                     disabled={loading}
                   >
                     {loading ? <Spinner size="sm" /> : "Generate"}
@@ -515,7 +766,7 @@ const PayebleReceivableReport = () => {
             </CardBody>
           </Card>
           {(processedData.length > 0 || loading || generated) && (
-            <Card>
+            <Card className="payrec-report-card">
 
               {/*COMMON HEADER */}
               <div className="text-start">
@@ -523,7 +774,7 @@ const PayebleReceivableReport = () => {
               </div>
 
 
-              <CardBody className="pt-3 pl-3 pr-3 pb-3">
+              <CardBody className="payrec-report-body">
                 <CommonTable
                   ref={tableRef}
                   columns={columns}
@@ -531,9 +782,12 @@ const PayebleReceivableReport = () => {
                   currentPage={currentPage}
                   rowsPerPage={rowsPerPage}
                   loading={loading}
+                  isDark={isDarkMode}
                   autoHeight={true}
                   minWidth="1600px"
                   showTotals
+                  expandedRowIds={expandedRows}
+                  renderExpandedRow={renderExpandedRow}
                 />
               </CardBody>
 

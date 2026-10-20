@@ -20,6 +20,7 @@ import { resetSalesTransactionCreated } from "../../slices/salesTransaction/redu
 import { getVendors, getPartyCustomers, getProductsForSales, getPartyDetails, getTransporters, getUnits, getSalesTransactionDetails, getDeliveryChallans, getSalesTransactions, getBanks, getCompanies, getPartyOutstanding, getVehicles } from "../../helpers/fakebackend_helper";
 import { getSelectedFiscalYearId } from "../../utils/fiscalYearStorage";
 import { APIClient } from "../../helpers/api_helper";
+import { validateCustomerSalesLimits, showSalesLimitBlockedToast } from "../../utils/customerSalesLimitValidation";
 
 const apiClient = new APIClient();
 
@@ -167,7 +168,12 @@ const SalesTransactionCreateRevised = () => {
                     console.log("[SalesOrder] Raw customer data received:", customerData);
 
                     if (Array.isArray(customerData)) {
-                        const mappedCustomers = customerData.map(v => ({
+                        const mappedCustomers = customerData
+                            .filter(v => {
+                                const active = v.isActive ?? v.IsActive;
+                                return active !== false && active !== 0 && active !== 'false';
+                            })
+                            .map(v => ({
                             label: v.displayName || v.DisplayName || v.partyName || v.PartyName || v.name || v.Name || v.CompanyName || v.companyName || "Unknown Customer",
                             value: v.partyId || v.PartyId
                         }));
@@ -453,6 +459,33 @@ const SalesTransactionCreateRevised = () => {
                     validation.setFieldError('poOrderNo', 'This Purchase Order number already exists. Please use a unique number.');
                     return;
                 }
+            }
+
+            // ---- Customer daily sale / credit limit checks ----
+            let party = selectedCustomerDetails;
+            if (values.partyId) {
+                try {
+                    const response = await getPartyDetails(values.partyId);
+                    const fetchedParty = response.party || response.Party || {};
+                    party = { ...fetchedParty, ...(party || {}) };
+                } catch (limitErr) {
+                    console.warn("Failed to load customer limits:", limitErr);
+                }
+            }
+
+            const limitCheck = validateCustomerSalesLimits({
+                party: party || {},
+                partyId: values.partyId,
+                grandTotal: values.grandTotal,
+                previousOutstanding: values.previousOutstanding,
+                invDate: values.invDate,
+                allSalesOrders,
+                excludeSpUniqueCode: id ? parseInt(id) : 0,
+                isSalesRecord,
+            });
+            if (!limitCheck.allowed) {
+                showSalesLimitBlockedToast(limitCheck);
+                return;
             }
 
             const { lines, ...headerValues } = values;
@@ -820,6 +853,7 @@ const SalesTransactionCreateRevised = () => {
             // Use stored rate_diff from party master (not auto-calculated / not persisted on open).
             const rateDiff = parseFloat(party.rateDiff || party.RateDiff) || 0;
             setCustomerRateDiff(rateDiff);
+            setSelectedCustomerDetails({ ...party, billing, shipping });
 
             if (skipLineRecalculation) return;
 
@@ -840,8 +874,6 @@ const SalesTransactionCreateRevised = () => {
             
             // Note: calculateTotals also updates validation.values.lines, so we pass our updated lines to it
             calculateTotals(updatedLines);
-
-            setSelectedCustomerDetails({ ...party, billing, shipping });
         } catch (error) {
             console.error("Error fetching customer details:", error);
         }

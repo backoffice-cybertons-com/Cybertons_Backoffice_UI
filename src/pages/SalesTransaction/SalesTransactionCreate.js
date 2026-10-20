@@ -17,9 +17,10 @@ import {
     updateSalesTransaction as onUpdateSalesTransaction,
 } from "../../slices/thunks";
 import { resetSalesTransactionCreated } from "../../slices/salesTransaction/reducer";
-import { getVendors, getPartyCustomers, getProductsForSales, getPartyDetails, getTransporters, getUnits, getSalesTransactionDetails, getDeliveryChallans, getSalesTransactions, getBanks, getCompanies, getPartyOutstanding, getVehicles } from "../../helpers/fakebackend_helper";
+import { getVendors, getPartyCustomers, getProductsForSales, getPartyDetails, getTransporters, getUnits, getSalesTransactionDetails, getDeliveryChallans, getSalesTransactions, getBanks, getCompanies, getPartyOutstanding, getVehicles, getStockSummaryReport } from "../../helpers/fakebackend_helper";
 import { getSelectedFiscalYearId } from "../../utils/fiscalYearStorage";
 import { APIClient } from "../../helpers/api_helper";
+import { validateCustomerSalesLimits, showSalesLimitBlockedToast } from "../../utils/customerSalesLimitValidation";
 
 const apiClient = new APIClient();
 
@@ -182,6 +183,8 @@ const SalesTransactionCreate = () => {
     const [isCopyPreviousModalOpen, setIsCopyPreviousModalOpen] = useState(false);
     const [previousInvoices, setPreviousInvoices] = useState([]);
     const [qtyByCode, setQtyByCode] = useState({});
+    // stockMap: { [productId]: closingQty } — populated lazily when a product is selected
+    const [stockMap, setStockMap] = useState({});
 
     // Stabilize constant values outside or with useMemo
     const today = useMemo(() => new Date(), []);
@@ -194,29 +197,46 @@ const SalesTransactionCreate = () => {
             try {
                 console.log("[SalesOrder] Fetching initial data...");
 
-                // Fetch Customers separately for better error isolation
-                let customerData = [];
+                // Fetch Customers + Vendors and merge into a single grouped dropdown
                 try {
-                    console.log("[SalesOrder] Fetching customers (type=Customer)...");
-                    const custRaw = await getPartyCustomers();
-                    customerData = Array.isArray(custRaw) ? custRaw
-                        : (custRaw?.data && Array.isArray(custRaw.data)) ? custRaw.data
-                            : [];
-                    console.log("[SalesOrder] Raw customer data received:", customerData);
+                    console.log("[SalesOrder] Fetching customers and vendors...");
+                    const [custRaw, vendRaw] = await Promise.allSettled([
+                        getPartyCustomers(),
+                        getVendors()
+                    ]);
 
-                    if (Array.isArray(customerData)) {
-                        const mappedCustomers = customerData.map(v => ({
-                            label: v.displayName || v.DisplayName || v.partyName || v.PartyName || v.name || v.Name || v.CompanyName || v.companyName || "Unknown Customer",
-                            value: v.partyId || v.PartyId
-                        }));
-                        console.log(`[SalesOrder] Successfully mapped ${mappedCustomers.length} customers.`);
-                        setCustomers(mappedCustomers);
-                    } else {
-                        console.warn("[SalesOrder] Customer data is not an array:", customerData);
-                        setCustomers([]);
-                    }
+                    const custArr = custRaw.status === 'fulfilled'
+                        ? (Array.isArray(custRaw.value) ? custRaw.value
+                            : (custRaw.value?.data && Array.isArray(custRaw.value.data)) ? custRaw.value.data : [])
+                        : [];
+
+                    const vendArr = vendRaw.status === 'fulfilled'
+                        ? (Array.isArray(vendRaw.value) ? vendRaw.value
+                            : (vendRaw.value?.data && Array.isArray(vendRaw.value.data)) ? vendRaw.value.data : [])
+                        : [];
+
+                    const mapParty = (v, fallback) => ({
+                        label: v.displayName || v.DisplayName || v.partyName || v.PartyName || v.name || v.Name || v.CompanyName || v.companyName || fallback,
+                        value: v.partyId || v.PartyId
+                    });
+
+                    const isActive = v => {
+                        const a = v.isActive ?? v.IsActive;
+                        return a !== false && a !== 0 && a !== 'false';
+                    };
+
+                    const mappedCustomers = custArr.filter(isActive).map(v => mapParty(v, "Unknown Customer"));
+                    const mappedVendors   = vendArr.filter(isActive).map(v => mapParty(v, "Unknown Vendor"));
+
+                    // Build grouped options so the dropdown shows two sections
+                    const grouped = [];
+                    if (mappedCustomers.length > 0) grouped.push({ label: "── Customers ──", options: mappedCustomers });
+                    if (mappedVendors.length > 0)   grouped.push({ label: "── Vendors ──",   options: mappedVendors });
+
+                    console.log(`[SalesOrder] Mapped ${mappedCustomers.length} customers + ${mappedVendors.length} vendors.`);
+                    setCustomers(grouped);
                 } catch (custErr) {
-                    console.error("[SalesOrder] ERROR fetching customers:", custErr);
+                    console.error("[SalesOrder] ERROR fetching customers/vendors:", custErr);
                     setCustomers([]);
                 }
 
@@ -325,6 +345,11 @@ const SalesTransactionCreate = () => {
                     console.log(isEdit ? "Edit data fetched:" : "Copy data fetched:", editData);
                     if (editData && editData.header) {
                         const header = editData.header;
+                        const category = (header.invCategory || header.InvCategory || "").toLowerCase();
+                        if (category === "other_sale") {
+                            history(`/sales-transaction/other/edit/${isEdit ? id : copyId}${isView ? "?view=true" : ""}`);
+                            return;
+                        }
                         const parseDate = (val) => {
                             if (!val) return null;
                             const d = new Date(val);
@@ -471,6 +496,56 @@ const SalesTransactionCreate = () => {
                     validation.setFieldError('poOrderNo', 'This Purchase Order number already exists. Please use a unique number.');
                     return;
                 }
+            }
+
+            // ---- Customer daily sale / credit limit checks ----
+            let party = selectedCustomerDetails;
+            if (values.partyId) {
+                try {
+                    const response = await getPartyDetails(values.partyId);
+                    const fetchedParty = response.party || response.Party || {};
+                    party = { ...fetchedParty, ...(party || {}) };
+                } catch (limitErr) {
+                    console.warn("Failed to load customer limits:", limitErr);
+                }
+            }
+
+            const limitCheck = validateCustomerSalesLimits({
+                party: party || {},
+                partyId: values.partyId,
+                grandTotal: values.grandTotal,
+                previousOutstanding: values.previousOutstanding,
+                invDate: values.invDate,
+                allSalesOrders,
+                excludeSpUniqueCode: id ? parseInt(id) : 0,
+                isSalesRecord,
+            });
+            if (!limitCheck.allowed) {
+                showSalesLimitBlockedToast(limitCheck);
+                return;
+            }
+
+            // ---- Stock quantity check ----
+            const stockViolations = values.lines
+                .filter(line => line.productId)
+                .map(line => {
+                    const pid = String(line.productId);
+                    const available = stockMap[pid] ?? null;
+                    const ordered = parseFloat(line.crt) || 0;
+                    if (available !== null && ordered > available) {
+                        const prodLabel = products.find(p => String(p.value) === pid)?.label || `Product #${pid}`;
+                        return { prodLabel, ordered, available };
+                    }
+                    return null;
+                })
+                .filter(Boolean);
+
+            if (stockViolations.length > 0) {
+                const msgs = stockViolations.map(
+                    v => `• ${v.prodLabel}: ordered ${v.ordered}, available ${v.available}`
+                ).join('\n');
+                alert(`⚠️ Stock insufficient for the following product(s):\n\n${msgs}\n\nPlease reduce the quantity.`);
+                return;
             }
 
             const { lines, ...headerValues } = values;
@@ -701,11 +776,34 @@ const SalesTransactionCreate = () => {
         calculateTotals(lines);
     };
 
-    const handleLineChange = (index, field, value) => {
+    const handleLineChange = async (index, field, value) => {
         const lines = [...validation.values.lines];
         lines[index][field] = value;
 
         // Auto-fill logic for Product selection
+        // ---- Fetch live closing stock when a product is selected ----
+        if (field === "productId" && value && !(value in stockMap)) {
+            const today = new Date();
+            const yyyy = today.getFullYear();
+            const mm = String(today.getMonth() + 1).padStart(2, '0');
+            const dd = String(today.getDate()).padStart(2, '0');
+            const todayStr = `${yyyy}-${mm}-${dd}`;
+            const companyId = parseInt(secureStorage.getPlain('companyId') || secureStorage.getPlain('CompanyId') || 1);
+            try {
+                const raw = await getStockSummaryReport(companyId, '2000-01-01', todayStr);
+                const rows = Array.isArray(raw) ? raw : (raw?.data && Array.isArray(raw.data) ? raw.data : []);
+                const updated = { ...stockMap };
+                rows.forEach(r => {
+                    const pid = r.ProductId ?? r.productId;
+                    const closing = parseFloat(r.ClosingQty ?? r.closingQty ?? 0);
+                    if (pid != null) updated[String(pid)] = closing;
+                });
+                setStockMap(updated);
+            } catch (e) {
+                console.warn('[SalesOrder] Could not fetch stock:', e);
+            }
+        }
+
         if (field === "productId" && value) {
             const selectedProd = products.find(p => p.value == value);
             if (selectedProd) {
@@ -838,6 +936,7 @@ const SalesTransactionCreate = () => {
             // Use stored rate_diff from party master (not auto-calculated / not persisted on open).
             const rateDiff = parseFloat(party.rateDiff || party.RateDiff) || 0;
             setCustomerRateDiff(rateDiff);
+            setSelectedCustomerDetails({ ...party, billing, shipping });
 
             if (skipLineRecalculation) return;
 
@@ -858,8 +957,6 @@ const SalesTransactionCreate = () => {
             
             // Note: calculateTotals also updates validation.values.lines, so we pass our updated lines to it
             calculateTotals(updatedLines);
-
-            setSelectedCustomerDetails({ ...party, billing, shipping });
         } catch (error) {
             console.error("Error fetching customer details:", error);
         }
@@ -868,7 +965,8 @@ const SalesTransactionCreate = () => {
     useEffect(() => {
         const preselectedPartyId = location.state?.partyId;
         if (partyPreselectedRef.current || isEdit || isCopy || !preselectedPartyId || customers.length === 0) return;
-        const customer = customers.find((c) => String(c.value) === String(preselectedPartyId));
+        const allOptions = customers.flatMap(g => g.options ?? [g]);
+        const customer = allOptions.find((c) => String(c.value) === String(preselectedPartyId));
         if (customer) {
             partyPreselectedRef.current = true;
             handleCustomerChange(customer, true);
@@ -1008,7 +1106,7 @@ const SalesTransactionCreate = () => {
                                     <Form onSubmit={validation.handleSubmit}>
                                         <Row className="mb-4">
                                             <Col md={6}>
-                                                <Label className="text-danger fw-medium">Customer Name*</Label>
+                                                <Label className="text-danger fw-medium">Customer / Vendor*</Label>
                                                 <div className="d-flex gap-2">
                                                     <div className="flex-grow-1">
                                                         <Select
@@ -1016,10 +1114,10 @@ const SalesTransactionCreate = () => {
                                                             isDisabled={isView}
                                                             onChange={(opt) => { handleCustomerChange(opt); setTouchedSelects(p => ({ ...p, partyId: true })); }}
                                                             onBlur={() => setTouchedSelects(p => ({ ...p, partyId: true }))}
-                                                            placeholder="Select Customer"
+                                                            placeholder="Select Customer / Vendor"
                                                             classNamePrefix="select"
-                                                            noOptionsMessage={() => "No customers found"}
-                                                            value={customers.find(v => v.value === validation.values.partyId) || null}
+                                                            noOptionsMessage={() => "No customers or vendors found"}
+                                                            value={customers.flatMap(g => g.options ?? [g]).find(v => v.value === validation.values.partyId) || null}
                                                             styles={{ control: base => ({ ...base, borderColor: (touchedSelects.partyId && !validation.values.partyId) ? '#f06548' : base.borderColor }) }}
                                                         />
                                                     </div>
@@ -1311,8 +1409,13 @@ const SalesTransactionCreate = () => {
                                                                             handleLineChange(index, "crt", formatToFourDecimals(e.target.value));
                                                                             validation.setFieldTouched(`lines[${index}].crt`, true);
                                                                         }}
-                                                                        style={{ borderColor: showErr('crt') ? '#f06548' : '' }} />
+                                                                        style={{ borderColor: (showErr('crt') || (stockMap[String(line.productId)] != null && parseFloat(line.crt) > stockMap[String(line.productId)])) ? '#f06548' : '' }} />
                                                                     {showErr('crt') && <div className="text-danger" style={{ fontSize: '11px' }}>{lineErrors.crt}</div>}
+                                                                    {!showErr('crt') && line.productId && stockMap[String(line.productId)] != null && (
+                                                                        parseFloat(line.crt) > stockMap[String(line.productId)]
+                                                                            ? <div className="text-danger" style={{ fontSize: '11px' }}>⚠️ Exceeds stock ({stockMap[String(line.productId)].toFixed(3)} available)</div>
+                                                                            : <div className="text-success" style={{ fontSize: '11px' }}>✔ In stock ({stockMap[String(line.productId)].toFixed(3)} available)</div>
+                                                                    )}
                                                                 </td>
                                                                 <td><Input type="number" value={formatToFourDecimals(line.packing)} readOnly className="bg-light no-spin-input" /></td>
                                                                 <td>

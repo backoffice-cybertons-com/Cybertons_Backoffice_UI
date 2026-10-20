@@ -262,6 +262,20 @@ const useNavData = () => {
         finalLink = "/reports/bank-book";
       } else if (tabName === "Trial Balance") {
         finalLink = "/reports/TrialBalanceReport";
+      } else if (
+        tabName === "Customer Order Limit" ||
+        tabName === "Customer Order Limit Report" ||
+        tabName === "Customer Order Payment" ||
+        tabName === "Customer Order / Payment" ||
+        tabName === "Customer Order Payment Report"
+      ) {
+        finalLink = "/reports/customer-order-payment";
+      } else if (
+        tabName === "Monthly Commission" ||
+        tabName === "Monthly Commission Report" ||
+        tabName === "Monthly Comm Report"
+      ) {
+        finalLink = "/reports/monthly-commission";
       } else if (tabName === "Expense" || tabName === "Expenses") {
         // The new independent Expense component
         finalLink = "/purchases/expense";

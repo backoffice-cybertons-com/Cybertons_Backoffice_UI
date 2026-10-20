@@ -1,0 +1,204 @@
+/* Monthly Commission Report — Customer Limit Order style */
+
+.mcr-page .mcr-filter-card {
+  border: none;
+  box-shadow: 0 2px 12px rgba(30, 58, 110, 0.08);
+  border-radius: 10px;
+}
+
+.mcr-filter-card .card-body {
+  padding: 1rem 1.25rem;
+}
+
+.mcr-report-card {
+  overflow: hidden;
+  border: none;
+  border-radius: 12px;
+  box-shadow: 0 4px 24px rgba(30, 58, 110, 0.1);
+}
+
+.mcr-report-body {
+  padding: 0.75rem 1.25rem 1.25rem;
+}
+
+/* Summary stat strip */
+.mcr-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.mcr-stat {
+  position: relative;
+  padding: 0.85rem 1rem;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #f8fafc 0%, #eef2f7 100%);
+  border: 1px solid #d6deeb;
+  overflow: hidden;
+}
+
+.mcr-stat::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  border-radius: 10px 0 0 10px;
+  background: #465e80;
+}
+
+.mcr-stat--order::before   { background: linear-gradient(180deg,#3b82f6,#2563eb); }
+.mcr-stat--mrp::before     { background: linear-gradient(180deg,#8b5cf6,#6d28d9); }
+.mcr-stat--depo::before    { background: linear-gradient(180deg,#f59e0b,#d97706); }
+.mcr-stat--payment::before { background: linear-gradient(180deg,#10b981,#059669); }
+.mcr-stat--os::before      { background: linear-gradient(180deg,#ef4444,#dc2626); }
+.mcr-stat--comm::before    { background: linear-gradient(180deg,#06b6d4,#0891b2); }
+
+.mcr-stat-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #64748b;
+  margin-bottom: 0.25rem;
+}
+
+.mcr-stat-value {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #1e3a6e;
+  font-variant-numeric: tabular-nums;
+}
+
+.mcr-stat-meta {
+  font-size: 10px;
+  color: #94a3b8;
+  margin-top: 0.15rem;
+}
+
+/* CommonTable overrides */
+.mcr-page .ct-wrapper {
+  border-radius: 10px;
+  border: 1px solid #d6deeb;
+  box-shadow: 0 2px 10px rgba(30, 58, 110, 0.05);
+}
+
+.mcr-page .ct-table thead tr.ct-head-label th {
+  background: linear-gradient(180deg,#465e80 0%,#3d5270 100%) !important;
+  color: #fff !important;
+  font-weight: 600;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  border-right: 1px solid rgba(255,255,255,0.12);
+  white-space: nowrap;
+}
+
+.mcr-page .ct-table thead tr.ct-head-label th:hover {
+  background: linear-gradient(180deg,#3d5270 0%,#354960 100%) !important;
+}
+
+/* Column J (OS) — reddish */
+.mcr-page .ct-table thead tr.ct-head-label th:nth-child(11) {
+  background: linear-gradient(180deg,#dc2626 0%,#b91c1c 100%) !important;
+}
+
+/* Column K (Payment) — green */
+.mcr-page .ct-table thead tr.ct-head-label th:nth-child(12) {
+  background: linear-gradient(180deg,#059669 0%,#047857 100%) !important;
+}
+
+/* Column M (Adjust Comm) — amber */
+.mcr-page .ct-table thead tr.ct-head-label th:nth-child(14) {
+  background: linear-gradient(180deg,#d97706 0%,#b45309 100%) !important;
+}
+
+/* Column N (Net Comm) — teal */
+.mcr-page .ct-table thead tr.ct-head-label th:nth-child(15) {
+  background: linear-gradient(180deg,#0891b2 0%,#0e7490 100%) !important;
+}
+
+/* Column O (Comm Amount) — deep purple */
+.mcr-page .ct-table thead tr.ct-head-label th:nth-child(16) {
+  background: linear-gradient(180deg,#6d28d9 0%,#5b21b6 100%) !important;
+}
+
+.mcr-page .ct-table thead tr.ct-head-filter th {
+  background: #eef2f7 !important;
+  border-bottom: 1px solid #d6deeb;
+}
+
+.mcr-page .ct-filter-input {
+  background: #fff;
+  border: 1px solid #d6deeb;
+  border-radius: 6px;
+  color: #1e293b;
+}
+
+.mcr-page .ct-sort-icon { color: rgba(255,255,255,0.75); }
+.mcr-page .ct-sort-icon.active { color: #fff; opacity: 1; }
+
+.mcr-page .ct-table tbody tr:nth-child(even) td { background: #fafbfd; }
+.mcr-page .ct-table tbody tr:hover td { background: #f0f4fa; }
+
+.mcr-page .ct-table tbody td {
+  border-color: #e8edf4;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+/* Column-specific cell colours */
+.mcr-td-date    { color: #374151; font-weight: 700; }
+.mcr-td-crate   { color: #1e40af; font-weight: 700; }
+.mcr-td-mrp     { color: #6d28d9; }
+.mcr-td-os      { color: #b91c1c; font-weight: 700; }
+.mcr-td-payment { color: #047857; font-weight: 700; }
+.mcr-td-comm    { color: #0891b2; font-weight: 700; }
+.mcr-td-sr      { color: #64748b; font-size: 12px; font-weight: 600; }
+
+.mcr-page .ct-table tfoot th {
+  background: #eef2f7 !important;
+  border-top: 2px solid #465e80 !important;
+  color: #1e3a6e !important;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Dark mode */
+.mcr-page--dark .mcr-filter-card,
+.mcr-page--dark .mcr-report-card {
+  box-shadow: 0 4px 24px rgba(0,0,0,0.25);
+}
+
+.mcr-page--dark .mcr-stat {
+  background: linear-gradient(135deg,#2a2f35 0%,#23272b 100%);
+  border-color: #3d4449;
+}
+
+.mcr-page--dark .mcr-stat-label { color: #94a3b8; }
+.mcr-page--dark .mcr-stat-value { color: #e2e8f0; }
+
+.mcr-page--dark .ct-wrapper {
+  border-color: #3d4449;
+  background: #212529;
+}
+
+.mcr-page--dark .ct-table thead tr.ct-head-filter th { background: #2f343a !important; }
+.mcr-page--dark .ct-filter-input { background: #262a2f; border-color: #3d4449; color: #ced4da; }
+.mcr-page--dark .ct-table tbody tr:nth-child(even) td { background: #2a2f35; }
+.mcr-page--dark .ct-table tbody tr:hover td { background: #32383e; }
+.mcr-page--dark .ct-table tbody td { border-color: #3d4449; color: #e2e8f0; }
+.mcr-page--dark .ct-table tfoot th {
+  background: #2f343a !important;
+  border-top-color: #465e80 !important;
+  color: #e2e8f0 !important;
+}
+
+@media print {
+  .mcr-filter-card { display: none !important; }
+  .mcr-report-card { box-shadow: none !important; border: none !important; }
+  .mcr-stats { break-inside: avoid; }
+}

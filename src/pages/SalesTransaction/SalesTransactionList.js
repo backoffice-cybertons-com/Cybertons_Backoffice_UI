@@ -30,6 +30,15 @@ import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { createSelector } from "reselect";
 import { formatToFourDecimals } from "../../utils/numberUtils";
+import { isAdminUser } from "../../utils/isAdminUser";
+import { isOtherSaleRecord } from "./OtherSaleCreate";
+
+const normalizePerm = (p) => ({
+    canAdd: !!(p?.canAdd ?? p?.CanAdd),
+    canEdit: !!(p?.canEdit ?? p?.CanEdit),
+    canDelete: !!(p?.canDelete ?? p?.CanDelete),
+    canView: !!(p?.canView ?? p?.CanView ?? true),
+});
 
 const SalesTransactionList = () => {
     const dispatch = useDispatch();
@@ -50,19 +59,38 @@ const SalesTransactionList = () => {
         SalesTransactions, isSalesTransactionSuccess, error
     } = useSelector(selectSalesProperties);
 
-    // Permissions
-      const permissions = useSelector(state => state.auth.permissions || []);
-    // const pagePermissions = useMemo(() => {
-    //     const p = permissions.find(x => x.tabId === 14);
-    //     return p || { canAdd: false, canEdit: false, canDelete: false, canView: true };
-    // }, [permissions]);
+    // Permissions — resolve by URL/name first (tab IDs differ across tenants)
+    const permissions = useSelector(state => state.auth.permissions || []);
+    const pagePermissions = useMemo(() => {
+        const match = permissions.find((x) => {
+            const url = (x.tabUrl || x.TabUrl || "").toString().trim().toLowerCase();
+            const name = (x.tabName || x.TabName || "").toString().trim().toLowerCase();
+            const tabId = x.tabId ?? x.TabId;
+            return (
+                url.includes("sales-order") ||
+                name === "invoices" ||
+                name === "invoice" ||
+                name === "sales order" ||
+                name.includes("sales transaction") ||
+                tabId === 15 ||
+                tabId === 14
+            );
+        });
+        return normalizePerm(match || { canAdd: false, canEdit: false, canDelete: false, canView: true });
+    }, [permissions]);
 
-        const pagePermissions = useMemo(() => {
-        //--changes made on 27/04/2026 
-        const p = permissions.find(x => x.tabId === 15);
-        return p || { canAdd: false, canEdit: false, canDelete: false, canView: true };
-      }, [permissions]);
+    const revisedSalesOrderPermission = useMemo(() => {
+        const permission = permissions.find((item) => {
+            const tabUrl = (item.tabUrl || item.TabUrl || "").toString().trim().toLowerCase();
+            const tabName = (item.tabName || item.TabName || "").toString().trim().toLowerCase();
+            return tabUrl.includes("revised-sales-order") || tabName.includes("revised sales");
+        });
+        return permission ? normalizePerm(permission) : null;
+    }, [permissions]);
 
+    const isAdmin = useMemo(() => isAdminUser(permissions), [permissions]);
+    const revisedCanAdd = isAdmin || !!revisedSalesOrderPermission?.canAdd;
+    const revisedCanEdit = isAdmin || !!revisedSalesOrderPermission?.canEdit;
 
     //delete 
     const [deleteModal, setDeleteModal] = useState(false);
@@ -145,32 +173,55 @@ const SalesTransactionList = () => {
                 grow: 0,
                 cell: (cellProps) => {
                     const code = cellProps.row.original.spUniqueCode;
+                    const isOther = isOtherSaleRecord(cellProps.row.original);
+                    const standardEditPath = isOther
+                        ? `/sales-transaction/other/edit/${code}`
+                        : `/sales-order/edit/${code}`;
+                    const revisedEditPath = `/revised-sales-order/edit/${code}`;
                     return (
                         <div className="d-flex align-items-center gap-1 flex-wrap">
                             {pagePermissions.canEdit && (
-                                <Link to={`/sales-order/edit/${code}`} className="btn btn-sm btn-soft-info" title="Edit (Old Form)">
-                                    <i className="ri-pencil-fill" />
-                                </Link>
-                            )}
-                            {pagePermissions.canEdit && (
-                                <Link to={`/revised-sales-order/edit/${code}`} className="btn btn-sm btn-soft-dark" title="Edit (Revised Form)">
-                                    <i className="ri-edit-2-line" />
-                                </Link>
+                                <>
+                                    <Link
+                                        to={standardEditPath}
+                                        className="btn btn-sm btn-soft-primary"
+                                        title={isOther ? "Edit (Other Sale)" : "Edit (Standard Sales Order)"}
+                                    >
+                                        <i className="ri-pencil-line" />
+                                    </Link>
+                                    {!isOther && revisedCanEdit && (
+                                        <Link
+                                            to={revisedEditPath}
+                                            className="btn btn-sm btn-soft-info"
+                                            title="Edit (Revised / MRP)"
+                                        >
+                                            <i className="ri-pencil-fill" />
+                                        </Link>
+                                    )}
+                                </>
                             )}
                             {pagePermissions.canAdd && (
-                                <Link to={`/sales-order/create?copyId=${code}`} className="btn btn-sm btn-soft-warning" title="Copy Invoice">
+                                <Link
+                                    to={isOther ? `/sales-transaction/other/create?copyId=${code}` : `/sales-order/create?copyId=${code}`}
+                                    className="btn btn-sm btn-soft-warning"
+                                    title="Copy Invoice"
+                                >
                                     <i className="ri-file-copy-line" />
                                 </Link>
                             )}
                             <Link to={`/sales-order/invoice/${code}`} className="btn btn-sm btn-soft-success" title="Standard Tax Invoice">
                                 <i className="ri-printer-line" />
                             </Link>
-                            <Link to={`/sales-order/mrp-invoice/${code}`} className="btn btn-sm btn-soft-secondary" title="MRP Tax Invoice">
-                                <i className="ri-file-text-line" />
-                            </Link>
-                            <Link to={`/sales-order/updated-invoice/${code}`} className="btn btn-sm btn-soft-primary" title="MRP Profit Statement (Internal)">
-                                <i className="ri-file-chart-line" />
-                            </Link>
+                            {!isOther && revisedCanEdit && (
+                                <Link to={`/sales-order/mrp-invoice/${code}`} className="btn btn-sm btn-soft-secondary" title="MRP Tax Invoice">
+                                    <i className="ri-file-text-line" />
+                                </Link>
+                            )}
+                            {!isOther && revisedCanEdit && (
+                                <Link to={`/sales-order/updated-invoice/${code}`} className="btn btn-sm btn-soft-primary" title="MRP Profit Statement (Internal)">
+                                    <i className="ri-file-chart-line" />
+                                </Link>
+                            )}
                             {pagePermissions.canDelete && (
                                 <button
                                     type="button"
@@ -224,6 +275,16 @@ const SalesTransactionList = () => {
                 grow: 0,
             },
             {
+                header: "Category",
+                accessorKey: "invCategory",
+                enableColumnFilter: true,
+                cell: (cell) => {
+                    const val = (cell.getValue() || cell.row.original.InvCategory || "").toString();
+                    if (val.toLowerCase() === "other_sale") return "Other Sale";
+                    return val || "Sales Order";
+                },
+            },
+            {
                 header: "Tot Qty",
                 accessorKey: "totalQuantity",
                 enableColumnFilter: true,
@@ -249,7 +310,7 @@ const SalesTransactionList = () => {
                 cell: (cell) => (cell.getValue() || 0).toFixed(2),
             },
         ],
-        [vendors, pagePermissions]
+        [vendors, pagePermissions, revisedCanEdit]
     );
 
     const exportColumns = useMemo(() => ([
@@ -319,6 +380,15 @@ const SalesTransactionList = () => {
                                             )} */}
                                             {pagePermissions.canAdd && (
                                                 <Link
+                                                    to="/sales-transaction/other/create"
+                                                    className="btn btn-soft-primary"
+                                                    title="Other Sale (non product-master items)"
+                                                >
+                                                    <i className="ri-add-line align-bottom me-1"></i> Other Sale
+                                                </Link>
+                                            )}
+                                            {pagePermissions.canAdd && (
+                                                <Link
                                                     to="/sales-order/create"
                                                     className="btn btn-danger"
                                                     title="Old Sales Order Form"
@@ -326,7 +396,7 @@ const SalesTransactionList = () => {
                                                     <i className="ri-add-line align-bottom me-1"></i> Sales Order
                                                 </Link>
                                             )}
-                                            {pagePermissions.canAdd && (
+                                            {revisedCanAdd && (
                                                 <Link
                                                     to="/revised-sales-order/create"
                                                     className="btn btn-success"
