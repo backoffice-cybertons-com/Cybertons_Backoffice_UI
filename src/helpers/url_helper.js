@@ -170,6 +170,7 @@ export const GET_PENDING_INVOICES = "/api/paymentReceipt/pending";
 
 // Journal
 export const GET_DIRECT_JOURNALS = "/api/journal/direct";
+export const GET_JOURNALS_BY_DATE_ACCOUNT = "/api/journal/by-date-account";
 export const ADD_NEW_DIRECT_JOURNAL = "/api/journal/direct";
 export const UPDATE_DIRECT_JOURNAL = "/api/journal/direct";
 export const DELETE_DIRECT_JOURNAL = "/api/journal/direct";

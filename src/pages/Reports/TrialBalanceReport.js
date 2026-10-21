@@ -467,35 +467,35 @@ const TrialBalanceReport = () => {
                                     <CardBody className="pt-0 pb-0">
                                         <Row className="g-1 mb-1">
                                             <Col md={4}>
-                                                <Card className="tb-summary-card tb-summary-debit">
+                                                <Card className={`tb-summary-card tb-summary-debit${isBalanced ? " tb-summary-balanced" : ""}`}>
                                                     <CardBody className="py-1 px-2">
                                                         <div className="d-flex align-items-start justify-content-between gap-2">
                                                             <div className="text-muted text-uppercase fw-semibold tb-summary-label">Total Debit</div>
-                                                            <i className="ri-arrow-right-up-line text-success tb-summary-icon" aria-hidden />
+                                                            <i className={`ri-arrow-right-up-line tb-summary-icon ${isBalanced ? "text-dark" : "text-success"}`} aria-hidden />
                                                         </div>
-                                                        <div className="tb-summary-value text-success mb-0">{formatMoney(totalDebit)}</div>
+                                                        <div className={`tb-summary-value mb-0 ${isBalanced ? "text-dark" : "text-success"}`}>{formatMoney(totalDebit)}</div>
                                                     </CardBody>
                                                 </Card>
                                             </Col>
                                             <Col md={4}>
-                                                <Card className="tb-summary-card tb-summary-credit">
+                                                <Card className={`tb-summary-card tb-summary-credit${isBalanced ? " tb-summary-balanced" : ""}`}>
                                                     <CardBody className="py-1 px-2">
                                                         <div className="d-flex align-items-start justify-content-between gap-2">
                                                             <div className="text-muted text-uppercase fw-semibold tb-summary-label">Total Credit</div>
-                                                            <i className="ri-arrow-right-down-line text-danger tb-summary-icon" aria-hidden />
+                                                            <i className={`ri-arrow-right-down-line tb-summary-icon ${isBalanced ? "text-dark" : "text-danger"}`} aria-hidden />
                                                         </div>
-                                                        <div className="tb-summary-value text-danger mb-0">{formatMoney(totalCredit)}</div>
+                                                        <div className={`tb-summary-value mb-0 ${isBalanced ? "text-dark" : "text-danger"}`}>{formatMoney(totalCredit)}</div>
                                                     </CardBody>
                                                 </Card>
                                             </Col>
                                             <Col md={4}>
-                                                <Card className="tb-summary-card tb-summary-diff">
+                                                <Card className={`tb-summary-card tb-summary-diff${isBalanced ? " tb-summary-balanced" : ""}`}>
                                                     <CardBody className="py-1 px-2">
                                                         <div className="d-flex align-items-start justify-content-between gap-2">
                                                             <div className="text-muted text-uppercase fw-semibold tb-summary-label">Difference</div>
-                                                            <i className={`ri-scales-3-line tb-summary-icon ${isBalanced ? "text-success" : "text-warning"}`} aria-hidden />
+                                                            <i className={`ri-scales-3-line tb-summary-icon ${isBalanced ? "text-dark" : "text-warning"}`} aria-hidden />
                                                         </div>
-                                                        <div className={`tb-summary-value mb-0 ${isBalanced ? "text-success" : "text-warning"}`}>
+                                                        <div className={`tb-summary-value mb-0 ${isBalanced ? "text-dark" : "text-warning"}`}>
                                                             {formatMoney(Math.abs(diff))} {isBalanced ? "" : (diff > 0 ? "(Dr)" : "(Cr)")}
                                                         </div>
                                                     </CardBody>
@@ -534,10 +534,10 @@ const TrialBalanceReport = () => {
                                                                         <span className="tb-account">{row.accountName}</span>
                                                                     </div>
                                                                 </td>
-                                                                <td className="text-end text-success fw-medium">
+                                                                <td className={`text-end fw-medium ${isBalanced ? "text-dark" : "text-success"}`}>
                                                                     {row.debit > 0 ? formatMoney(row.debit) : <span className="text-muted">-</span>}
                                                                 </td>
-                                                                <td className="text-end text-danger pe-3 fw-medium">
+                                                                <td className={`text-end pe-3 fw-medium ${isBalanced ? "text-dark" : "text-danger"}`}>
                                                                     {row.credit > 0 ? formatMoney(row.credit) : <span className="text-muted">-</span>}
                                                                 </td>
                                                             </tr>
@@ -549,8 +549,8 @@ const TrialBalanceReport = () => {
                                             {/* Static Total Strip Under Table */}
                                             <div className="tb-total-strip d-flex align-items-center py-2">
                                                 <div style={{ width: '50%' }} className="text-start ps-4 tb-grand-total-label fw-bold">GRAND TOTAL</div>
-                                                <div style={{ width: '25%' }} className="text-end text-success fw-bold">{formatMoney(totalDebit)}</div>
-                                                <div style={{ width: '25%' }} className="text-end text-danger pe-3 fw-bold">{formatMoney(totalCredit)}</div>
+                                                <div style={{ width: '25%' }} className={`text-end fw-bold ${isBalanced ? "text-dark" : "text-success"}`}>{formatMoney(totalDebit)}</div>
+                                                <div style={{ width: '25%' }} className={`text-end pe-3 fw-bold ${isBalanced ? "text-dark" : "text-danger"}`}>{formatMoney(totalCredit)}</div>
                                             </div>
                                         </div>
                                     </CardBody>

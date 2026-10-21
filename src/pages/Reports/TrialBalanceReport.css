@@ -175,6 +175,16 @@
   background-color: #f7b84b;
 }
 
+/* When balanced (diff = 0): neutral black accents */
+.tb-summary-card.tb-summary-balanced::before {
+  background-color: #212529;
+}
+
+.tb-summary-card.tb-summary-balanced .tb-summary-value,
+.tb-summary-card.tb-summary-balanced .tb-summary-icon {
+  color: #212529 !important;
+}
+
 .tb-summary-card:hover {
   transform: translateY(-3px);
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
@@ -200,7 +210,7 @@
 .tb-summary-value{
   font-size: 0.9375rem;
   line-height: 1.25;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .tb-summary-icon{

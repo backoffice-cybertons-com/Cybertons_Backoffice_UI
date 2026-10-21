@@ -1,18 +1,20 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useCallback } from "react";
 import moment from "moment";
 import {
-    CardBody, Row, Col, Card, Container, Form, Input, Label, Button, CardHeader
+    CardBody, Row, Col, Card, Container, Form, Input, Label, Button, CardHeader, Table, Spinner
 } from "reactstrap";
-import { useNavigate, useParams, useLocation } from "react-router-dom";
+import { useNavigate, useParams, useLocation, Link } from "react-router-dom";
 import Flatpickr from "react-flatpickr";
 import BreadCrumb from "../../Components/Common/BreadCrumb";
+import DeleteModal from "../../Components/Common/DeleteModal";
 import Select from "react-select";
 import { useFormik } from "formik";
 import * as Yup from "yup";
-import { getAccounts, addNewDirectJournal, getDirectJournals } from "../../helpers/fakebackend_helper";
+import { getAccounts, addNewDirectJournal, getDirectJournals, getJournalsByDateAndAccount, deleteDirectJournal } from "../../helpers/fakebackend_helper";
 import { getSelectedFiscalYearId } from "../../utils/fiscalYearStorage";
 import { formatToTwoDecimals } from "../../utils/numberUtils";
-import { toast, ToastContainer } from 'react-toastify';
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import { APIClient } from "../../helpers/api_helper";
 import * as url from "../../helpers/url_helper";
 
@@ -29,6 +31,10 @@ const ExpenseCreate = () => {
     const [mainAccounts, setMainAccounts] = useState([]);
     const [trnAccounts, setTrnAccounts] = useState([]);
     const [vchType, setVchType] = useState("Income");
+    const [relatedJvs, setRelatedJvs] = useState([]);
+    const [relatedLoading, setRelatedLoading] = useState(false);
+    const [selectedTransaction, setSelectedTransaction] = useState(null);
+    const [deleteModal, setDeleteModal] = useState(false);
 
     const today = useMemo(() => new Date(), []);
 
@@ -142,6 +148,25 @@ const ExpenseCreate = () => {
         fetchTrnAccounts();
     }, []);
 
+    const fetchRelatedJvs = useCallback(async (dateValue, accountCode) => {
+        if (!dateValue || !accountCode) {
+            setRelatedJvs([]);
+            return;
+        }
+        try {
+            setRelatedLoading(true);
+            const jvDate = moment(dateValue).format("YYYY-MM-DD");
+            const res = await getJournalsByDateAndAccount(jvDate, accountCode);
+            const data = Array.isArray(res) ? res : (res?.data || []);
+            setRelatedJvs(data);
+        } catch (e) {
+            console.error("Failed to fetch related journals:", e);
+            setRelatedJvs([]);
+        } finally {
+            setRelatedLoading(false);
+        }
+    }, []);
+
     const validation = useFormik({
         enableReinitialize: true,
         initialValues: {
@@ -190,19 +215,13 @@ const ExpenseCreate = () => {
                 const response = await addNewDirectJournal(entries);
                 if (response && (response.success || response.Success || response.data?.success)) {
                     toast.success("Transaction saved successfully!");
-                    // Stay on create page and reset to a fresh entry
+                    // Keep Main Account / Date / Transaction Account as-is; only clear amount fields for next entry
                     setVchType("Income");
-                    validation.resetForm({
-                        values: {
-                            date: today,
-                            mainAccountId: "",
-                            trnAccountId: "",
-                            receivedDr: "0.00",
-                            paidCr: "0.00",
-                            description: "",
-                            gCode: ""
-                        }
-                    });
+                    validation.setFieldValue("receivedDr", "0.00");
+                    validation.setFieldValue("paidCr", "0.00");
+                    validation.setFieldValue("description", "");
+                    validation.setFieldValue("gCode", "");
+                    await fetchRelatedJvs(values.date, values.trnAccountId);
                 } else {
                     toast.error("Failed to save transaction");
                 }
@@ -211,6 +230,11 @@ const ExpenseCreate = () => {
             }
         }
     });
+
+    // Load existing JVs when Transaction Date + Transaction Account change
+    useEffect(() => {
+        fetchRelatedJvs(validation.values.date, validation.values.trnAccountId);
+    }, [validation.values.date, validation.values.trnAccountId, fetchRelatedJvs]);
 
     const handleReceivedChange = (e) => {
         const raw = sanitizeAmountInput(e.target.value);
@@ -232,9 +256,34 @@ const ExpenseCreate = () => {
         }
     };
 
+    const onClickDelete = (transaction) => {
+        setSelectedTransaction(transaction);
+        setDeleteModal(true);
+    };
+
+    const handleDeleteTransaction = async () => {
+        if (!selectedTransaction) return;
+        const rowGCode = selectedTransaction.gCode || selectedTransaction.GCode || selectedTransaction.g_code;
+        try {
+            await deleteDirectJournal(rowGCode);
+            toast.success("Transaction deleted successfully");
+            await fetchRelatedJvs(validation.values.date, validation.values.trnAccountId);
+        } catch (err) {
+            toast.error("Failed to delete transaction");
+        } finally {
+            setDeleteModal(false);
+            setSelectedTransaction(null);
+        }
+    };
+
     return (
         <React.Fragment>
             <div className="page-content">
+                <DeleteModal
+                    show={deleteModal}
+                    onDeleteClick={handleDeleteTransaction}
+                    onCloseClick={() => { setDeleteModal(false); setSelectedTransaction(null); }}
+                />
                 <Container fluid>
                     <BreadCrumb title={isView ? "View Income & Expenses" : isEdit ? "Edit Income & Expenses" : "Add Income & Expenses"} pageTitle="Income/Expense" />
                     <Row>
@@ -335,7 +384,90 @@ const ExpenseCreate = () => {
                             </Card>
                         </Col>
                     </Row>
-                    <ToastContainer />
+
+                    {/* Existing JVs for selected Transaction Date + Transaction Account */}
+                    {validation.values.trnAccountId && (
+                        <Row>
+                            <Col lg={12}>
+                                <Card className="shadow-none border">
+                                    <CardHeader className="bg-light-subtle d-flex align-items-center justify-content-between">
+                                        <h5 className="card-title mb-0">Existing Transactions</h5>
+                                        {relatedLoading && <Spinner size="sm" color="primary" />}
+                                    </CardHeader>
+                                    <CardBody className="p-0">
+                                        <div className="table-responsive">
+                                            <Table className="table table-bordered table-nowrap align-middle mb-0">
+                                                <thead className="table-light">
+                                                    <tr>
+                                                        <th style={{ width: "90px" }}>Action</th>
+                                                        <th>Date</th>
+                                                        <th>Type</th>
+                                                        <th>Debit Account</th>
+                                                        <th>Credit Account</th>
+                                                        <th className="text-end">Amount</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {!relatedLoading && relatedJvs.length === 0 && (
+                                                        <tr>
+                                                            <td colSpan="6" className="text-center text-muted py-3">
+                                                                No transactions found for selected date and account.
+                                                            </td>
+                                                        </tr>
+                                                    )}
+                                                    {relatedJvs.map((row, idx) => {
+                                                        const dateVal = row.jvDate || row.JvDate;
+                                                        const vType = row.vType || row.VType || "";
+                                                        const drName = row.drAccountName || row.DrAccountName || "-";
+                                                        const crName = row.crAccountName || row.CrAccountName || "-";
+                                                        const amount = row.amount ?? row.Amount ?? 0;
+                                                        const rowGCode = row.gCode || row.GCode || row.g_code;
+                                                        const key = row.jvCode || row.JvCode || rowGCode || idx;
+                                                        return (
+                                                            <tr key={key}>
+                                                                <td>
+                                                                    <div className="d-flex align-items-center gap-1">
+                                                                        {rowGCode && (
+                                                                            <Link
+                                                                                to={`/purchases/expense/edit/${rowGCode}`}
+                                                                                className="btn btn-sm btn-soft-info"
+                                                                                title="Edit"
+                                                                            >
+                                                                                <i className="ri-pencil-fill" />
+                                                                            </Link>
+                                                                        )}
+                                                                        {rowGCode && (
+                                                                            <button
+                                                                                type="button"
+                                                                                className="btn btn-sm btn-soft-danger"
+                                                                                onClick={() => onClickDelete(row)}
+                                                                                title="Delete"
+                                                                            >
+                                                                                <i className="ri-delete-bin-fill" />
+                                                                            </button>
+                                                                        )}
+                                                                    </div>
+                                                                </td>
+                                                                <td>{dateVal ? moment(dateVal).format("DD/MM/YYYY") : "-"}</td>
+                                                                <td>
+                                                                    <span className={`badge ${String(vType).toLowerCase() === "income" ? "bg-success-subtle text-success" : "bg-danger-subtle text-danger"}`}>
+                                                                        {vType || "-"}
+                                                                    </span>
+                                                                </td>
+                                                                <td>{drName}</td>
+                                                                <td>{crName}</td>
+                                                                <td className="text-end">{Number(amount).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                                                            </tr>
+                                                        );
+                                                    })}
+                                                </tbody>
+                                            </Table>
+                                        </div>
+                                    </CardBody>
+                                </Card>
+                            </Col>
+                        </Row>
+                    )}
                 </Container>
             </div>
         </React.Fragment>

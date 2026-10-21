@@ -488,6 +488,8 @@ export const getAccounts = () => api.get(url.GET_ACCOUNTS);
 
 // Direct Journal
 export const getDirectJournals = (vType) => api.get(`${url.GET_DIRECT_JOURNALS}/${vType}`);
+export const getJournalsByDateAndAccount = (jvDate, accountCode) =>
+  api.get(url.GET_JOURNALS_BY_DATE_ACCOUNT, { jvDate, accountCode });
 export const addNewDirectJournal = (data) => api.create(url.ADD_NEW_DIRECT_JOURNAL, data);
 export const deleteDirectJournal = (gCode) => api.delete(`${url.DELETE_DIRECT_JOURNAL}/${gCode}`);
 
