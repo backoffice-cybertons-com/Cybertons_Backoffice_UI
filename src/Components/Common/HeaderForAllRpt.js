@@ -13,7 +13,10 @@ const selectLayoutProperties = createSelector(selectLayoutState, (layout) => ({
   layoutModeType: layout.layoutModeType,
 }));
 
-const HeaderForAllRpt = ({ reportName = "Outstanding Comparison Report" }) => {
+const HeaderForAllRpt = ({
+  reportName = "Outstanding Comparison Report",
+  reportMeta = null,
+}) => {
   const { layoutModeType } = useSelector(selectLayoutProperties);
   const isDarkMode = layoutModeType === "dark";
   const [companyInfo, setCompanyInfo] = useState(null);
@@ -36,102 +39,54 @@ const HeaderForAllRpt = ({ reportName = "Outstanding Comparison Report" }) => {
   const companyEmail = companyInfo?.email || "";
 
   return (
-      <div
-        className={`border-bottom mb-1 pb-1 header-for-all-rpt${isDarkMode ? " header-for-all-rpt--dark" : ""}`}
-        style={{
-          background: "var(--vz-card-bg, #fff)",
-          borderBottom: "1px solid var(--vz-border-color, #e9ebec)",
-          padding: "10px 18px",
-        }}
-      >
-        <div className="d-flex justify-content-between align-items-start flex-wrap">
-
-          {/* Left Side */}
-          <div className="d-flex align-items-start">
-
-            {/* Logo */}
+    <div
+      className={`header-for-all-rpt${isDarkMode ? " header-for-all-rpt--dark" : ""}`}
+    >
+      <div className="rpt-header-inner">
+        <div className="rpt-header-left">
+          <div className="rpt-header-brand">
             <img
+              className="rpt-header-logo"
               src={
                 companyInfo?.logoPath
                   ? `${process.env.REACT_APP_API_URL}${companyInfo.logoPath}`
                   : companyLogo
               }
               alt="Company Logo"
-              style={{
-                width: "95px",
-                height: "95px",
-                objectFit: "contain",
-                marginRight: "14px",
-              }}
             />
+            <span className="rpt-header-company-name">{companyName}</span>
+          </div>
 
-            {/* Company Details */}
-            <div
-              style={{
-                height: "95px",
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "space-between",
-                paddingBottom: "2px",
-              }}
-            >
-              <h5
-                style={{
-                  margin: 0,
-                  fontWeight: "700",
-                  color: "var(--vz-heading-color, #111)",
-                  fontSize: "16px",
-                }}
-              >
-                {companyName}
-              </h5>
+          <div className="rpt-header-divider" aria-hidden="true" />
 
-              <div
-                className="rpt-company-meta"
-                style={{
-                  fontSize: "11px",
-                  color: "var(--vz-secondary-color, #444)",
-                  lineHeight: "1.4",
-                }}
-              >
-                <div>{companyAddress}</div>
-
-                <div>
-                  <strong>Tel:</strong> {companyMobile}
-                </div>
-
-                <div>
-                  <strong>Email:</strong> {companyEmail}
-                </div>
-              </div>
+          <div className="rpt-header-details">
+            <div className="rpt-header-address">{companyAddress}</div>
+            <div className="rpt-header-contact">
+              <span>
+                <strong>Tel:</strong> {companyMobile || "-"}
+              </span>
+              <span className="rpt-header-sep">|</span>
+              <span>
+                <strong>Email:</strong> {companyEmail || "-"}
+              </span>
             </div>
           </div>
-
-          {/* Right Side */}
-          <div
-            className="rpt-header-badge"
-            style={{
-              background: "var(--vz-light, #eff6ff)",
-              padding: "10px 16px",
-              borderRadius: "8px",
-              border: "1px solid var(--vz-border-color, #bfdbfe)",
-              minWidth: "240px",
-              textAlign: "center",
-            }}
-          >
-            <h4
-              style={{
-                margin: 0,
-                fontSize: "18px",
-                fontWeight: "700",
-                color: "var(--vz-primary, #1e3a8a)",
-              }}
-            >
-              {reportName}
-            </h4>
-          </div>
         </div>
+
+        {reportName || reportMeta ? (
+          <div className={`rpt-header-right${reportMeta ? " rpt-header-right--with-meta" : ""}`}>
+            {reportName ? (
+              <div className="rpt-header-badge">
+                <h4>{reportName}</h4>
+              </div>
+            ) : null}
+            {reportMeta ? (
+              <div className="rpt-header-meta-group">{reportMeta}</div>
+            ) : null}
+          </div>
+        ) : null}
       </div>
+    </div>
   );
 };
 

@@ -219,66 +219,35 @@ const SalesInvoiceMrp = () => {
                         </div>
                     </div>
 
-                    {/* Company Row */}
-                    <div
-                        style={{
-                            position: "relative",
-                            textAlign: "center",
-                            padding: "10px 0 6px",
-                        }}
-                    >
-                        {/* Logo Container */}
-                        <div
-                            style={{
-                                position: "absolute",
-                                left: "14px",
-                                top: "46%",
-                                transform: "translateY(-50%)",
-                                width: "100px",
-                                height: "80px",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                overflow: "hidden"
-                            }}
-                        >
-                            <img
-                                src={
-                                    company?.logoPath
-                                        ? `${process.env.REACT_APP_API_URL}${company.logoPath}`
-                                        : ""
-                                }
-                                alt="logo"
-                                style={{
-                                    maxWidth: "100%",
-                                    maxHeight: "100%",
-                                    objectFit: "contain",
-                                }}
-                            />
-                        </div>
-
-                        {/* Company Details */}
-                        <div className="si-company-block">
-                            <div className="si-company-name">
-                                {companyName}
+                    {/* Company Row — compact horizontal */}
+                    <div className="si-company-row">
+                        <div className="si-company-brand">
+                            <div className="si-company-logo">
+                                {company?.logoPath ? (
+                                    <img
+                                        src={`${process.env.REACT_APP_API_URL}${company.logoPath}`}
+                                        alt="logo"
+                                    />
+                                ) : null}
                             </div>
-
-                            <div className="si-company-info">
+                            <div className="si-company-name">{companyName}</div>
+                        </div>
+                        <div className="si-company-divider" aria-hidden="true" />
+                        <div className="si-company-details">
+                            <div className="si-company-address">
                                 {[companyAddress, companyCity, companyState, companyPin]
                                     .filter(Boolean)
                                     .join(", ")}
-
-                                <br />
-
-                                Mobile No. : {companyMobile}
-                                &nbsp;/&nbsp;
-                                E-mail : {companyEmail}
-
-                                <br />
-
-                                GSTIN No. : {companyGstin}
-                                &nbsp;/&nbsp;
-                                State : {companyState}
+                            </div>
+                            <div className="si-company-contact">
+                                Tel: {companyMobile || "-"}
+                                &nbsp;|&nbsp;
+                                Email: {companyEmail || "-"}
+                                {companyGstin ? (
+                                    <>
+                                        &nbsp;|&nbsp;GSTIN: {companyGstin}
+                                    </>
+                                ) : null}
                             </div>
                         </div>
                     </div>

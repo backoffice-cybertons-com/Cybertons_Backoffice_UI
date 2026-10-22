@@ -6,19 +6,33 @@ import {
 import { useNavigate, useParams, useLocation, Link } from "react-router-dom";
 import Flatpickr from "react-flatpickr";
 import BreadCrumb from "../../Components/Common/BreadCrumb";
-import DeleteModal from "../../Components/Common/DeleteModal";
 import Select from "react-select";
 import { useFormik } from "formik";
 import * as Yup from "yup";
-import { getAccounts, addNewDirectJournal, getDirectJournals, getJournalsByDateAndAccount, deleteDirectJournal } from "../../helpers/fakebackend_helper";
+import { getAccounts, addNewDirectJournal, getDirectJournals } from "../../helpers/fakebackend_helper";
 import { getSelectedFiscalYearId } from "../../utils/fiscalYearStorage";
 import { formatToTwoDecimals } from "../../utils/numberUtils";
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { APIClient } from "../../helpers/api_helper";
 import * as url from "../../helpers/url_helper";
+import secureStorage from "../../utils/secureStorage";
 
 const api = new APIClient();
+
+const fmtMoney = (n) =>
+    Number(n || 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+const balanceLabel = (bal) => {
+    if (bal === null || bal === undefined) return "";
+    const abs = Math.abs(bal);
+    return `${fmtMoney(abs)} ${bal >= 0 ? "Dr" : "Cr"}`;
+};
+
+const balClass = (bal) => {
+    if (bal === null || bal === undefined) return "";
+    return bal >= 0 ? "text-success" : "text-danger";
+};
 
 const ExpenseCreate = () => {
     const history = useNavigate();
@@ -31,10 +45,10 @@ const ExpenseCreate = () => {
     const [mainAccounts, setMainAccounts] = useState([]);
     const [trnAccounts, setTrnAccounts] = useState([]);
     const [vchType, setVchType] = useState("Income");
-    const [relatedJvs, setRelatedJvs] = useState([]);
-    const [relatedLoading, setRelatedLoading] = useState(false);
-    const [selectedTransaction, setSelectedTransaction] = useState(null);
-    const [deleteModal, setDeleteModal] = useState(false);
+    const [ledgerData, setLedgerData] = useState(null);
+    const [ledgerLoading, setLedgerLoading] = useState(false);
+    const [ledgerFromDate, setLedgerFromDate] = useState(() => moment().subtract(5, "days").toDate());
+    const [ledgerToDate, setLedgerToDate] = useState(() => new Date());
 
     const today = useMemo(() => new Date(), []);
 
@@ -148,22 +162,28 @@ const ExpenseCreate = () => {
         fetchTrnAccounts();
     }, []);
 
-    const fetchRelatedJvs = useCallback(async (dateValue, accountCode) => {
-        if (!dateValue || !accountCode) {
-            setRelatedJvs([]);
+    const fetchMainAccountLedger = useCallback(async (fromDateValue, toDateValue, accountCode) => {
+        if (!fromDateValue || !toDateValue || !accountCode) {
+            setLedgerData(null);
             return;
         }
         try {
-            setRelatedLoading(true);
-            const jvDate = moment(dateValue).format("YYYY-MM-DD");
-            const res = await getJournalsByDateAndAccount(jvDate, accountCode);
-            const data = Array.isArray(res) ? res : (res?.data || []);
-            setRelatedJvs(data);
+            setLedgerLoading(true);
+            const fromDate = moment(fromDateValue).format("YYYY-MM-DD");
+            const toDate = moment(toDateValue).format("YYYY-MM-DD");
+            const companyId = secureStorage.getPlain("companyId") || 10001;
+            const response = await api.get(url.GET_LEDGER_REPORT, {
+                companyId,
+                accountCode,
+                fromDate,
+                toDate,
+            });
+            setLedgerData(response || null);
         } catch (e) {
-            console.error("Failed to fetch related journals:", e);
-            setRelatedJvs([]);
+            console.error("Failed to fetch main account ledger:", e);
+            setLedgerData(null);
         } finally {
-            setRelatedLoading(false);
+            setLedgerLoading(false);
         }
     }, []);
 
@@ -221,7 +241,7 @@ const ExpenseCreate = () => {
                     validation.setFieldValue("paidCr", "0.00");
                     validation.setFieldValue("description", "");
                     validation.setFieldValue("gCode", "");
-                    await fetchRelatedJvs(values.date, values.trnAccountId);
+                    await fetchMainAccountLedger(ledgerFromDate, ledgerToDate, values.mainAccountId);
                 } else {
                     toast.error("Failed to save transaction");
                 }
@@ -231,10 +251,10 @@ const ExpenseCreate = () => {
         }
     });
 
-    // Load existing JVs when Transaction Date + Transaction Account change
+    // Load main account ledger when From/To filter or Main Account change
     useEffect(() => {
-        fetchRelatedJvs(validation.values.date, validation.values.trnAccountId);
-    }, [validation.values.date, validation.values.trnAccountId, fetchRelatedJvs]);
+        fetchMainAccountLedger(ledgerFromDate, ledgerToDate, validation.values.mainAccountId);
+    }, [ledgerFromDate, ledgerToDate, validation.values.mainAccountId, fetchMainAccountLedger]);
 
     const handleReceivedChange = (e) => {
         const raw = sanitizeAmountInput(e.target.value);
@@ -256,41 +276,79 @@ const ExpenseCreate = () => {
         }
     };
 
-    const onClickDelete = (transaction) => {
-        setSelectedTransaction(transaction);
-        setDeleteModal(true);
+    const getVchLink = (item) => {
+        if (!item || !item.vType) return "#";
+        const vt = String(item.vType).toUpperCase();
+        const vchId = item.vCode || item.id;
+        if (!vchId || vchId === 0) return "#";
+        if (vt === "SALES" || vt === "SALE") return `/sales-order/edit/${vchId}?view=true`;
+        if (vt === "PURCHASE") return `/purchase-transaction/edit/${vchId}?view=true`;
+        if (vt === "PAYMENT" || vt === "RECEIPT") return `/payment-receipt/edit/${vchId}?view=true`;
+        if (vt === "INCOME" || vt === "EXPENSE") return `/purchases/expense/edit/${vchId}?view=true`;
+        return "#";
     };
 
-    const handleDeleteTransaction = async () => {
-        if (!selectedTransaction) return;
-        const rowGCode = selectedTransaction.gCode || selectedTransaction.GCode || selectedTransaction.g_code;
-        try {
-            await deleteDirectJournal(rowGCode);
-            toast.success("Transaction deleted successfully");
-            await fetchRelatedJvs(validation.values.date, validation.values.trnAccountId);
-        } catch (err) {
-            toast.error("Failed to delete transaction");
-        } finally {
-            setDeleteModal(false);
-            setSelectedTransaction(null);
-        }
-    };
+    const mainAccountLabel = mainAccounts.find(a => a.value === validation.values.mainAccountId)?.label || "Main Account";
+    const ledgerEntries = ledgerData?.entries || ledgerData?.Entries || [];
+    const openingBalance = ledgerData?.openingBalance ?? ledgerData?.OpeningBalance ?? 0;
+    const closingBalance = ledgerData?.closingBalance ?? ledgerData?.ClosingBalance ?? 0;
+    const totalDr = ledgerEntries.reduce((sum, e) => sum + Number(e.debit ?? e.Debit ?? 0), 0);
+    const totalCr = ledgerEntries.reduce((sum, e) => sum + Number(e.credit ?? e.Credit ?? 0), 0);
 
     return (
         <React.Fragment>
             <div className="page-content">
-                <DeleteModal
-                    show={deleteModal}
-                    onDeleteClick={handleDeleteTransaction}
-                    onCloseClick={() => { setDeleteModal(false); setSelectedTransaction(null); }}
-                />
                 <Container fluid>
                     <BreadCrumb title={isView ? "View Income & Expenses" : isEdit ? "Edit Income & Expenses" : "Add Income & Expenses"} pageTitle="Income/Expense" />
+
                     <Row>
                         <Col lg={12}>
                             <Card className="shadow-none border">
-                                <CardHeader className="bg-light-subtle">
-                                    <h5 className="card-title mb-0">Transaction Detail</h5>
+                                <CardHeader className="bg-light-subtle d-flex align-items-center flex-wrap gap-2 py-2">
+                                    <h5 className="card-title mb-0 me-2">Transaction Detail</h5>
+                                    {validation.submitCount > 0 && (validation.errors.mainAccountId || validation.errors.trnAccountId) && (
+                                        <div className="d-flex align-items-center gap-2 flex-wrap">
+                                            {validation.errors.mainAccountId && (
+                                                <small className="text-danger fw-semibold text-nowrap">
+                                                    <i className="ri-error-warning-line me-1 align-middle" />
+                                                    {validation.errors.mainAccountId}
+                                                </small>
+                                            )}
+                                            {validation.errors.trnAccountId && (
+                                                <small className="text-danger fw-semibold text-nowrap">
+                                                    <i className="ri-error-warning-line me-1 align-middle" />
+                                                    {validation.errors.trnAccountId}
+                                                </small>
+                                            )}
+                                        </div>
+                                    )}
+                                    <div className="d-flex align-items-center gap-2 ms-auto flex-wrap">
+                                        <div className="d-flex align-items-center gap-2 bg-white border rounded px-2 py-1">
+                                            <Label className="text-muted text-uppercase fw-semibold mb-0 text-nowrap" style={{ fontSize: '11px' }}>
+                                                <i className="ri-calendar-line me-1 align-middle" />From Date
+                                            </Label>
+                                            <Flatpickr
+                                                className="form-control form-control-sm"
+                                                style={{ width: 130, height: 28, paddingTop: 2, paddingBottom: 2 }}
+                                                options={{ dateFormat: "d/m/Y" }}
+                                                value={ledgerFromDate}
+                                                onChange={(d) => d[0] && setLedgerFromDate(d[0])}
+                                            />
+                                        </div>
+                                        <span className="text-muted fw-semibold">—</span>
+                                        <div className="d-flex align-items-center gap-2 bg-white border rounded px-2 py-1">
+                                            <Label className="text-muted text-uppercase fw-semibold mb-0 text-nowrap" style={{ fontSize: '11px' }}>
+                                                <i className="ri-calendar-check-line me-1 align-middle" />To Date
+                                            </Label>
+                                            <Flatpickr
+                                                className="form-control form-control-sm"
+                                                style={{ width: 130, height: 28, paddingTop: 2, paddingBottom: 2 }}
+                                                options={{ dateFormat: "d/m/Y" }}
+                                                value={ledgerToDate}
+                                                onChange={(d) => d[0] && setLedgerToDate(d[0])}
+                                            />
+                                        </div>
+                                    </div>
                                 </CardHeader>
                                 <CardBody>
                                     <Form onSubmit={validation.handleSubmit}>
@@ -307,7 +365,6 @@ const ExpenseCreate = () => {
                                                     onChange={opt => validation.setFieldValue("mainAccountId", opt?.value)}
                                                     isSearchable={true}
                                                 />
-                                                {validation.errors.mainAccountId && <small className="text-danger">{validation.errors.mainAccountId}</small>}
                                             </Col>
                                         </Row>
 
@@ -328,7 +385,6 @@ const ExpenseCreate = () => {
                                                     onChange={opt => validation.setFieldValue("trnAccountId", opt?.value)}
                                                     isSearchable={true}
                                                 />
-                                                {validation.errors.trnAccountId && <small className="text-danger">{validation.errors.trnAccountId}</small>}
                                             </Col>
 
                                             <Col md={2}>
@@ -385,84 +441,100 @@ const ExpenseCreate = () => {
                         </Col>
                     </Row>
 
-                    {/* Existing JVs for selected Transaction Date + Transaction Account */}
-                    {validation.values.trnAccountId && (
+                    {/* Main Account Ledger for From–To filter range */}
+                    {validation.values.mainAccountId && (
                         <Row>
                             <Col lg={12}>
                                 <Card className="shadow-none border">
-                                    <CardHeader className="bg-light-subtle d-flex align-items-center justify-content-between">
-                                        <h5 className="card-title mb-0">Existing Transactions</h5>
-                                        {relatedLoading && <Spinner size="sm" color="primary" />}
+                                    <CardHeader className="bg-light-subtle d-flex align-items-center justify-content-between flex-wrap gap-2">
+                                        <div>
+                                            <h5 className="card-title mb-0">Ledger — {mainAccountLabel}</h5>
+                                            <div className="text-muted fs-12 mt-1">
+                                                {moment(ledgerFromDate).format("DD/MM/YYYY")}
+                                                {" to "}
+                                                {moment(ledgerToDate).format("DD/MM/YYYY")}
+                                            </div>
+                                        </div>
+                                        <div className="d-flex align-items-center gap-3">
+                                            <div className="text-end">
+                                                <div className="fs-11 text-muted text-uppercase">Opening</div>
+                                                <div className="fw-semibold">{balanceLabel(openingBalance)}</div>
+                                            </div>
+                                            <div className="text-end border-start ps-3">
+                                                <div className="fs-11 text-muted text-uppercase">Closing</div>
+                                                <div className={`fw-semibold ${balClass(closingBalance)}`}>{balanceLabel(closingBalance)}</div>
+                                            </div>
+                                            {ledgerLoading && <Spinner size="sm" color="primary" />}
+                                        </div>
                                     </CardHeader>
                                     <CardBody className="p-0">
-                                        <div className="table-responsive">
-                                            <Table className="table table-bordered table-nowrap align-middle mb-0">
-                                                <thead className="table-light">
+                                        <div className="table-responsive" style={{ maxHeight: 420, overflowY: "auto" }}>
+                                            <Table className="table table-hover table-nowrap align-middle mb-0">
+                                                <thead className="table-light text-uppercase fs-11" style={{ position: "sticky", top: 0, zIndex: 1 }}>
                                                     <tr>
-                                                        <th style={{ width: "90px" }}>Action</th>
                                                         <th>Date</th>
                                                         <th>Type</th>
-                                                        <th>Debit Account</th>
-                                                        <th>Credit Account</th>
-                                                        <th className="text-end">Amount</th>
+                                                        <th>No</th>
+                                                        <th>Particulars</th>
+                                                        <th className="text-end">Debit (Dr)</th>
+                                                        <th className="text-end">Credit (Cr)</th>
+                                                        <th className="text-end">Balance</th>
                                                     </tr>
                                                 </thead>
-                                                <tbody>
-                                                    {!relatedLoading && relatedJvs.length === 0 && (
+                                                <tbody className="fs-12">
+                                                    {!ledgerLoading && ledgerEntries.length === 0 && (
                                                         <tr>
-                                                            <td colSpan="6" className="text-center text-muted py-3">
-                                                                No transactions found for selected date and account.
+                                                            <td colSpan="7" className="text-center text-muted py-3">
+                                                                No ledger entries for selected main account and date range.
                                                             </td>
                                                         </tr>
                                                     )}
-                                                    {relatedJvs.map((row, idx) => {
-                                                        const dateVal = row.jvDate || row.JvDate;
-                                                        const vType = row.vType || row.VType || "";
-                                                        const drName = row.drAccountName || row.DrAccountName || "-";
-                                                        const crName = row.crAccountName || row.CrAccountName || "-";
-                                                        const amount = row.amount ?? row.Amount ?? 0;
-                                                        const rowGCode = row.gCode || row.GCode || row.g_code;
-                                                        const key = row.jvCode || row.JvCode || rowGCode || idx;
+                                                    {ledgerEntries.map((e, i) => {
+                                                        const debit = Number(e.debit ?? e.Debit ?? 0);
+                                                        const credit = Number(e.credit ?? e.Credit ?? 0);
+                                                        const balance = e.balance ?? e.Balance;
+                                                        const vType = e.vType || e.VType || "";
+                                                        const vCode = e.vCode ?? e.VCode ?? "";
+                                                        const link = getVchLink(e);
                                                         return (
-                                                            <tr key={key}>
+                                                            <tr key={e.id || e.Id || `${vCode}-${i}`}>
+                                                                <td>{moment(e.jvDate || e.JvDate).format("DD/MM/YYYY")}</td>
                                                                 <td>
-                                                                    <div className="d-flex align-items-center gap-1">
-                                                                        {rowGCode && (
-                                                                            <Link
-                                                                                to={`/purchases/expense/edit/${rowGCode}`}
-                                                                                className="btn btn-sm btn-soft-info"
-                                                                                title="Edit"
-                                                                            >
-                                                                                <i className="ri-pencil-fill" />
-                                                                            </Link>
-                                                                        )}
-                                                                        {rowGCode && (
-                                                                            <button
-                                                                                type="button"
-                                                                                className="btn btn-sm btn-soft-danger"
-                                                                                onClick={() => onClickDelete(row)}
-                                                                                title="Delete"
-                                                                            >
-                                                                                <i className="ri-delete-bin-fill" />
-                                                                            </button>
-                                                                        )}
-                                                                    </div>
+                                                                    {link !== "#" ? (
+                                                                        <Link to={link} className="badge bg-info-subtle text-info">{vType || "-"}</Link>
+                                                                    ) : (
+                                                                        <span className="badge bg-secondary-subtle text-secondary">{vType || "-"}</span>
+                                                                    )}
                                                                 </td>
-                                                                <td>{dateVal ? moment(dateVal).format("DD/MM/YYYY") : "-"}</td>
-                                                                <td>
-                                                                    <span className={`badge ${String(vType).toLowerCase() === "income" ? "bg-success-subtle text-success" : "bg-danger-subtle text-danger"}`}>
-                                                                        {vType || "-"}
-                                                                    </span>
-                                                                </td>
-                                                                <td>{drName}</td>
-                                                                <td>{crName}</td>
-                                                                <td className="text-end">{Number(amount).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                                                                <td>{vCode || "-"}</td>
+                                                                <td className="text-wrap">{e.description || e.Description || "-"}</td>
+                                                                <td className="text-end text-success">{debit > 0 ? fmtMoney(debit) : "-"}</td>
+                                                                <td className="text-end text-danger">{credit > 0 ? fmtMoney(credit) : "-"}</td>
+                                                                <td className={`text-end fw-semibold ${balClass(balance)}`}>{balanceLabel(balance)}</td>
                                                             </tr>
                                                         );
                                                     })}
                                                 </tbody>
                                             </Table>
                                         </div>
+                                        {ledgerData && (
+                                            <div className="border-top bg-light bg-opacity-50 px-3 py-2">
+                                                <Row className="g-2 align-items-center">
+                                                    <Col md={4} className="text-md-end">
+                                                        <span className="text-muted text-uppercase fs-11 fw-semibold me-2">Total Debit</span>
+                                                        <span className="fw-bold text-success">{fmtMoney(totalDr)}</span>
+                                                    </Col>
+                                                    <Col md={4} className="text-md-end">
+                                                        <span className="text-muted text-uppercase fs-11 fw-semibold me-2">Total Credit</span>
+                                                        <span className="fw-bold text-danger">{fmtMoney(totalCr)}</span>
+                                                    </Col>
+                                                    <Col md={4} className="text-md-end">
+                                                        <span className="text-muted text-uppercase fs-11 fw-semibold me-2">Closing</span>
+                                                        <span className={`fw-bold ${balClass(closingBalance)}`}>{balanceLabel(closingBalance)}</span>
+                                                    </Col>
+                                                </Row>
+                                            </div>
+                                        )}
                                     </CardBody>
                                 </Card>
                             </Col>

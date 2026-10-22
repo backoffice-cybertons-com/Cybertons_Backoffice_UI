@@ -1,14 +1,176 @@
-/* HeaderForAllRpt — theme-aware report header */
+/* HeaderForAllRpt — compact, space-optimized report header */
 
-.header-for-all-rpt .rpt-header-badge h4 {
-  line-height: 1.25;
+.header-for-all-rpt {
+  background: var(--vz-card-bg, #fff);
+  border: 1px solid var(--vz-border-color, #e6eaf0);
+  border-radius: 6px;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
+  padding: 6px 12px;
+  margin-bottom: 8px;
+  zoom:1.5;
 }
 
-/* Dark theme (Bootstrap data-bs-theme + component class) */
+.rpt-header-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.rpt-header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  flex: 1;
+}
+
+.rpt-header-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.rpt-header-logo {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  display: block;
+}
+
+.rpt-header-company-name {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.2px;
+  color: var(--vz-heading-color, #1a2744);
+  white-space: nowrap;
+  line-height: 1.2;
+}
+
+.rpt-header-divider {
+  width: 1px;
+  align-self: stretch;
+  min-height: 28px;
+  background: #d5dbe5;
+  flex-shrink: 0;
+}
+
+.rpt-header-details {
+  min-width: 0;
+  font-size: 9px;
+  line-height: 1.35;
+  color: #5a6a7a;
+}
+
+.rpt-header-address {
+  text-transform: uppercase;
+  letter-spacing: 0.15px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rpt-header-contact {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0;
+  margin-top: 1px;
+}
+
+.rpt-header-contact strong {
+  font-weight: 600;
+  color: #4a5a6a;
+}
+
+.rpt-header-sep {
+  margin: 0 6px;
+  color: #a0aab8;
+}
+
+.rpt-header-right {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  min-width: 0;
+}
+
+.rpt-header-right--with-meta {
+  flex-wrap: wrap;
+  gap: 0.35rem 0.5rem;
+  max-width: min(100%, 640px);
+}
+
+.rpt-header-badge {
+  background: var(--vz-light, #eff6ff);
+  padding: 4px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--vz-border-color, #bfdbfe);
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.rpt-header-badge h4 {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--vz-primary, #1e3a8a);
+  line-height: 1.25;
+  white-space: nowrap;
+}
+
+.rpt-header-meta-group {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.3rem 0.45rem;
+  min-width: 0;
+  background: transparent;
+}
+
+.rpt-header-meta {
+  font-size: 8px; /* was 10px — smaller than Balance Sheet title */
+  font-weight: 500;
+  color: #475569;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.rpt-header-meta-sep {
+  width: 1px;
+  height: 10px;
+  background: #cbd5e1;
+  flex-shrink: 0;
+}
+
+.rpt-header-status {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0.1rem 0.4rem;
+  font-size: 7px; /* was 9px */
+  font-weight: 700;
+  line-height: 1.2;
+  color: #fff;
+  white-space: nowrap;
+}
+
+.rpt-header-status--success {
+  background: #198754;
+}
+
+.rpt-header-status--warning {
+  background: #f59e0b;
+}
+
+/* Dark theme */
 [data-bs-theme="dark"] .header-for-all-rpt,
 .header-for-all-rpt--dark {
   background: var(--vz-card-bg, #212529) !important;
-  border-bottom-color: var(--vz-border-color, #32383e) !important;
+  border-color: var(--vz-border-color, #32383e) !important;
 }
 
 [data-bs-theme="dark"] .header-for-all-rpt .rpt-header-badge,
@@ -22,21 +184,37 @@
   color: #a8b4f0 !important;
 }
 
-[data-bs-theme="dark"] .header-for-all-rpt h5,
-.header-for-all-rpt--dark h5 {
+[data-bs-theme="dark"] .header-for-all-rpt .rpt-header-company-name,
+.header-for-all-rpt--dark .rpt-header-company-name {
   color: var(--vz-heading-color, #e9ecef) !important;
 }
 
-[data-bs-theme="dark"] .header-for-all-rpt .rpt-company-meta,
-.header-for-all-rpt--dark .rpt-company-meta {
+[data-bs-theme="dark"] .header-for-all-rpt .rpt-header-details,
+.header-for-all-rpt--dark .rpt-header-details {
   color: var(--vz-secondary-color, #adb5bd) !important;
+}
+
+[data-bs-theme="dark"] .header-for-all-rpt .rpt-header-divider,
+.header-for-all-rpt--dark .rpt-header-divider {
+  background: #3d4449 !important;
+}
+
+[data-bs-theme="dark"] .header-for-all-rpt .rpt-header-meta,
+.header-for-all-rpt--dark .rpt-header-meta {
+  color: #adb5bd !important;
+}
+
+[data-bs-theme="dark"] .header-for-all-rpt .rpt-header-meta-sep,
+.header-for-all-rpt--dark .rpt-header-meta-sep {
+  background: #3d4449 !important;
 }
 
 @media print {
   .header-for-all-rpt,
   .header-for-all-rpt--dark {
     background: #fff !important;
-    border-bottom: 1px solid #e9ebec !important;
+    border: 1px solid #e6eaf0 !important;
+    box-shadow: none !important;
   }
 
   .rpt-header-badge {
@@ -46,5 +224,13 @@
 
   .rpt-header-badge h4 {
     color: #1e3a8a !important;
+  }
+
+  .rpt-header-company-name {
+    color: #1a2744 !important;
+  }
+
+  .rpt-header-details {
+    color: #5a6a7a !important;
   }
 }

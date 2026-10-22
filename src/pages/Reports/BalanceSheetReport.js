@@ -1,10 +1,8 @@
 import React, { useMemo, useState } from "react";
 import {
-    Badge,
     Button,
     Card,
     CardBody,
-    CardHeader,
     Col,
     Container,
     Input,
@@ -382,25 +380,22 @@ const BalanceSheetReport = () => {
 
                     {reportData && detailRows.length > 0 && (
                         <Card id="balanceSheetPrintArea" className="bs-report-card">
-                            <HeaderForAllReport reportName="Balance Sheet" />
-
-                            <CardHeader className="border-0 py-2">
-                                <div className="d-flex align-items-start align-items-md-center justify-content-between flex-wrap gap-2">
-                                    <div>
-                                        <div className="d-flex align-items-center gap-2 flex-wrap">
-                                            <h6 className="card-title mb-0 fs-6 fw-semibold">Balance Sheet</h6>
-                                            <Badge color={isBalanced ? "success" : "warning"} className="bs-pill">
-                                                {isBalanced ? "Balanced" : "Difference"}
-                                            </Badge>
-                                            <span className="text-muted fs-12">As of <strong>{formatDate(asOfDate)}</strong></span>
-                                        </div>
-                                        <div className="text-muted fs-11 mt-1">
-                                            Showing <strong>{shownRows.length}</strong> of <strong>{detailRows.length}</strong> ledgers
-                                            {query.trim() ? <> | Filter: <strong>{query.trim()}</strong></> : null}
-                                        </div>
-                                    </div>
-                                </div>
-                            </CardHeader>
+                            <HeaderForAllReport
+                                reportName="Balance Sheet"
+                                reportMeta={
+                                    <>
+                                        <span className={`rpt-header-status rpt-header-status--${isBalanced ? "success" : "warning"}`}>
+                                            {isBalanced ? "Balanced" : "Difference"}
+                                        </span>
+                                        <span className="rpt-header-meta">As of {formatDate(asOfDate)}</span>
+                                        <span className="rpt-header-meta-sep" aria-hidden="true" />
+                                        <span className="rpt-header-meta">
+                                            Showing {shownRows.length} of {detailRows.length} ledgers
+                                            {query.trim() ? <> · Filter: {query.trim()}</> : null}
+                                        </span>
+                                    </>
+                                }
+                            />
 
                             <CardBody className="bs-report-body">
                                 <div className="bs-summary-grid">
