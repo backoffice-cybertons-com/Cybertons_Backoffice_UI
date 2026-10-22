@@ -9,7 +9,7 @@ import * as signalR from "@microsoft/signalr";
 // CRA automatically picks the right .env file based on NODE_ENV.
 // Strip any trailing slash so hub paths concatenate cleanly.
 // ─────────────────────────────────────────────────────────────────────────────
-const rawBaseUrl = process.env.REACT_APP_API_URL || "https://localhost:7067";
+const rawBaseUrl = process.env.REACT_APP_API_URL || "https://api.cybertons.com";
 export const API_BASE_URL = rawBaseUrl.replace(/\/+$/, "");
 
 // ─────────────────────────────────────────────────────────────────────────────

@@ -24,7 +24,7 @@ import { getSelectedFiscalYearId } from '../../utils/fiscalYearStorage';
 const config = {
   // Base URL from environment variable (.env)
   // fallback to localhost if not set
-  baseURL: process.env.REACT_APP_API_URL || 'https://localhost:7067',
+  baseURL: process.env.REACT_APP_API_URL || 'https://api.cybertons.com',
   headers: {
     'Content-Type': 'application/json',
   },

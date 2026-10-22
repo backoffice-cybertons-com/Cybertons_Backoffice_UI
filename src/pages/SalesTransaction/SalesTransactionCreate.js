@@ -526,27 +526,28 @@ const SalesTransactionCreate = () => {
             }
 
             // ---- Stock quantity check ----
-            const stockViolations = values.lines
-                .filter(line => line.productId)
-                .map(line => {
-                    const pid = String(line.productId);
-                    const available = stockMap[pid] ?? null;
-                    const ordered = parseFloat(line.crt) || 0;
-                    if (available !== null && ordered > available) {
-                        const prodLabel = products.find(p => String(p.value) === pid)?.label || `Product #${pid}`;
-                        return { prodLabel, ordered, available };
-                    }
-                    return null;
-                })
-                .filter(Boolean);
+            // TEMP: commented out so sales can proceed even when stock is negative / insufficient
+            // const stockViolations = values.lines
+            //     .filter(line => line.productId)
+            //     .map(line => {
+            //         const pid = String(line.productId);
+            //         const available = stockMap[pid] ?? null;
+            //         const ordered = parseFloat(line.crt) || 0;
+            //         if (available !== null && ordered > available) {
+            //             const prodLabel = products.find(p => String(p.value) === pid)?.label || `Product #${pid}`;
+            //             return { prodLabel, ordered, available };
+            //         }
+            //         return null;
+            //     })
+            //     .filter(Boolean);
 
-            if (stockViolations.length > 0) {
-                const msgs = stockViolations.map(
-                    v => `• ${v.prodLabel}: ordered ${v.ordered}, available ${v.available}`
-                ).join('\n');
-                alert(`⚠️ Stock insufficient for the following product(s):\n\n${msgs}\n\nPlease reduce the quantity.`);
-                return;
-            }
+            // if (stockViolations.length > 0) {
+            //     const msgs = stockViolations.map(
+            //         v => `• ${v.prodLabel}: ordered ${v.ordered}, available ${v.available}`
+            //     ).join('\n');
+            //     alert(`⚠️ Stock insufficient for the following product(s):\n\n${msgs}\n\nPlease reduce the quantity.`);
+            //     return;
+            // }
 
             const { lines, ...headerValues } = values;
             const selectedFiscalYearId = getSelectedFiscalYearId();
@@ -1409,13 +1410,15 @@ const SalesTransactionCreate = () => {
                                                                             handleLineChange(index, "crt", formatToFourDecimals(e.target.value));
                                                                             validation.setFieldTouched(`lines[${index}].crt`, true);
                                                                         }}
-                                                                        style={{ borderColor: (showErr('crt') || (stockMap[String(line.productId)] != null && parseFloat(line.crt) > stockMap[String(line.productId)])) ? '#f06548' : '' }} />
+                                                                        style={{ borderColor: showErr('crt') ? '#f06548' : '' }} />
                                                                     {showErr('crt') && <div className="text-danger" style={{ fontSize: '11px' }}>{lineErrors.crt}</div>}
+                                                                    {/* TEMP: stock exceed warning disabled so sale can proceed with negative/insufficient stock
                                                                     {!showErr('crt') && line.productId && stockMap[String(line.productId)] != null && (
                                                                         parseFloat(line.crt) > stockMap[String(line.productId)]
                                                                             ? <div className="text-danger" style={{ fontSize: '11px' }}>⚠️ Exceeds stock ({stockMap[String(line.productId)].toFixed(3)} available)</div>
                                                                             : <div className="text-success" style={{ fontSize: '11px' }}>✔ In stock ({stockMap[String(line.productId)].toFixed(3)} available)</div>
                                                                     )}
+                                                                    */}
                                                                 </td>
                                                                 <td><Input type="number" value={formatToFourDecimals(line.packing)} readOnly className="bg-light no-spin-input" /></td>
                                                                 <td>
