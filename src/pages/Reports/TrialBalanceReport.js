@@ -9,7 +9,7 @@ import { createSelector } from 'reselect';
 import Flatpickr from "react-flatpickr";
 import * as XLSX from 'xlsx-js-style';
 import { saveAs } from 'file-saver';
-import { getTrialBalance } from "../../helpers/fakebackend_helper";
+import { getTrialBalance, getTrialBalanceGroupWise } from "../../helpers/fakebackend_helper";
 import secureStorage from "../../utils/secureStorage";
 import BreadCrumb from '../../Components/Common/BreadCrumb';
 import "./TrialBalanceReport.css";
@@ -31,6 +31,7 @@ const TrialBalanceReport = () => {
     const [query, setQuery] = useState('');
     const [hideZero, setHideZero] = useState(true);
     const [sortBy, setSortBy] = useState({ key: 'accountName', dir: 'asc' }); // key: accountName|debit|credit
+    const [viewMode, setViewMode] = useState('normal'); // normal | group
 
     const formatLocalYMD = (d) => {
         if (!d) return '';
@@ -52,7 +53,7 @@ const TrialBalanceReport = () => {
 
     const companyName = secureStorage.getPlain('companyName') || secureStorage.getPlain('CompanyName') || 'SoftBook';
 
-    const fetchReport = async () => {
+    const fetchReport = async (mode = viewMode) => {
         if (!asOfDate) {
             setError('Please select a date.');
             return;
@@ -60,10 +61,13 @@ const TrialBalanceReport = () => {
         setLoading(true);
         setError('');
         setReportData(null);
+        setViewMode(mode);
         try {
             const dateStr = formatLocalYMD(asOfDate);
             const companyId = secureStorage.getPlain('companyId') || 10001; // fallback if missing
-            const response = await getTrialBalance(companyId, dateStr);
+            const response = mode === 'group'
+                ? await getTrialBalanceGroupWise(companyId, dateStr)
+                : await getTrialBalance(companyId, dateStr);
 
             const data = Array.isArray(response) ? response : (response?.data || []);
             setReportData(data);
@@ -75,11 +79,12 @@ const TrialBalanceReport = () => {
         }
     };
 
-    // The backend only provides AccountName, Debit, and Credit
+    // Backend: AccountName, Debit, Credit, ReportGroup
     const rows = (reportData || []).map(row => ({
         accountName: (row.accountName || row.AccountName || '').toString().trim() || 'Unknown',
         debit: Number(row.debit || row.Debit || 0),
         credit: Number(row.credit || row.Credit || 0),
+        reportGroup: ((row.reportGroup || row.ReportGroup || 'Others').toString().trim() || 'Others'),
         isTotal: (row.accountName || row.AccountName || '').toUpperCase() === 'TOTAL'
     }));
 
@@ -96,15 +101,40 @@ const TrialBalanceReport = () => {
         const q = query.trim().toLowerCase();
         let data = accountRows;
         if (hideZero) data = data.filter(r => (r.debit || 0) !== 0 || (r.credit || 0) !== 0);
-        if (q) data = data.filter(r => (r.accountName || '').toLowerCase().includes(q));
+        if (q) {
+            data = data.filter(r =>
+                (r.accountName || '').toLowerCase().includes(q) ||
+                (r.reportGroup || '').toLowerCase().includes(q)
+            );
+        }
 
         const dir = sortBy.dir === 'asc' ? 1 : -1;
         const sorted = [...data].sort((a, b) => {
+            if (viewMode === 'group') {
+                const g = a.reportGroup.localeCompare(b.reportGroup);
+                if (g !== 0) return g;
+            }
             if (sortBy.key === 'accountName') return dir * a.accountName.localeCompare(b.accountName);
             return dir * ((a[sortBy.key] || 0) - (b[sortBy.key] || 0));
         });
         return sorted;
-    }, [accountRows, hideZero, query, sortBy]);
+    }, [accountRows, hideZero, query, sortBy, viewMode]);
+
+    const groupedRows = useMemo(() => {
+        if (viewMode !== 'group') return [];
+        const map = new Map();
+        for (const row of shownRows) {
+            const key = row.reportGroup || 'Others';
+            if (!map.has(key)) {
+                map.set(key, { groupName: key, rows: [], totalDebit: 0, totalCredit: 0 });
+            }
+            const g = map.get(key);
+            g.rows.push(row);
+            g.totalDebit += row.debit || 0;
+            g.totalCredit += row.credit || 0;
+        }
+        return Array.from(map.values()).sort((a, b) => a.groupName.localeCompare(b.groupName));
+    }, [shownRows, viewMode]);
 
     const setSort = (key) => {
         setSortBy(prev => {
@@ -133,9 +163,21 @@ const TrialBalanceReport = () => {
             ["", "Debit", "Credit"],
         ];
 
-        // Data rows
-        for (const r of shownRows) {
-            aoa.push([r.accountName, r.debit || "", r.credit || ""]);
+        // Data rows (flat or group-wise)
+        const groupHeaderRows = new Set();
+        if (viewMode === 'group') {
+            for (const group of groupedRows) {
+                const headerIdx = aoa.length;
+                aoa.push([group.groupName, group.totalDebit || "", group.totalCredit || ""]);
+                groupHeaderRows.add(headerIdx);
+                for (const r of group.rows) {
+                    aoa.push([`  ${r.accountName}`, r.debit || "", r.credit || ""]);
+                }
+            }
+        } else {
+            for (const r of shownRows) {
+                aoa.push([r.accountName, r.debit || "", r.credit || ""]);
+            }
         }
         aoa.push(["Total", totalDebit, totalCredit]);
 
@@ -196,6 +238,13 @@ const TrialBalanceReport = () => {
             border,
         };
 
+        const groupStyle = {
+            font: { bold: true, color: { rgb: "111827" } },
+            fill: { patternType: "solid", fgColor: { rgb: "E8EEF5" } },
+            alignment: { vertical: "center" },
+            border,
+        };
+
         const totalStyle = {
             font: { bold: true, color: { rgb: "111827" } },
             fill: { patternType: "solid", fgColor: { rgb: "C8E08A" } },
@@ -237,8 +286,11 @@ const TrialBalanceReport = () => {
                 // Data rows (start at 7)
                 if (R >= 7) {
                     const isTotalRow = R === range.e.r;
+                    const isGroupHeader = groupHeaderRows.has(R);
                     if (isTotalRow) {
                         cell.s = { ...totalStyle, ...(C === 0 ? {} : moneyStyle) };
+                    } else if (isGroupHeader) {
+                        cell.s = { ...groupStyle, ...(C === 0 ? {} : moneyStyle) };
                     } else if (C === 0) {
                         cell.s = nameStyle;
                     } else {
@@ -249,14 +301,13 @@ const TrialBalanceReport = () => {
         }
 
         // Ensure numeric cells are numbers
-        for (let i = 0; i < shownRows.length; i++) {
-            const r = 7 + i;
-            const debitAddr = XLSX.utils.encode_cell({ r, c: 1 });
-            const creditAddr = XLSX.utils.encode_cell({ r, c: 2 });
-            if (ws[debitAddr]) ws[debitAddr].t = "n";
-            if (ws[creditAddr]) ws[creditAddr].t = "n";
+        for (let R = 7; R < range.e.r; R++) {
+            const debitAddr = XLSX.utils.encode_cell({ r: R, c: 1 });
+            const creditAddr = XLSX.utils.encode_cell({ r: R, c: 2 });
+            if (ws[debitAddr] && typeof ws[debitAddr].v === 'number') ws[debitAddr].t = "n";
+            if (ws[creditAddr] && typeof ws[creditAddr].v === 'number') ws[creditAddr].t = "n";
         }
-        const totalRowIndex = 7 + shownRows.length;
+        const totalRowIndex = range.e.r;
         const tDebit = XLSX.utils.encode_cell({ r: totalRowIndex, c: 1 });
         const tCredit = XLSX.utils.encode_cell({ r: totalRowIndex, c: 2 });
         if (ws[tDebit]) ws[tDebit].t = "n";
@@ -265,7 +316,8 @@ const TrialBalanceReport = () => {
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, "Trial Balance");
         const buffer = XLSX.write(wb, { bookType: "xlsx", type: "array" });
-        saveAs(new Blob([buffer], { type: "application/octet-stream" }), `Trial_Balance_${formatLocalYMD(asOfDate)}.xlsx`);
+        const suffix = viewMode === 'group' ? '_GroupWise' : '';
+        saveAs(new Blob([buffer], { type: "application/octet-stream" }), `Trial_Balance${suffix}_${formatLocalYMD(asOfDate)}.xlsx`);
     };
 
     const handlePrint = () => {
@@ -312,6 +364,8 @@ const TrialBalanceReport = () => {
               .tb-total-row{ background:#f8f9fa !important; color:#212529 !important; border-top:2px solid #dee2e6 !important; }
               .tb-total-row td:nth-child(2){ color:#198754 !important; }
               .tb-total-row td:nth-child(3){ color:#dc3545 !important; }
+              .tb-group-row td{ background:#f1f5f9 !important; font-weight:700 !important; }
+              .tb-account-nested{ padding-left:12px; }
 
               /* Remove sticky behaviors for print */
               .sticky-top, .sticky-bottom { position: static !important; }
@@ -326,7 +380,7 @@ const TrialBalanceReport = () => {
 
     return (
         <React.Fragment>
-            <div className="page-content trial-balance-page">
+            <div className={`page-content trial-balance-page${isDarkMode ? ' trial-balance-page--dark' : ''}`}>
                 <Container fluid>
                     <BreadCrumb title="Trial Balance" pageTitle="Reports" />
 
@@ -345,12 +399,29 @@ const TrialBalanceReport = () => {
                                                 options={{ dateFormat: "d M Y", maxDate: "today" }}
                                             />
                                         </Col>
-                                        <Col xxl={2} lg={3} md={4}>
-                                            <div className="d-flex gap-2">
-                                                <Button color="primary" className="flex-grow-1" onClick={fetchReport} disabled={loading}>
-                                                    {loading
+                                        <Col xxl={3} lg={4} md={6}>
+                                            <div className="d-flex gap-2 flex-wrap">
+                                                <Button
+                                                    color="primary"
+                                                    className="flex-grow-1"
+                                                    onClick={() => fetchReport('normal')}
+                                                    disabled={loading}
+                                                    outline={viewMode === 'group' && !!reportData}
+                                                >
+                                                    {loading && viewMode === 'normal'
                                                         ? <><Spinner size="sm" className="me-1" />Loading...</>
                                                         : <><i className="ri-filter-2-line me-1" />Generate</>}
+                                                </Button>
+                                                <Button
+                                                    color="info"
+                                                    className="flex-grow-1"
+                                                    onClick={() => fetchReport('group')}
+                                                    disabled={loading}
+                                                    outline={viewMode !== 'group' || !reportData}
+                                                >
+                                                    {loading && viewMode === 'group'
+                                                        ? <><Spinner size="sm" className="me-1" />Loading...</>
+                                                        : <><i className="ri-folder-2-line me-1" />Group Wise</>}
                                                 </Button>
                                                 <Button
                                                     color="light"
@@ -459,6 +530,7 @@ const TrialBalanceReport = () => {
                                             </div>
                                             <div className="text-muted fs-11 mt-1">
                                                 Showing <strong>{shownRows.length}</strong> of <strong>{accountRows.length}</strong> accounts
+                                                {viewMode === 'group' ? <> · <strong>Group wise</strong> ({groupedRows.length} groups)</> : null}
                                                 {query.trim() ? <> · Filter: <strong>{query.trim()}</strong></> : null}
                                             </div>
                                         </div>
@@ -526,22 +598,58 @@ const TrialBalanceReport = () => {
                                                         </tr>
                                                     </thead>
                                                     <tbody>
-                                                        {shownRows.map((row, idx) => (
-                                                            <tr key={`${row.accountName}-${idx}`}>
-                                                                <td className="ps-3 fw-medium">
-                                                                    <div className="d-flex align-items-center">
-                                                                        <i className="ri-file-list-3-line text-muted me-2" />
-                                                                        <span className="tb-account">{row.accountName}</span>
-                                                                    </div>
-                                                                </td>
-                                                                <td className={`text-end fw-medium ${isBalanced ? "text-dark" : "text-success"}`}>
-                                                                    {row.debit > 0 ? formatMoney(row.debit) : <span className="text-muted">-</span>}
-                                                                </td>
-                                                                <td className={`text-end pe-3 fw-medium ${isBalanced ? "text-dark" : "text-danger"}`}>
-                                                                    {row.credit > 0 ? formatMoney(row.credit) : <span className="text-muted">-</span>}
-                                                                </td>
-                                                            </tr>
-                                                        ))}
+                                                        {viewMode === 'group'
+                                                            ? groupedRows.map((group) => (
+                                                                <React.Fragment key={`grp-${group.groupName}`}>
+                                                                    <tr className="tb-group-row">
+                                                                        <td className="ps-3">
+                                                                            <div className="d-flex align-items-center">
+                                                                                <i className="ri-folder-3-fill me-2" />
+                                                                                <span>{group.groupName}</span>
+                                                                                <span className="text-muted fw-normal ms-2 fs-11">({group.rows.length})</span>
+                                                                            </div>
+                                                                        </td>
+                                                                        <td className={`text-end fw-bold ${isBalanced ? "text-dark" : "text-success"}`}>
+                                                                            {group.totalDebit > 0 ? formatMoney(group.totalDebit) : <span className="text-muted">-</span>}
+                                                                        </td>
+                                                                        <td className={`text-end pe-3 fw-bold ${isBalanced ? "text-dark" : "text-danger"}`}>
+                                                                            {group.totalCredit > 0 ? formatMoney(group.totalCredit) : <span className="text-muted">-</span>}
+                                                                        </td>
+                                                                    </tr>
+                                                                    {group.rows.map((row, idx) => (
+                                                                        <tr key={`${group.groupName}-${row.accountName}-${idx}`}>
+                                                                            <td className="ps-3 fw-medium">
+                                                                                <div className="d-flex align-items-center">
+                                                                                    <i className="ri-file-list-3-line text-muted me-2" />
+                                                                                    <span className="tb-account tb-account-nested">{row.accountName}</span>
+                                                                                </div>
+                                                                            </td>
+                                                                            <td className={`text-end fw-medium ${isBalanced ? "text-dark" : "text-success"}`}>
+                                                                                {row.debit > 0 ? formatMoney(row.debit) : <span className="text-muted">-</span>}
+                                                                            </td>
+                                                                            <td className={`text-end pe-3 fw-medium ${isBalanced ? "text-dark" : "text-danger"}`}>
+                                                                                {row.credit > 0 ? formatMoney(row.credit) : <span className="text-muted">-</span>}
+                                                                            </td>
+                                                                        </tr>
+                                                                    ))}
+                                                                </React.Fragment>
+                                                            ))
+                                                            : shownRows.map((row, idx) => (
+                                                                <tr key={`${row.accountName}-${idx}`}>
+                                                                    <td className="ps-3 fw-medium">
+                                                                        <div className="d-flex align-items-center">
+                                                                            <i className="ri-file-list-3-line text-muted me-2" />
+                                                                            <span className="tb-account">{row.accountName}</span>
+                                                                        </div>
+                                                                    </td>
+                                                                    <td className={`text-end fw-medium ${isBalanced ? "text-dark" : "text-success"}`}>
+                                                                        {row.debit > 0 ? formatMoney(row.debit) : <span className="text-muted">-</span>}
+                                                                    </td>
+                                                                    <td className={`text-end pe-3 fw-medium ${isBalanced ? "text-dark" : "text-danger"}`}>
+                                                                        {row.credit > 0 ? formatMoney(row.credit) : <span className="text-muted">-</span>}
+                                                                    </td>
+                                                                </tr>
+                                                            ))}
                                                     </tbody>
                                                 </Table>
                                             </div>

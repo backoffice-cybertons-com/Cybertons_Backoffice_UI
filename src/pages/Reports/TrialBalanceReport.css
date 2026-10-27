@@ -131,6 +131,22 @@
   color: #0f172a; /* slate-900 */
 }
 
+.tb-account-nested{
+  padding-left: 0.85rem;
+}
+
+.tb-group-row td{
+  background: #f1f5f9;
+  color: #0f172a;
+  font-weight: 700;
+  border-top: 1px solid #e2e8f0;
+  font-size: 0.8125rem;
+}
+
+.tb-group-row td .ri-folder-3-fill{
+  color: #64748b;
+}
+
 .tb-pill{
   border-radius: 999px;
   padding: 0.35rem 0.6rem;
@@ -361,6 +377,11 @@
   color: #212529;
 }
 
+[data-bs-theme="dark"] .trial-balance-page .report-card-compact,
+.trial-balance-page--dark .report-card-compact {
+  background: var(--vz-card-bg, #212529);
+}
+
 [data-bs-theme="dark"] .trial-balance-page .tb-table-wrap,
 .trial-balance-page--dark .tb-table-wrap {
   background: var(--vz-card-bg, #212529);
@@ -380,9 +401,28 @@
   border-color: #2f343a;
 }
 
+[data-bs-theme="dark"] .trial-balance-page .tb-table.table-hover > tbody > tr:hover > *,
+.trial-balance-page--dark .tb-table.table-hover > tbody > tr:hover > * {
+  --bs-table-bg-state: #2a2f34;
+  color: #e9ecef;
+  background-color: #2a2f34;
+}
+
 [data-bs-theme="dark"] .trial-balance-page .tb-account,
 .trial-balance-page--dark .tb-account {
   color: #e9ecef;
+}
+
+[data-bs-theme="dark"] .trial-balance-page .tb-group-row td,
+.trial-balance-page--dark .tb-group-row td {
+  background: #2a2f34;
+  color: #e9ecef;
+  border-top-color: #32383e;
+}
+
+[data-bs-theme="dark"] .trial-balance-page .tb-group-row td .ri-folder-3-fill,
+.trial-balance-page--dark .tb-group-row td .ri-folder-3-fill {
+  color: #adb5bd;
 }
 
 [data-bs-theme="dark"] .trial-balance-page .tb-total-strip,
@@ -397,10 +437,21 @@
   color: #e9ecef;
 }
 
+/* Bootstrap text-dark stays black — override only on this page */
+[data-bs-theme="dark"] .trial-balance-page .text-dark,
+.trial-balance-page--dark .text-dark {
+  color: #e9ecef !important;
+}
+
 [data-bs-theme="dark"] .trial-balance-page .tb-summary-card,
 .trial-balance-page--dark .tb-summary-card {
   background: var(--vz-card-bg, #212529) !important;
   border-color: #32383e !important;
+}
+
+[data-bs-theme="dark"] .trial-balance-page .tb-summary-card:hover,
+.trial-balance-page--dark .tb-summary-card:hover {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.45);
 }
 
 [data-bs-theme="dark"] .trial-balance-page .tb-summary-label,
@@ -408,10 +459,27 @@
   color: #adb5bd !important;
 }
 
+[data-bs-theme="dark"] .trial-balance-page .tb-summary-card.tb-summary-balanced::before,
+.trial-balance-page--dark .tb-summary-card.tb-summary-balanced::before {
+  background-color: #adb5bd;
+}
+
+[data-bs-theme="dark"] .trial-balance-page .tb-summary-card.tb-summary-balanced .tb-summary-value,
+[data-bs-theme="dark"] .trial-balance-page .tb-summary-card.tb-summary-balanced .tb-summary-icon,
+.trial-balance-page--dark .tb-summary-card.tb-summary-balanced .tb-summary-value,
+.trial-balance-page--dark .tb-summary-card.tb-summary-balanced .tb-summary-icon {
+  color: #e9ecef !important;
+}
+
 [data-bs-theme="dark"] .trial-balance-page .tb-actions,
 .trial-balance-page--dark .tb-actions {
   background: #262a2f;
   border-color: #32383e;
+}
+
+[data-bs-theme="dark"] .trial-balance-page .tb-actions .form-check-label,
+.trial-balance-page--dark .tb-actions .form-check-label {
+  color: #ced4da;
 }
 
 [data-bs-theme="dark"] .trial-balance-page .report-card-compact .footer-print-sticky,
@@ -425,4 +493,5 @@
 .trial-balance-page--dark .table-light {
   --bs-table-bg: #2a2f34;
   --bs-table-color: #e9ecef;
+  --bs-table-border-color: #32383e;
 }
