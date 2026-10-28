@@ -3,7 +3,7 @@ import { Card, CardHeader, CardBody, Col, Container, Row, Input, Button, Label, 
 import Select from 'react-select';
 import { useSelector } from 'react-redux';
 import { createSelector } from 'reselect';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import * as XLSX from 'xlsx-js-style';
 import { saveAs } from 'file-saver';
 import { APIClient } from "../../helpers/api_helper";
@@ -81,6 +81,7 @@ const buildLedgerSelectStyles = (isDark) => ({
 const LedgerReport = () => {
     const { layoutModeType } = useSelector(selectLayoutProperties);
     const isDarkMode = layoutModeType === 'dark';
+    const location = useLocation();
     const ledgerSelectProps = useMemo(() => ({
         classNamePrefix: 'lsd-select',
         menuPlacement: 'auto',
@@ -89,14 +90,20 @@ const LedgerReport = () => {
     }), [isDarkMode]);
     document.title = 'Ledger Report | SoftBook';
     const api = new APIClient();
+    const queryBootstrapped = useRef(false);
 
     const today = new Date();
     const firstOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    const queryParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
+    const queryAccountId = queryParams.get('accountId') || queryParams.get('accountCode');
+    const queryAccountName = queryParams.get('accountName') || '';
+    const queryFromDate = queryParams.get('fromDate');
+    const queryToDate = queryParams.get('toDate');
 
     const [accounts, setAccounts] = useState([]);
     const [selectedAccount, setSelectedAccount] = useState(null);
-    const [fromDate, setFromDate] = useState(toLocalYMD(firstOfMonth));
-    const [toDate, setToDate] = useState(toLocalYMD(today));
+    const [fromDate, setFromDate] = useState(queryFromDate || toLocalYMD(firstOfMonth));
+    const [toDate, setToDate] = useState(queryToDate || toLocalYMD(today));
     const [reportType, setReportType] = useState({ value: 'detailed_split', label: 'Dual Ledger' });
     const reportTypeOptions = [
         { value: 'detailed_split', label: 'Dual Ledger' },
@@ -126,22 +133,53 @@ const LedgerReport = () => {
         fetchAccounts();
     }, []);
 
-    const fetchReport = async (modeOverride = null) => {
-        if (!selectedAccount) { setError("Please select an account."); return; }
+    const fetchReport = async (modeOverride = null, overrides = null) => {
+        const account = overrides?.account || selectedAccount;
+        const from = overrides?.fromDate || fromDate;
+        const to = overrides?.toDate || toDate;
+        if (!account) { setError("Please select an account."); return; }
         const mode = modeOverride || reportType.value;
         setLoading(true); setError(""); setReportData(null);
         const companyId = secureStorage.getPlain('companyId') || 10001;
         try {
             if (mode.startsWith('detailed')) {
-                const response = await api.get(url.GET_LEDGER_REPORT, { companyId, accountCode: selectedAccount.value, fromDate, toDate });
+                const response = await api.get(url.GET_LEDGER_REPORT, { companyId, accountCode: account.value, fromDate: from, toDate: to });
                 setReportData({ type: mode, ...response });
             } else {
-                const raw = await getLedgerSummaryDatewise(companyId, selectedAccount.value, fromDate, toDate);
+                const raw = await getLedgerSummaryDatewise(companyId, account.value, from, to);
                 const rows = Array.isArray(raw) ? raw : (raw?.data || []);
                 setReportData({ type: mode, rows: rows });
             }
         } catch (err) { setError("Failed to fetch report."); } finally { setLoading(false); }
     };
+
+    useEffect(() => {
+        if (queryBootstrapped.current || !queryAccountId) return;
+
+        const matched = accounts.find((account) => String(account.value) === String(queryAccountId));
+        if (!matched && accounts.length === 0 && !queryAccountName) return;
+
+        const account = matched || {
+            value: Number.isNaN(Number(queryAccountId)) ? queryAccountId : Number(queryAccountId),
+            label: queryAccountName || `Account ${queryAccountId}`
+        };
+        const from = queryFromDate || fromDate;
+        const to = queryToDate || toDate;
+
+        queryBootstrapped.current = true;
+        if (queryFromDate) setFromDate(queryFromDate);
+        if (queryToDate) setToDate(queryToDate);
+        setSelectedAccount(account);
+        fetchReport(null, { account, fromDate: from, toDate: to });
+    }, [accounts, queryAccountId, queryAccountName, queryFromDate, queryToDate]);
+
+    useEffect(() => {
+        if (!selectedAccount?.value || accounts.length === 0) return;
+        const matched = accounts.find((account) => String(account.value) === String(selectedAccount.value));
+        if (matched && matched.label !== selectedAccount.label) {
+            setSelectedAccount(matched);
+        }
+    }, [accounts, selectedAccount]);
 
     const getVchLink = (item) => {
         if (!item || !item.vType) return "#";

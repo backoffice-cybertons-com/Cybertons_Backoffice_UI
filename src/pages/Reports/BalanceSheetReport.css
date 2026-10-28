@@ -268,6 +268,19 @@
   overflow-wrap: anywhere;
 }
 
+.bs-ledger-link {
+  color: #405189;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.bs-ledger-link:hover,
+.bs-ledger-link:focus {
+  color: #2c3e8c;
+  text-decoration: underline;
+  outline: none;
+}
+
 .bs-side-liabilities .bs-side-heading {
   border-top: 3px solid #344767;
 }
@@ -353,6 +366,15 @@
 
 [data-bs-theme="dark"] .balance-sheet-page .bs-ledger-name {
   color: #ced4da;
+}
+
+[data-bs-theme="dark"] .balance-sheet-page .bs-ledger-link {
+  color: #8ea2f5;
+}
+
+[data-bs-theme="dark"] .balance-sheet-page .bs-ledger-link:hover,
+[data-bs-theme="dark"] .balance-sheet-page .bs-ledger-link:focus {
+  color: #b4c2ff;
 }
 
 [data-bs-theme="dark"] .balance-sheet-page .bs-side-liabilities .bs-side-heading {

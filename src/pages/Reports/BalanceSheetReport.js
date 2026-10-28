@@ -140,13 +140,26 @@ const BalanceSheetReport = () => {
     const flattenSideRows = (groups, totalLabel, totalAmount) => {
         const flattened = [];
         groups.forEach(group => {
-            flattened.push({ label: group.groupName, amount: group.total, isGroup: true });
+            flattened.push({
+                label: group.groupName,
+                amount: group.total,
+                isGroup: true
+            });
             group.rows.forEach(row => {
-                flattened.push({ label: row.ledgerName, amount: row.amount, isGroup: false });
+                flattened.push({
+                    label: `  ${row.ledgerName}`,
+                    amount: row.amount,
+                    isGroup: false
+                });
             });
         });
         flattened.push({ label: totalLabel, amount: totalAmount, isTotal: true });
         return flattened;
+    };
+
+    const excelCellValue = (value) => {
+        if (value === undefined || value === null || value === "") return "";
+        return value;
     };
 
     const handleExcel = () => {
@@ -155,6 +168,12 @@ const BalanceSheetReport = () => {
         const liabilityExportRows = flattenSideRows(liabilityGroups, "Liabilities & Equity Total", liabilityTotal);
         const assetExportRows = flattenSideRows(assetGroups, "Assets Total", assetTotal);
         const maxRows = Math.max(liabilityExportRows.length, assetExportRows.length);
+        const headerRowIndex = 4;
+        const dataStartRow = headerRowIndex + 1;
+        const leftGroupRows = new Set();
+        const rightGroupRows = new Set();
+        const leftTotalRows = new Set();
+        const rightTotalRows = new Set();
 
         const aoa = [
             ["BALANCE SHEET", "", "", ""],
@@ -167,15 +186,28 @@ const BalanceSheetReport = () => {
         for (let i = 0; i < maxRows; i++) {
             const left = liabilityExportRows[i] || {};
             const right = assetExportRows[i] || {};
+            const excelRow = dataStartRow + i;
+
+            if (left.isGroup) leftGroupRows.add(excelRow);
+            if (left.isTotal) leftTotalRows.add(excelRow);
+            if (right.isGroup) rightGroupRows.add(excelRow);
+            if (right.isTotal) rightTotalRows.add(excelRow);
+
             aoa.push([
                 left.label || "",
-                left.amount || "",
+                excelCellValue(left.amount),
                 right.label || "",
-                right.amount || ""
+                excelCellValue(right.amount)
             ]);
         }
 
-        aoa.push(["Difference", Math.abs(difference), isBalanced ? "Balanced" : (difference > 0 ? "Assets higher" : "Liabilities higher"), ""]);
+        const diffRowIndex = aoa.length;
+        aoa.push([
+            "Difference",
+            Math.abs(difference),
+            isBalanced ? "Balanced" : (difference > 0 ? "Assets higher" : "Liabilities higher"),
+            ""
+        ]);
 
         const ws = XLSX.utils.aoa_to_sheet(aoa);
         ws["!merges"] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 3 } }];
@@ -186,6 +218,31 @@ const BalanceSheetReport = () => {
             bottom: { style: "thin", color: { rgb: "D1D5DB" } },
             left: { style: "thin", color: { rgb: "D1D5DB" } },
             right: { style: "thin", color: { rgb: "D1D5DB" } }
+        };
+
+        const groupStyle = {
+            font: { bold: true, color: { rgb: "111827" } },
+            fill: { patternType: "solid", fgColor: { rgb: "E8EEF5" } },
+            alignment: { vertical: "center" },
+            border
+        };
+
+        const totalStyle = {
+            font: { bold: true, color: { rgb: "111827" } },
+            fill: { patternType: "solid", fgColor: { rgb: "DDE8C6" } },
+            alignment: { vertical: "center" },
+            border
+        };
+
+        const moneyStyle = {
+            numFmt: "#,##0.00",
+            alignment: { horizontal: "right" },
+            border
+        };
+
+        const nameStyle = {
+            alignment: { horizontal: "left" },
+            border
         };
 
         const range = XLSX.utils.decode_range(ws["!ref"]);
@@ -199,19 +256,48 @@ const BalanceSheetReport = () => {
                         font: { bold: true, sz: 16 },
                         alignment: { horizontal: "center" }
                     };
-                } else if (r === 4) {
+                    continue;
+                }
+
+                if (r === headerRowIndex) {
                     ws[addr].s = {
                         font: { bold: true, color: { rgb: "FFFFFF" } },
                         fill: { patternType: "solid", fgColor: { rgb: "344767" } },
                         border,
                         alignment: { horizontal: c % 2 === 0 ? "left" : "right" }
                     };
-                } else if (r > 4) {
+                    continue;
+                }
+
+                if (r === diffRowIndex) {
                     ws[addr].s = {
+                        font: { bold: true },
+                        fill: { patternType: "solid", fgColor: { rgb: isBalanced ? "DCFCE7" : "FEF3C7" } },
                         border,
                         alignment: { horizontal: c % 2 === 0 ? "left" : "right" },
-                        numFmt: c % 2 === 1 ? "#,##0.00" : undefined
+                        numFmt: c === 1 ? "#,##0.00" : undefined
                     };
+                    if (c === 1 && typeof ws[addr].v === "number") ws[addr].t = "n";
+                    continue;
+                }
+
+                if (r >= dataStartRow) {
+                    const isLeft = c <= 1;
+                    const isGroup = isLeft ? leftGroupRows.has(r) : rightGroupRows.has(r);
+                    const isTotal = isLeft ? leftTotalRows.has(r) : rightTotalRows.has(r);
+                    const isAmountCol = c % 2 === 1;
+
+                    if (isGroup) {
+                        ws[addr].s = { ...groupStyle, ...(isAmountCol ? moneyStyle : {}) };
+                    } else if (isTotal) {
+                        ws[addr].s = { ...totalStyle, ...(isAmountCol ? moneyStyle : {}) };
+                    } else if (isAmountCol) {
+                        ws[addr].s = moneyStyle;
+                    } else {
+                        ws[addr].s = nameStyle;
+                    }
+
+                    if (isAmountCol && typeof ws[addr].v === "number") ws[addr].t = "n";
                 }
             }
         }
@@ -219,7 +305,7 @@ const BalanceSheetReport = () => {
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, "Balance Sheet");
         const buffer = XLSX.write(wb, { bookType: "xlsx", type: "array" });
-        saveAs(new Blob([buffer], { type: "application/octet-stream" }), `Balance_Sheet_${formatLocalYMD(asOfDate)}.xlsx`);
+        saveAs(new Blob([buffer], { type: "application/octet-stream" }), `Balance_Sheet_GroupWise_${formatLocalYMD(asOfDate)}.xlsx`);
     };
 
     const handlePrint = () => {
@@ -247,11 +333,30 @@ const BalanceSheetReport = () => {
                 .bs-side-scroll { overflow: visible !important; max-height: none !important; }
                 .bs-side-table th, .bs-side-table td { font-size: 10px !important; padding: 4px 6px !important; }
                 .bs-summary-grid { margin-bottom: 8px !important; }
+                .bs-ledger-link { color: inherit !important; text-decoration: none !important; cursor: default !important; }
             </style>
             </head><body><div class="bs-print-shell">${content.innerHTML}</div>
             <script>window.onload=function(){setTimeout(()=>{window.print();window.close();},400);};<\/script>
             </body></html>`);
         printWindow.document.close();
+    };
+
+    const getFiscalYearStart = (value) => {
+        const date = value instanceof Date ? value : new Date(value);
+        const fyYear = date.getMonth() >= 3 ? date.getFullYear() : date.getFullYear() - 1;
+        return `${fyYear}-04-01`;
+    };
+
+    const openAccountLedger = (row) => {
+        if (!row?.ledgerId) return;
+        const params = new URLSearchParams({
+            accountId: String(row.ledgerId),
+            accountName: row.ledgerName || "",
+            fromDate: getFiscalYearStart(asOfDate),
+            toDate: formatLocalYMD(asOfDate)
+        });
+        const base = process.env.PUBLIC_URL || "";
+        window.open(`${base}/reports/ledger?${params.toString()}`, "_blank", "noopener,noreferrer");
     };
 
     const renderSidePanel = (side, groups, total) => (
@@ -290,7 +395,25 @@ const BalanceSheetReport = () => {
                                 {group.rows.map(row => (
                                     <tr key={`${side}-${group.groupName}-${row.ledgerId ?? row.ledgerName}`}>
                                         <td>
-                                            <span className="bs-ledger-name">{row.ledgerName}</span>
+                                            {row.ledgerId ? (
+                                                <span
+                                                    className="bs-ledger-name bs-ledger-link"
+                                                    role="button"
+                                                    tabIndex={0}
+                                                    title="Open account ledger"
+                                                    onClick={() => openAccountLedger(row)}
+                                                    onKeyDown={(event) => {
+                                                        if (event.key === "Enter" || event.key === " ") {
+                                                            event.preventDefault();
+                                                            openAccountLedger(row);
+                                                        }
+                                                    }}
+                                                >
+                                                    {row.ledgerName}
+                                                </span>
+                                            ) : (
+                                                <span className="bs-ledger-name">{row.ledgerName}</span>
+                                            )}
                                         </td>
                                         <td className="text-end">{formatMoney(row.amount)}</td>
                                     </tr>
