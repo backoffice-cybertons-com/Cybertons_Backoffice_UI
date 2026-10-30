@@ -6,9 +6,16 @@ import { Card, CardBody, Col, Row, UncontrolledTooltip } from 'reactstrap';
 const formatQty = (num) =>
     Number(num || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 4 });
 
-const GoodsSummaryCard = ({ goodsSummary, periodLabel, loading }) => {
+const GoodsSummaryCard = ({ goodsSummary, totalQtySold, periodLabel, loading }) => {
     const purchaseQty = Number(goodsSummary?.total_purchase_qty ?? goodsSummary?.totalPurchaseQty ?? 0);
-    const salesQty = Number(goodsSummary?.total_sales_qty ?? goodsSummary?.totalSalesQty ?? 0);
+    const salesQty = Number(
+        totalQtySold
+        ?? goodsSummary?.total_qty_sold
+        ?? goodsSummary?.totalQtySold
+        ?? goodsSummary?.total_sales_qty
+        ?? goodsSummary?.totalSalesQty
+        ?? 0
+    );
     const diff = purchaseQty - salesQty;
     const diffColor = diff < 0 ? 'danger' : diff > 0 ? 'success' : 'secondary';
     const diffIcon = diff < 0 ? 'ri-arrow-down-line' : 'ri-arrow-up-line';
@@ -53,7 +60,7 @@ const GoodsSummaryCard = ({ goodsSummary, periodLabel, loading }) => {
                         </Col>
                         <Col sm={6}>
                             <div className="border border-dashed rounded p-3 h-100">
-                                <p className="text-muted text-uppercase fs-12 mb-2">Total Goods Sold</p>
+                                <p className="text-muted text-uppercase fs-12 mb-2">Total Qty Sold</p>
                                 <h3 className="mb-1 text-success" id="goods-sales-qty">
                                     <CountUp start={0} end={salesQty} duration={2} formattingFn={formatQty} />
                                 </h3>

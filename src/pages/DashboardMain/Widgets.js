@@ -17,6 +17,9 @@ const Widgets = ({ kpiData, loading }) => {
         return num.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     };
 
+    const formatAmount2 = (num) =>
+        Number(num || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
     const widgetsData = [
         {
             id: 1,
@@ -31,7 +34,14 @@ const Widgets = ({ kpiData, loading }) => {
             icon: "ri-exchange-dollar-line",
             decimals: 2,
             prefix: "₹",
-            separator: ","
+            separator: ",",
+            extras: [
+                {
+                    label: "Qty Sold",
+                    displayValue: Number(kpiData?.total_qty_sold ?? kpiData?.totalQtySold ?? 0).toLocaleString('en-IN', { maximumFractionDigits: 0 }),
+                    prefix: "",
+                },
+            ],
         },
         {
             id: 2,
@@ -46,7 +56,14 @@ const Widgets = ({ kpiData, loading }) => {
             icon: "ri-rocket-line",
             decimals: 2,
             prefix: "₹",
-            separator: ","
+            separator: ",",
+            extras: [
+                {
+                    label: "COGS",
+                    displayValue: formatAmount2(kpiData?.total_cogs_amount ?? kpiData?.totalCogsAmount ?? 0),
+                    prefix: "₹",
+                },
+            ],
         },
         {
             id: 3,
@@ -65,6 +82,26 @@ const Widgets = ({ kpiData, loading }) => {
         },
         {
             id: 4,
+            label: "Total Income",
+            badgeClass: (kpiData?.income_change >= 0) ? "success" : "danger",
+            badge: (kpiData?.income_change >= 0) ? "ri-arrow-right-up-line" : "ri-arrow-right-down-line",
+            percentage: Math.abs(kpiData?.income_change || 0).toFixed(2),
+            counter: kpiData?.total_income
+                ?? kpiData?.c_other_income
+                ?? kpiData?.other_income
+                ?? kpiData?.cOtherIncome
+                ?? kpiData?.otherIncome
+                ?? 0,
+            link: "View Income",
+            url: "/purchases/expense?vType=Income",
+            bgcolor: "success",
+            icon: "ri-arrow-up-circle-line",
+            decimals: 2,
+            prefix: "₹",
+            separator: ","
+        },
+        {
+            id: 5,
             label: "Total Expense",
             badgeClass: (kpiData?.expense_change >= 0) ? "danger" : "success",
             badge: (kpiData?.expense_change >= 0) ? "ri-arrow-right-up-line" : "ri-arrow-right-down-line",
@@ -73,13 +110,13 @@ const Widgets = ({ kpiData, loading }) => {
             link: "View Expenses",
             url: "/purchases/expense?vType=Expense",
             bgcolor: "warning",
-            icon: "ri-money-dollar-circle-line",
+            icon: "ri-arrow-down-circle-line",
             decimals: 2,
             prefix: "₹",
             separator: ","
         },
         {
-            id: 5,
+            id: 6,
             label: "Net Profit",
             badgeClass: (kpiData?.net_profit_change >= 0) ? "success" : "danger",
             badge: (kpiData?.net_profit_change >= 0) ? "ri-arrow-right-up-line" : "ri-arrow-right-down-line",
@@ -91,10 +128,10 @@ const Widgets = ({ kpiData, loading }) => {
             icon: "ri-wallet-3-line",
             decimals: 2,
             prefix: "₹",
-            separator: ","
+            separator: ",",
         },
         {
-            id: 6,
+            id: 7,
             label: "Profit %",
             badgeClass: "primary",
             badge: null,
@@ -122,9 +159,9 @@ const Widgets = ({ kpiData, loading }) => {
                             </div>
                         </div>
                     )}
-                    <Row className="row-cols-xxl-6 row-cols-md-3 row-cols-1 g-0">
+                    <Row className="g-0 flex-nowrap">
                             {widgetsData.map((item, key) => (
-                                <Col key={key} className={key !== widgetsData.length - 1 ? "border-end-dashed" : ""}>
+                                <Col key={key} className={key !== widgetsData.length - 1 ? "border-end-dashed" : ""} style={{ minWidth: 0, flex: '1 1 0' }}>
                                     <div className="py-4 px-3">
                                         <h5 className="text-muted text-uppercase fs-13">
                                             {item.label}
@@ -152,12 +189,37 @@ const Widgets = ({ kpiData, loading }) => {
                                             </div>
                                         </div>
                                         <div className="d-flex align-items-center justify-content-between mt-3">
-                                            <Link to={item.url} className="text-decoration-underline text-muted fs-12">{item.link}</Link>
-                                            {item.percentage !== null && (
-                                                <span className="text-muted fs-11">
-                                                    <i className={`${item.badge} text-${item.badgeClass} align-middle me-1`}></i>
-                                                    <span className={`fw-bold text-${item.badgeClass}`}>{item.percentage}%</span> vs. prev mo
-                                                </span>
+                                            {item.extras?.length > 0 ? (
+                                                <>
+                                                    <span className="text-truncate" id={`kpi-extras-${key}`}>
+                                                        {item.extras.map((extra, extraIdx) => (
+                                                            <span key={extra.label}>
+                                                                {extraIdx > 0 ? ' · ' : ''}
+                                                                <span className="text-muted fs-12">{extra.label}</span>{' '}
+                                                                <span className="fw-bold fs-13 text-body">{extra.prefix}{extra.displayValue}</span>
+                                                            </span>
+                                                        ))}
+                                                    </span>
+                                                    <UncontrolledTooltip placement="top" target={`kpi-extras-${key}`}>
+                                                        {item.extras.map((extra) => `${extra.label} ${extra.prefix}${extra.displayValue}`).join(' | ')}
+                                                    </UncontrolledTooltip>
+                                                    {item.percentage !== null && (
+                                                        <span className="text-muted fs-11 text-nowrap ms-1">
+                                                            <i className={`${item.badge} text-${item.badgeClass} align-middle me-1`}></i>
+                                                            <span className={`fw-bold text-${item.badgeClass}`}>{item.percentage}%</span>
+                                                        </span>
+                                                    )}
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Link to={item.url} className="text-decoration-underline text-muted fs-12">{item.link}</Link>
+                                                    {item.percentage !== null && (
+                                                        <span className="text-muted fs-11">
+                                                            <i className={`${item.badge} text-${item.badgeClass} align-middle me-1`}></i>
+                                                            <span className={`fw-bold text-${item.badgeClass}`}>{item.percentage}%</span> vs. prev mo
+                                                        </span>
+                                                    )}
+                                                </>
                                             )}
                                         </div>
                                     </div>

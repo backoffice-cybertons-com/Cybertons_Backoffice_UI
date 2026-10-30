@@ -15,12 +15,17 @@ const formatCompact = (num) => {
     return formatAmt(n);
 };
 
-const SalesProfitCard = ({ salesProfitSummary, periodLabel, loading }) => {
+const SalesProfitCard = ({ salesProfitSummary, totalCogsAmount, periodLabel, loading }) => {
     const saleAtPrice = Number(
         salesProfitSummary?.total_sale_at_sale_price ?? salesProfitSummary?.totalSaleAtSalePrice ?? 0
     );
     const saleAtCog = Number(
-        salesProfitSummary?.total_sale_at_cog ?? salesProfitSummary?.totalSaleAtCog ?? 0
+        totalCogsAmount
+        ?? salesProfitSummary?.total_cogs_amount
+        ?? salesProfitSummary?.totalCogsAmount
+        ?? salesProfitSummary?.total_sale_at_cog
+        ?? salesProfitSummary?.totalSaleAtCog
+        ?? 0
     );
     const grossProfit = Number(
         salesProfitSummary?.gross_profit ?? salesProfitSummary?.grossProfit ?? 0
@@ -40,7 +45,7 @@ const SalesProfitCard = ({ salesProfitSummary, periodLabel, loading }) => {
         },
         {
             key: 'sale-cog',
-            label: 'Sale Amount (COG)',
+            label: 'Total COGS',
             value: saleAtCog,
             color: 'warning',
             icon: 'ri-scales-3-line',

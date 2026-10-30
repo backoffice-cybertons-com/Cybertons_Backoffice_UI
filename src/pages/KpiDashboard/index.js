@@ -247,6 +247,12 @@ const KpiDashboard = () => {
                     <Row className="mt-4">
                         <SalesProfitCard
                             salesProfitSummary={dashboardData?.sales_profit_summary}
+                            totalCogsAmount={
+                                dashboardData?.kpi_cards?.total_cogs_amount
+                                ?? dashboardData?.total_cogs_amount
+                                ?? dashboardData?.kpi_cards?.totalCogsAmount
+                                ?? dashboardData?.totalCogsAmount
+                            }
                             periodLabel={getPeriodLabel()}
                             loading={cardLoading}
                         />
@@ -262,6 +268,12 @@ const KpiDashboard = () => {
                     <Row className="mt-4">
                         <GoodsSummaryCard
                             goodsSummary={dashboardData?.goods_summary}
+                            totalQtySold={
+                                dashboardData?.kpi_cards?.total_qty_sold
+                                ?? dashboardData?.total_qty_sold
+                                ?? dashboardData?.kpi_cards?.totalQtySold
+                                ?? dashboardData?.totalQtySold
+                            }
                             periodLabel={getPeriodLabel()}
                             loading={cardLoading}
                         />

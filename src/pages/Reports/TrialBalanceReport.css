@@ -131,6 +131,19 @@
   color: #0f172a; /* slate-900 */
 }
 
+.tb-account-link {
+  color: #405189;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.tb-account-link:hover,
+.tb-account-link:focus {
+  color: #2c3e8c;
+  text-decoration: underline;
+  outline: none;
+}
+
 .tb-account-nested{
   padding-left: 0.85rem;
 }
@@ -411,6 +424,18 @@
 [data-bs-theme="dark"] .trial-balance-page .tb-account,
 .trial-balance-page--dark .tb-account {
   color: #e9ecef;
+}
+
+[data-bs-theme="dark"] .trial-balance-page .tb-account-link,
+.trial-balance-page--dark .tb-account-link {
+  color: #8ea2ff;
+}
+
+[data-bs-theme="dark"] .trial-balance-page .tb-account-link:hover,
+[data-bs-theme="dark"] .trial-balance-page .tb-account-link:focus,
+.trial-balance-page--dark .tb-account-link:hover,
+.trial-balance-page--dark .tb-account-link:focus {
+  color: #b6c3ff;
 }
 
 [data-bs-theme="dark"] .trial-balance-page .tb-group-row td,

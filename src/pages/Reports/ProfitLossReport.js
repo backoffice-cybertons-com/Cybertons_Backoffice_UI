@@ -89,7 +89,7 @@ const ProfitLossReport = () => {
             reportSide: (row.reportSide || row.ReportSide || "").toString().toUpperCase(),
             rowType: (row.rowType || row.RowType || "").toString().toUpperCase(),
             groupName: (row.groupName || row.GroupName || "Other").toString(),
-            ledgerId: row.ledgerId ?? row.LedgerId ?? null,
+            ledgerId: row.ledgerId ?? row.LedgerId ?? row.accountId ?? row.AccountId ?? null,
             ledgerName: (row.ledgerName || row.LedgerName || "").toString(),
             amount: Number(row.amount ?? row.Amount ?? 0)
         }));
@@ -249,11 +249,30 @@ const ProfitLossReport = () => {
                 .bs-side-scroll { overflow: visible !important; max-height: none !important; }
                 .bs-side-table th, .bs-side-table td { font-size: 10px !important; padding: 4px 6px !important; }
                 .bs-summary-grid { margin-bottom: 8px !important; }
+                .bs-ledger-link { color: inherit !important; text-decoration: none !important; cursor: default !important; }
             </style>
             </head><body><div class="bs-print-shell">${content.innerHTML}</div>
             <script>window.onload=function(){setTimeout(()=>{window.print();window.close();},400);};<\/script>
             </body></html>`);
         printWindow.document.close();
+    };
+
+    const getFiscalYearStart = (value) => {
+        const date = value instanceof Date ? value : new Date(value);
+        const fyYear = date.getMonth() >= 3 ? date.getFullYear() : date.getFullYear() - 1;
+        return `${fyYear}-04-01`;
+    };
+
+    const openAccountLedger = (row) => {
+        if (!row?.ledgerId) return;
+        const params = new URLSearchParams({
+            accountId: String(row.ledgerId),
+            accountName: row.ledgerName || "",
+            fromDate: getFiscalYearStart(asOfDate),
+            toDate: formatLocalYMD(asOfDate)
+        });
+        const base = process.env.PUBLIC_URL || "";
+        window.open(`${base}/reports/ledger?${params.toString().replace(/\+/g, "%20")}`, "_blank", "noopener,noreferrer");
     };
 
     const renderSidePanel = (side, groups, total) => (
@@ -292,7 +311,25 @@ const ProfitLossReport = () => {
                                 {group.rows.map(row => (
                                     <tr key={`${side}-${group.groupName}-${row.ledgerId ?? row.ledgerName}`}>
                                         <td>
-                                            <span className="bs-ledger-name">{row.ledgerName}</span>
+                                            {row.ledgerId ? (
+                                                <span
+                                                    className="bs-ledger-name bs-ledger-link"
+                                                    role="button"
+                                                    tabIndex={0}
+                                                    title="Open account ledger"
+                                                    onClick={() => openAccountLedger(row)}
+                                                    onKeyDown={(event) => {
+                                                        if (event.key === "Enter" || event.key === " ") {
+                                                            event.preventDefault();
+                                                            openAccountLedger(row);
+                                                        }
+                                                    }}
+                                                >
+                                                    {row.ledgerName}
+                                                </span>
+                                            ) : (
+                                                <span className="bs-ledger-name">{row.ledgerName}</span>
+                                            )}
                                         </td>
                                         <td className="text-end">{formatMoney(row.amount)}</td>
                                     </tr>

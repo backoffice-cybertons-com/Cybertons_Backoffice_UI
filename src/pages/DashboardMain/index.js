@@ -242,7 +242,33 @@ const DashboardMain = () => {
 
                     <Row>
                         <Widgets 
-                            kpiData={dashboardData?.kpi_cards} 
+                            kpiData={{
+                                ...(dashboardData?.kpi_cards || {}),
+                                total_qty_sold:
+                                    dashboardData?.kpi_cards?.total_qty_sold
+                                    ?? dashboardData?.total_qty_sold
+                                    ?? dashboardData?.kpi_cards?.totalQtySold
+                                    ?? dashboardData?.totalQtySold,
+                                total_cogs_amount:
+                                    dashboardData?.kpi_cards?.total_cogs_amount
+                                    ?? dashboardData?.total_cogs_amount
+                                    ?? dashboardData?.kpi_cards?.totalCogsAmount
+                                    ?? dashboardData?.totalCogsAmount,
+                                c_other_income:
+                                    dashboardData?.kpi_cards?.c_other_income
+                                    ?? dashboardData?.kpi_cards?.other_income
+                                    ?? dashboardData?.c_other_income
+                                    ?? dashboardData?.other_income
+                                    ?? dashboardData?.kpi_cards?.cOtherIncome
+                                    ?? dashboardData?.kpi_cards?.otherIncome,
+                                total_income:
+                                    dashboardData?.kpi_cards?.total_income
+                                    ?? dashboardData?.total_income
+                                    ?? dashboardData?.kpi_cards?.c_other_income
+                                    ?? dashboardData?.kpi_cards?.other_income
+                                    ?? dashboardData?.c_other_income
+                                    ?? dashboardData?.other_income,
+                            }}
                             loading={loading && !isIndependentUpdate}
                         />
                     </Row>

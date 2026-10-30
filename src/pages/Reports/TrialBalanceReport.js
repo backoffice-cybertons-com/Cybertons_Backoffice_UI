@@ -9,7 +9,7 @@ import { createSelector } from 'reselect';
 import Flatpickr from "react-flatpickr";
 import * as XLSX from 'xlsx-js-style';
 import { saveAs } from 'file-saver';
-import { getTrialBalance, getTrialBalanceGroupWise } from "../../helpers/fakebackend_helper";
+import { getParties, getTrialBalance, getTrialBalanceGroupWise } from "../../helpers/fakebackend_helper";
 import secureStorage from "../../utils/secureStorage";
 import BreadCrumb from '../../Components/Common/BreadCrumb';
 import "./TrialBalanceReport.css";
@@ -32,6 +32,7 @@ const TrialBalanceReport = () => {
     const [hideZero, setHideZero] = useState(true);
     const [sortBy, setSortBy] = useState({ key: 'accountName', dir: 'asc' }); // key: accountName|debit|credit
     const [viewMode, setViewMode] = useState('normal'); // normal | group
+    const [accountIdByName, setAccountIdByName] = useState({});
 
     const formatLocalYMD = (d) => {
         if (!d) return '';
@@ -71,6 +72,21 @@ const TrialBalanceReport = () => {
 
             const data = Array.isArray(response) ? response : (response?.data || []);
             setReportData(data);
+
+            try {
+                const partiesResponse = await getParties();
+                const parties = Array.isArray(partiesResponse) ? partiesResponse : (partiesResponse?.data || []);
+                const map = {};
+                parties.forEach((party) => {
+                    const id = party.partyId ?? party.PartyId ?? party.id ?? party.ledgerId ?? party.LedgerId;
+                    const name = (party.displayName || party.DisplayName || party.partyName || party.PartyName || party.name || party.Name || '').toString().trim().toLowerCase();
+                    if (id && name && map[name] == null) map[name] = id;
+                });
+                setAccountIdByName(map);
+            } catch (partyErr) {
+                console.error('Trial Balance party lookup Error:', partyErr);
+                setAccountIdByName({});
+            }
         } catch (err) {
             console.error('Trial Balance Error:', err);
             setError('Failed to load Trial Balance. Please try again.');
@@ -79,14 +95,61 @@ const TrialBalanceReport = () => {
         }
     };
 
-    // Backend: AccountName, Debit, Credit, ReportGroup
-    const rows = (reportData || []).map(row => ({
-        accountName: (row.accountName || row.AccountName || '').toString().trim() || 'Unknown',
-        debit: Number(row.debit || row.Debit || 0),
-        credit: Number(row.credit || row.Credit || 0),
-        reportGroup: ((row.reportGroup || row.ReportGroup || 'Others').toString().trim() || 'Others'),
-        isTotal: (row.accountName || row.AccountName || '').toUpperCase() === 'TOTAL'
-    }));
+    const getFiscalYearStart = (value) => {
+        const date = value instanceof Date ? value : new Date(value);
+        const fyYear = date.getMonth() >= 3 ? date.getFullYear() : date.getFullYear() - 1;
+        return `${fyYear}-04-01`;
+    };
+
+    const openAccountLedger = (row) => {
+        if (!row?.accountId) return;
+        const params = new URLSearchParams({
+            accountId: String(row.accountId),
+            accountName: row.accountName || '',
+            fromDate: getFiscalYearStart(asOfDate),
+            toDate: formatLocalYMD(asOfDate)
+        });
+        const base = process.env.PUBLIC_URL || '';
+        window.open(`${base}/reports/ledger?${params.toString().replace(/\+/g, '%20')}`, '_blank', 'noopener,noreferrer');
+    };
+
+    const renderAccountName = (row, extraClass = '') => {
+        const canOpenLedger = !!row.accountId;
+        if (!canOpenLedger) {
+            return <span className={`tb-account ${extraClass}`.trim()}>{row.accountName}</span>;
+        }
+        return (
+            <span
+                className={`tb-account tb-account-link ${extraClass}`.trim()}
+                role="button"
+                tabIndex={0}
+                title="Open account ledger"
+                onClick={() => openAccountLedger(row)}
+                onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        openAccountLedger(row);
+                    }
+                }}
+            >
+                {row.accountName}
+            </span>
+        );
+    };
+
+    // Backend: AccountId, AccountName, Debit, Credit, ReportGroup
+    const rows = (reportData || []).map(row => {
+        const accountName = (row.accountName || row.AccountName || '').toString().trim() || 'Unknown';
+        const accountId = row.accountId ?? row.AccountId ?? row.ledgerId ?? row.LedgerId ?? accountIdByName[accountName.toLowerCase()] ?? null;
+        return {
+            accountId,
+            accountName,
+            debit: Number(row.debit || row.Debit || 0),
+            credit: Number(row.credit || row.Credit || 0),
+            reportGroup: ((row.reportGroup || row.ReportGroup || 'Others').toString().trim() || 'Others'),
+            isTotal: accountName.toUpperCase() === 'TOTAL'
+        };
+    });
 
     // Filter out the 'TOTAL' row sent by the backend so we can calculate it ourselves cleanly
     const accountRows = rows.filter(r => !r.isTotal);
@@ -366,6 +429,7 @@ const TrialBalanceReport = () => {
               .tb-total-row td:nth-child(3){ color:#dc3545 !important; }
               .tb-group-row td{ background:#f1f5f9 !important; font-weight:700 !important; }
               .tb-account-nested{ padding-left:12px; }
+              .tb-account-link { color: inherit !important; text-decoration: none !important; cursor: default !important; }
 
               /* Remove sticky behaviors for print */
               .sticky-top, .sticky-bottom { position: static !important; }
@@ -621,7 +685,7 @@ const TrialBalanceReport = () => {
                                                                             <td className="ps-3 fw-medium">
                                                                                 <div className="d-flex align-items-center">
                                                                                     <i className="ri-file-list-3-line text-muted me-2" />
-                                                                                    <span className="tb-account tb-account-nested">{row.accountName}</span>
+                                                                                    {renderAccountName(row, 'tb-account-nested')}
                                                                                 </div>
                                                                             </td>
                                                                             <td className={`text-end fw-medium ${isBalanced ? "text-dark" : "text-success"}`}>
@@ -639,7 +703,7 @@ const TrialBalanceReport = () => {
                                                                     <td className="ps-3 fw-medium">
                                                                         <div className="d-flex align-items-center">
                                                                             <i className="ri-file-list-3-line text-muted me-2" />
-                                                                            <span className="tb-account">{row.accountName}</span>
+                                                                            {renderAccountName(row)}
                                                                         </div>
                                                                     </td>
                                                                     <td className={`text-end fw-medium ${isBalanced ? "text-dark" : "text-success"}`}>

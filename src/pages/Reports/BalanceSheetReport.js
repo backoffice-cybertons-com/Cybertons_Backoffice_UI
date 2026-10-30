@@ -356,7 +356,7 @@ const BalanceSheetReport = () => {
             toDate: formatLocalYMD(asOfDate)
         });
         const base = process.env.PUBLIC_URL || "";
-        window.open(`${base}/reports/ledger?${params.toString()}`, "_blank", "noopener,noreferrer");
+        window.open(`${base}/reports/ledger?${params.toString().replace(/\+/g, "%20")}`, "_blank", "noopener,noreferrer");
     };
 
     const renderSidePanel = (side, groups, total) => (

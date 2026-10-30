@@ -487,14 +487,14 @@ const LedgerReport = () => {
                                         <Col lg={6} className="lsd-split-col border-end">
                                             <Table className="table-sm table-nowrap mb-0"><thead className="table-light"><tr><th colSpan="5" className="text-center text-success py-2">DEBIT (Dr)</th></tr><tr className="fs-11"><th>Date</th><th>Type</th><th>No</th><th>Particulars</th><th className="text-end">Amount</th></tr></thead>
                                                 <tbody className="fs-12">
-                                                    {splitDetailRows.debit.map((e, i) => (<tr key={i}><td>{fmtDate(e.jvDate)}</td><td><Link to={getVchLink(e)} className="badge bg-info-subtle text-info">{e.vType}</Link></td><td>{e.vCode}</td><td className="text-wrap">{e.description}</td><td className="text-end">{fmtMoney(e.debit)}</td></tr>))}
+                                                    {splitDetailRows.debit.map((e, i) => (<tr key={i}><td>{fmtDate(e.jvDate)}</td><td><Link to={getVchLink(e)} target="_blank" rel="noopener noreferrer" className="badge bg-info-subtle text-info">{e.vType}</Link></td><td>{e.vCode}</td><td className="text-wrap">{e.description}</td><td className="text-end">{fmtMoney(e.debit)}</td></tr>))}
                                                     {renderPadRows(splitDetailRows.debitPad, 5)}
                                                 </tbody></Table>
                                         </Col>
                                         <Col lg={6} className="lsd-split-col">
                                             <Table className="table-sm table-nowrap mb-0"><thead className="table-light"><tr><th colSpan="5" className="text-center text-danger py-2">CREDIT (Cr)</th></tr><tr className="fs-11"><th>Date</th><th>Type</th><th>No</th><th>Particulars</th><th className="text-end">Amount</th></tr></thead>
                                                 <tbody className="fs-12">
-                                                    {splitDetailRows.credit.map((e, i) => (<tr key={i}><td>{fmtDate(e.jvDate)}</td><td><Link to={getVchLink(e)} className="badge bg-danger-subtle text-danger">{e.vType}</Link></td><td>{e.vCode}</td><td className="text-wrap">{e.description}</td><td className="text-end">{fmtMoney(e.credit)}</td></tr>))}
+                                                    {splitDetailRows.credit.map((e, i) => (<tr key={i}><td>{fmtDate(e.jvDate)}</td><td><Link to={getVchLink(e)} target="_blank" rel="noopener noreferrer" className="badge bg-danger-subtle text-danger">{e.vType}</Link></td><td>{e.vCode}</td><td className="text-wrap">{e.description}</td><td className="text-end">{fmtMoney(e.credit)}</td></tr>))}
                                                     {renderPadRows(splitDetailRows.creditPad, 5)}
                                                 </tbody></Table>
                                         </Col>
@@ -502,7 +502,7 @@ const LedgerReport = () => {
                                 )}
                                 {reportData.type === 'detailed_bank' && (
                                     <Table className="table-hover align-middle mb-0"><thead className="table-light text-uppercase fs-11"><tr><th>Date</th><th>Type</th><th>No</th><th>Particulars</th><th className="text-end">Debit (Dr)</th><th className="text-end">Credit (Cr)</th><th className="text-end">Balance</th></tr></thead>
-                                        <tbody className="fs-12">{reportData.entries?.map((e, i) => (<tr key={i}><td>{fmtDate(e.jvDate)}</td><td><Link to={getVchLink(e)} className="badge bg-info-subtle text-info">{e.vType}</Link></td><td>{e.vCode}</td><td className="text-wrap">{e.description}</td><td className="text-end text-success">{e.debit > 0 ? fmtMoney(e.debit) : '-'}</td><td className="text-end text-danger">{e.credit > 0 ? fmtMoney(e.credit) : '-'}</td><td className={`text-end fw-bold ${balClass(e.balance)}`}>{balanceLabel(e.balance)}</td></tr>))}</tbody></Table>
+                                        <tbody className="fs-12">{reportData.entries?.map((e, i) => (<tr key={i}><td>{fmtDate(e.jvDate)}</td><td><Link to={getVchLink(e)} target="_blank" rel="noopener noreferrer" className="badge bg-info-subtle text-info">{e.vType}</Link></td><td>{e.vCode}</td><td className="text-wrap">{e.description}</td><td className="text-end text-success">{e.debit > 0 ? fmtMoney(e.debit) : '-'}</td><td className="text-end text-danger">{e.credit > 0 ? fmtMoney(e.credit) : '-'}</td><td className={`text-end fw-bold ${balClass(e.balance)}`}>{balanceLabel(e.balance)}</td></tr>))}</tbody></Table>
                                 )}
                                 {reportData.type === 'summary_bank' && (
                                     <Table className="table-hover align-middle mb-0"><thead className="table-light text-uppercase fs-11"><tr><th>Date</th><th>Particular</th><th className="text-end">Debit (₹)</th><th className="text-end">Credit (₹)</th><th className="text-end">Balance</th></tr></thead>
