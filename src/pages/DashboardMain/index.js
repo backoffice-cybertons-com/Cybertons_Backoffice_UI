@@ -268,6 +268,15 @@ const DashboardMain = () => {
                                     ?? dashboardData?.kpi_cards?.other_income
                                     ?? dashboardData?.c_other_income
                                     ?? dashboardData?.other_income,
+                                profit_percentage:
+                                    dashboardData?.kpi_cards?.profit_percentage
+                                    ?? dashboardData?.kpi_cards?.profit_percent
+                                    ?? dashboardData?.kpi_cards?.profitPercentage
+                                    ?? dashboardData?.kpi_cards?.c_profit_percentage
+                                    ?? dashboardData?.kpi_cards?.c_profit_percent
+                                    ?? dashboardData?.profit_percentage
+                                    ?? dashboardData?.profit_percent
+                                    ?? dashboardData?.profitPercentage,
                             }}
                             loading={loading && !isIndependentUpdate}
                         />

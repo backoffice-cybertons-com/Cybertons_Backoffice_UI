@@ -20,6 +20,27 @@ const Widgets = ({ kpiData, loading }) => {
     const formatAmount2 = (num) =>
         Number(num || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
+    const parseKpiNumber = (val) => {
+        if (val === null || val === undefined || val === '') return 0;
+        if (typeof val === 'number') return Number.isFinite(val) ? val : 0;
+        const cleaned = String(val).replace(/%/g, '').replace(/,/g, '').trim();
+        const n = Number(cleaned);
+        return Number.isFinite(n) ? n : 0;
+    };
+
+    const formatPercent = (num) =>
+        parseKpiNumber(num).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+    const profitPercent = parseKpiNumber(
+        kpiData?.profit_percentage
+        ?? kpiData?.profit_percent
+        ?? kpiData?.profitPercentage
+        ?? kpiData?.c_profit_percentage
+        ?? kpiData?.c_profit_percent
+        ?? kpiData?.ProfitPercentage
+        ?? 0
+    );
+
     const widgetsData = [
         {
             id: 1,
@@ -136,14 +157,15 @@ const Widgets = ({ kpiData, loading }) => {
             badgeClass: "primary",
             badge: null,
             percentage: null,
-            counter: kpiData?.profit_percentage || 0,
+            counter: profitPercent,
             link: "View Report",
             url: "#",
             bgcolor: "info",
             icon: "ri-pulse-line",
             decimals: 2,
             suffix: "%",
-            separator: ","
+            separator: ",",
+            formatFn: formatPercent,
         }
     ];
 
@@ -173,15 +195,15 @@ const Widgets = ({ kpiData, loading }) => {
                                             <div className="flex-grow-1 ms-3">
                                                 <h2 className={`mb-0 fs-20 ${(item.label.includes("Profit") && item.counter < 0) ? "text-danger" :
                                                     (item.label.includes("Profit") && item.counter > 0) ? "text-success" : ""
-                                                    }`} id={`kpi-tooltip-${key}`} title={`${item.prefix || ""}${item.counter.toLocaleString('en-IN', { minimumFractionDigits: 2 })} ${item.suffix || ""}`}>
+                                                    }`} id={`kpi-tooltip-${key}`} title={`${item.prefix || ""}${(item.formatFn || formatNumber)(item.counter)} ${item.suffix || ""}`.trim()}>
                                                     <span className="counter-value">
                                                         {item.prefix}
                                                         <CountUp
                                                             start={0}
-                                                            end={item.counter}
-                                                            decimals={0}
+                                                            end={Number(item.counter) || 0}
+                                                            decimals={item.decimals ?? 0}
                                                             duration={3}
-                                                            formattingFn={formatNumber}
+                                                            formattingFn={item.formatFn || formatNumber}
                                                         />
                                                         {item.suffix}
                                                     </span>
