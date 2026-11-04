@@ -177,20 +177,45 @@ const ProfitLossReport = () => {
 
     const flattenSideRows = (groups, totalLabel, totalAmount) => {
         const flattened = [];
-        groups.forEach(group => {
-            flattened.push({ label: group.groupName, amount: group.total, isGroup: true });
-            group.directRows.forEach(row => {
-                flattened.push({ label: `  ${row.ledgerName}`, amount: row.amount, isGroup: false });
+        groups.forEach((group, groupIndex) => {
+            if (groupIndex > 0) flattened.push({ kind: "spacer" });
+
+            flattened.push({
+                label: group.groupName,
+                amount: group.total,
+                kind: "group"
             });
+
+            group.directRows.forEach(row => {
+                flattened.push({
+                    label: row.ledgerName,
+                    amount: row.amount,
+                    kind: "ledger"
+                });
+            });
+
             group.subGroups.forEach(subGroup => {
-                flattened.push({ label: `  ${subGroup.subGroupName}`, amount: subGroup.total, isSubGroup: true });
+                flattened.push({
+                    label: subGroup.subGroupName,
+                    amount: subGroup.total,
+                    kind: "subgroup"
+                });
                 subGroup.rows.forEach(row => {
-                    flattened.push({ label: `    ${row.ledgerName}`, amount: row.amount, isGroup: false });
+                    flattened.push({
+                        label: row.ledgerName,
+                        amount: row.amount,
+                        kind: "subledger"
+                    });
                 });
             });
         });
-        flattened.push({ label: totalLabel, amount: totalAmount, isTotal: true });
+        flattened.push({ label: totalLabel, amount: totalAmount, kind: "total" });
         return flattened;
+    };
+
+    const excelCellValue = (value) => {
+        if (value === undefined || value === null || value === "") return "";
+        return value;
     };
 
     const handleExcel = () => {
@@ -199,6 +224,10 @@ const ProfitLossReport = () => {
         const liabilityExportRows = flattenSideRows(liabilityGroups, "EXPENSES & Equity Total", liabilityTotal);
         const assetExportRows = flattenSideRows(assetGroups, "INCOMES Total", assetTotal);
         const maxRows = Math.max(liabilityExportRows.length, assetExportRows.length);
+        const headerRowIndex = 4;
+        const dataStartRow = headerRowIndex + 1;
+        const leftKinds = new Map();
+        const rightKinds = new Map();
 
         const aoa = [
             ["Profit & Loss Account", "", "", ""],
@@ -209,61 +238,158 @@ const ProfitLossReport = () => {
         ];
 
         for (let i = 0; i < maxRows; i++) {
-            const left = liabilityExportRows[i] || {};
-            const right = assetExportRows[i] || {};
+            const left = liabilityExportRows[i] || { kind: "spacer" };
+            const right = assetExportRows[i] || { kind: "spacer" };
+            const excelRow = dataStartRow + i;
+            leftKinds.set(excelRow, left.kind || "ledger");
+            rightKinds.set(excelRow, right.kind || "ledger");
             aoa.push([
                 left.label || "",
-                left.amount || "",
+                excelCellValue(left.amount),
                 right.label || "",
-                right.amount || ""
+                excelCellValue(right.amount)
             ]);
         }
 
-        aoa.push(["Difference", Math.abs(difference), isBalanced ? "Balanced" : (difference > 0 ? "INCOMES higher" : "EXPENSES higher"), ""]);
+        const diffRowIndex = aoa.length;
+        aoa.push([
+            "Difference",
+            Math.abs(difference),
+            isBalanced ? "Balanced" : (difference > 0 ? "INCOMES higher" : "EXPENSES higher"),
+            ""
+        ]);
 
         const ws = XLSX.utils.aoa_to_sheet(aoa);
         ws["!merges"] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 3 } }];
-        ws["!cols"] = [{ wch: 42 }, { wch: 18 }, { wch: 42 }, { wch: 18 }];
+        ws["!cols"] = [{ wch: 46 }, { wch: 18 }, { wch: 46 }, { wch: 18 }];
 
-        const border = {
-            top: { style: "thin", color: { rgb: "D1D5DB" } },
-            bottom: { style: "thin", color: { rgb: "D1D5DB" } },
-            left: { style: "thin", color: { rgb: "D1D5DB" } },
-            right: { style: "thin", color: { rgb: "D1D5DB" } }
+        const thin = { style: "thin", color: { rgb: "E5E7EB" } };
+        const border = { top: thin, bottom: thin, left: thin, right: thin };
+        const moneyFmt = "#,##0.00";
+
+        const kindStyle = {
+            group: {
+                font: { bold: true, sz: 11, color: { rgb: "111827" } },
+                fill: { patternType: "solid", fgColor: { rgb: "F3F4F6" } },
+                border: {
+                    top: { style: "thin", color: { rgb: "D1D5DB" } },
+                    bottom: { style: "thin", color: { rgb: "D1D5DB" } },
+                    left: thin,
+                    right: thin
+                }
+            },
+            subgroup: {
+                font: { bold: true, sz: 10, color: { rgb: "374151" } },
+                fill: { patternType: "solid", fgColor: { rgb: "F9FAFB" } },
+                border
+            },
+            ledger: {
+                font: { sz: 10, color: { rgb: "4B5563" } },
+                border
+            },
+            subledger: {
+                font: { sz: 10, color: { rgb: "6B7280" } },
+                border
+            },
+            total: {
+                font: { bold: true, sz: 11, color: { rgb: "111827" } },
+                fill: { patternType: "solid", fgColor: { rgb: "E5E7EB" } },
+                border: {
+                    top: { style: "thin", color: { rgb: "9CA3AF" } },
+                    bottom: { style: "thin", color: { rgb: "9CA3AF" } },
+                    left: thin,
+                    right: thin
+                }
+            }
         };
 
+        const indentByKind = { group: 0, subgroup: 1, ledger: 1, subledger: 2, total: 0 };
+
         const range = XLSX.utils.decode_range(ws["!ref"]);
+        const rowMeta = [];
+
         for (let r = range.s.r; r <= range.e.r; r++) {
             for (let c = range.s.c; c <= range.e.c; c++) {
                 const addr = XLSX.utils.encode_cell({ r, c });
-                if (!ws[addr]) continue;
+                if (!ws[addr]) ws[addr] = { t: "s", v: "" };
 
                 if (r === 0) {
                     ws[addr].s = {
-                        font: { bold: true, sz: 16 },
-                        alignment: { horizontal: "center" }
+                        font: { bold: true, sz: 16, color: { rgb: "0F172A" } },
+                        alignment: { horizontal: "center", vertical: "center" }
                     };
-                } else if (r === 4) {
+                    continue;
+                }
+
+                if (r === 1 || r === 2) {
+                    ws[addr].s = c % 2 === 0
+                        ? { font: { bold: true, color: { rgb: "334155" } }, alignment: { horizontal: "left" } }
+                        : { font: { color: { rgb: "111827" } }, alignment: { horizontal: "left" } };
+                    continue;
+                }
+
+                if (r === headerRowIndex) {
                     ws[addr].s = {
-                        font: { bold: true, color: { rgb: "FFFFFF" } },
-                        fill: { patternType: "solid", fgColor: { rgb: "344767" } },
+                        font: { bold: true, sz: 11, color: { rgb: "FFFFFF" } },
+                        fill: { patternType: "solid", fgColor: { rgb: "1F2937" } },
                         border,
-                        alignment: { horizontal: c % 2 === 0 ? "left" : "right" }
+                        alignment: { horizontal: c % 2 === 0 ? "left" : "right", vertical: "center" }
                     };
-                } else if (r > 4) {
+                    continue;
+                }
+
+                if (r === diffRowIndex) {
                     ws[addr].s = {
-                        border,
-                        alignment: { horizontal: c % 2 === 0 ? "left" : "right" },
-                        numFmt: c % 2 === 1 ? "#,##0.00" : undefined
+                        font: { bold: true, color: { rgb: "111827" } },
+                        fill: { patternType: "solid", fgColor: { rgb: "F3F4F6" } },
+                        border: {
+                            top: { style: "thin", color: { rgb: "9CA3AF" } },
+                            bottom: { style: "thin", color: { rgb: "9CA3AF" } },
+                            left: thin,
+                            right: thin
+                        },
+                        alignment: { horizontal: c % 2 === 0 ? "left" : "right", vertical: "center" },
+                        numFmt: c === 1 ? moneyFmt : undefined
                     };
+                    if (c === 1 && typeof ws[addr].v === "number") ws[addr].t = "n";
+                    continue;
+                }
+
+                if (r >= dataStartRow) {
+                    const kind = (c <= 1 ? leftKinds : rightKinds).get(r) || "spacer";
+                    if (kind === "spacer") {
+                        ws[addr].s = { fill: { patternType: "solid", fgColor: { rgb: "FFFFFF" } } };
+                        continue;
+                    }
+
+                    const base = kindStyle[kind] || kindStyle.ledger;
+                    const isAmountCol = c % 2 === 1;
+                    ws[addr].s = {
+                        ...base,
+                        alignment: {
+                            horizontal: isAmountCol ? "right" : "left",
+                            vertical: "center",
+                            indent: isAmountCol ? 0 : (indentByKind[kind] || 0)
+                        },
+                        numFmt: isAmountCol ? moneyFmt : undefined
+                    };
+                    if (isAmountCol && typeof ws[addr].v === "number") ws[addr].t = "n";
                 }
             }
+
+            if (r === 0) rowMeta[r] = { hpt: 24 };
+            else if (r === headerRowIndex || r === diffRowIndex) rowMeta[r] = { hpt: 20 };
+            else if (leftKinds.get(r) === "group" || rightKinds.get(r) === "group") rowMeta[r] = { hpt: 20 };
+            else if (leftKinds.get(r) === "subgroup" || rightKinds.get(r) === "subgroup") rowMeta[r] = { hpt: 18 };
+            else if (leftKinds.get(r) === "spacer" && rightKinds.get(r) === "spacer") rowMeta[r] = { hpt: 10 };
         }
+
+        ws["!rows"] = rowMeta;
 
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, "Profit & Loss Account");
         const buffer = XLSX.write(wb, { bookType: "xlsx", type: "array" });
-        saveAs(new Blob([buffer], { type: "application/octet-stream" }), `Balance_Sheet_${formatLocalYMD(asOfDate)}.xlsx`);
+        saveAs(new Blob([buffer], { type: "application/octet-stream" }), `Profit_Loss_${formatLocalYMD(asOfDate)}.xlsx`);
     };
 
     const handlePrint = () => {
