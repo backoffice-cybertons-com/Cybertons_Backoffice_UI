@@ -4,7 +4,21 @@ import CountUp from "react-countup";
 import { Card, CardBody, CardHeader, Col, UncontrolledTooltip } from 'reactstrap';
 import getChartColorsArray from "../../Components/Common/ChartsDynamicColor";
 
-const SalesTrendChart = ({ dataColors, seriesData, filter, loading }) => {
+const toNumber = (val) => {
+    const n = Number(val);
+    return Number.isFinite(n) ? n : 0;
+};
+
+const formatCompactAmount = (num) => {
+    const n = toNumber(num);
+    const absNum = Math.abs(n);
+    if (absNum >= 10000000) return (n / 10000000).toFixed(2) + " Cr";
+    if (absNum >= 100000) return (n / 100000).toFixed(2) + " L";
+    if (absNum >= 1000) return (n / 1000).toFixed(2) + " K";
+    return n.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+};
+
+const SalesTrendChart = ({ dataColors, seriesData, kpiTotals, filter, loading }) => {
     const chartColors = getChartColorsArray(dataColors);
 
     // Group daily data into months for THIS_YEAR to avoid duplicate labels
@@ -53,9 +67,9 @@ const SalesTrendChart = ({ dataColors, seriesData, filter, loading }) => {
             }
 
             if (monthName && grouped[monthName]) {
-                grouped[monthName].sales += (item.sales || item.total_sales || item.Total_Sales || 0);
-                grouped[monthName].purchase += (item.purchase || item.total_purchase || item.Total_Purchase || 0);
-                grouped[monthName].expense += (item.expense || item.total_expense || item.Total_Expense || 0);
+                grouped[monthName].sales += toNumber(item.sales || item.total_sales || item.Total_Sales);
+                grouped[monthName].purchase += toNumber(item.purchase || item.total_purchase || item.Total_Purchase);
+                grouped[monthName].expense += toNumber(item.expense || item.total_expense || item.Total_Expense);
             }
         });
 
@@ -67,15 +81,15 @@ const SalesTrendChart = ({ dataColors, seriesData, filter, loading }) => {
     const series = [
         {
             name: 'Total Sales',
-            data: processedData?.map(item => item.sales || item.total_sales || 0) || []
+            data: processedData?.map(item => toNumber(item.sales || item.total_sales)) || []
         },
         {
             name: 'Total Purchase',
-            data: processedData?.map(item => item.purchase || item.total_purchase || 0) || []
+            data: processedData?.map(item => toNumber(item.purchase || item.total_purchase)) || []
         },
         {
             name: 'Total Expense',
-            data: processedData?.map(item => item.expense || item.total_expense || 0) || []
+            data: processedData?.map(item => toNumber(item.expense || item.total_expense)) || []
         }
     ];
 
@@ -152,10 +166,7 @@ const SalesTrendChart = ({ dataColors, seriesData, filter, loading }) => {
                 show: true,
                 minWidth: 40,
                 formatter: function (value) {
-                    if (value >= 10000000) return (value / 10000000).toFixed(1) + " Cr";
-                    if (value >= 100000) return (value / 100000).toFixed(1) + " L";
-                    if (value >= 1000) return (value / 1000).toFixed(1) + " K";
-                    return value;
+                    return formatCompactAmount(value);
                 }
             },
             tickAmount: 5,
@@ -198,24 +209,20 @@ const SalesTrendChart = ({ dataColors, seriesData, filter, loading }) => {
         }
     };
 
-    // Calculate totals for the header
+    // Header totals match dashboard summary cards (kpi_cards), not a sum of chart buckets
     const totals = useMemo(() => {
-        const totalSales = seriesData?.reduce((acc, curr) => acc + (curr.sales || curr.total_sales || 0), 0) || 0;
-        const totalPurchase = seriesData?.reduce((acc, curr) => acc + (curr.purchase || curr.total_purchase || 0), 0) || 0;
-        const totalExpense = seriesData?.reduce((acc, curr) => acc + (curr.expense || curr.total_expense || 0), 0) || 0;
-        return { totalSales, totalPurchase, totalExpense };
-    }, [seriesData]);
-
-    const formatHeaderValue = (val) => {
-        const absVal = Math.abs(val);
-        if (absVal >= 10000000) return (val / 10000000).toFixed(2) + "Cr";
-        if (absVal >= 100000) return (val / 100000).toFixed(2) + "L";
-        if (absVal >= 1000) return (val / 1000).toFixed(2) + "K";
-        return val.toFixed(2);
-    };
+        const seriesSales = seriesData?.reduce((acc, curr) => acc + toNumber(curr.sales || curr.total_sales), 0) || 0;
+        const seriesPurchase = seriesData?.reduce((acc, curr) => acc + toNumber(curr.purchase || curr.total_purchase), 0) || 0;
+        const seriesExpense = seriesData?.reduce((acc, curr) => acc + toNumber(curr.expense || curr.total_expense), 0) || 0;
+        return {
+            totalSales: kpiTotals?.totalSales != null && kpiTotals.totalSales !== '' ? toNumber(kpiTotals.totalSales) : seriesSales,
+            totalPurchase: kpiTotals?.totalPurchase != null && kpiTotals.totalPurchase !== '' ? toNumber(kpiTotals.totalPurchase) : seriesPurchase,
+            totalExpense: kpiTotals?.totalExpense != null && kpiTotals.totalExpense !== '' ? toNumber(kpiTotals.totalExpense) : seriesExpense,
+        };
+    }, [seriesData, kpiTotals]);
 
     const formatFullCurrency = (val) => {
-        return "₹ " + val.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        return "₹ " + toNumber(val).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     };
 
     return (
@@ -232,7 +239,7 @@ const SalesTrendChart = ({ dataColors, seriesData, filter, loading }) => {
                                     start={0}
                                     end={totals.totalSales}
                                     duration={3}
-                                    formattingFn={formatHeaderValue}
+                                    formattingFn={formatCompactAmount}
                                 />
                                 <span className="text-muted d-inline-block fs-13 align-middle ms-2">Sales</span></h4>
                             <UncontrolledTooltip placement="top" target="total-sales-header">
@@ -245,7 +252,7 @@ const SalesTrendChart = ({ dataColors, seriesData, filter, loading }) => {
                                     start={0}
                                     end={totals.totalPurchase}
                                     duration={3}
-                                    formattingFn={formatHeaderValue}
+                                    formattingFn={formatCompactAmount}
                                 />
                                 <span className="text-muted d-inline-block fs-13 align-middle ms-2">Purchase</span></h4>
                             <UncontrolledTooltip placement="top" target="total-purchase-header">
@@ -258,7 +265,7 @@ const SalesTrendChart = ({ dataColors, seriesData, filter, loading }) => {
                                     start={0}
                                     end={totals.totalExpense}
                                     duration={3}
-                                    formattingFn={formatHeaderValue}
+                                    formattingFn={formatCompactAmount}
                                 />
                                 <span className="text-muted d-inline-block fs-13 align-middle ms-2">Expense</span></h4>
                             <UncontrolledTooltip placement="top" target="total-expense-header">

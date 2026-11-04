@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import Select from "react-select";
 import {
-    Modal, ModalHeader, ModalBody, ModalFooter, Button,
+    Modal, ModalBody, Button,
     Row, Col, Nav, NavItem, NavLink, TabContent, TabPane,
     Form, FormGroup, Label, Input, FormFeedback, Card, CardBody
 } from 'reactstrap';
@@ -22,6 +22,7 @@ const PartyMasterModal = ({ isOpen, toggle, partyId, isEdit, onSuccess, defaultT
     const [isUploading, setIsUploading] = useState(false);
     const [dropdowns, setDropdowns] = useState({
         partyTypes: [],
+        reportPartyTypes: [],
         currencies: [],
         accounts: [],
         paymentTerms: [],
@@ -45,6 +46,8 @@ const PartyMasterModal = ({ isOpen, toggle, partyId, isEdit, onSuccess, defaultT
     const initialPartyState = {
         Party: {
             PartyType: defaultType || '',
+            PartyTypeId: null,
+            ReportPartyType: '',
             Salutation: '',
             FirstName: '',
             LastName: '',
@@ -151,8 +154,9 @@ const PartyMasterModal = ({ isOpen, toggle, partyId, isEdit, onSuccess, defaultT
     useEffect(() => {
         const fetchDropdowns = async () => {
             try {
-                const [pTypes, currs, accs, pTerms, banks, branches, sp, tp, zones] = await Promise.all([
+                const [pTypes, reportTypes, currs, accs, pTerms, banks, branches, sp, tp, zones] = await Promise.all([
                     apiClient.get('/api/partytypemaster'),
+                    apiClient.get('/api/Master/reportPartyTypes').catch(() => []),
                     apiClient.get('/api/currency'),
                     apiClient.get('/api/account'),
                     apiClient.get('/api/paymentterm'),
@@ -165,6 +169,7 @@ const PartyMasterModal = ({ isOpen, toggle, partyId, isEdit, onSuccess, defaultT
                 setDropdowns(prev => ({
                     ...prev,
                     partyTypes: Array.isArray(pTypes) ? pTypes : [],
+                    reportPartyTypes: Array.isArray(reportTypes) ? reportTypes : [],
                     currencies: Array.isArray(currs) ? currs : [],
                     accounts: Array.isArray(accs) ? accs : [],
                     paymentTerms: Array.isArray(pTerms) ? pTerms : [],
@@ -193,6 +198,22 @@ const PartyMasterModal = ({ isOpen, toggle, partyId, isEdit, onSuccess, defaultT
             }
         }
     }, [isOpen, isEdit, partyId, defaultType]);
+
+    useEffect(() => {
+        if (!isOpen || isEdit) return;
+        const typeName = form.Party.PartyType;
+        if (!typeName || form.Party.PartyTypeId) return;
+        const selectedType = (dropdowns.partyTypes || []).find(pt =>
+            String(pt.PartyTypeName || pt.partyTypeName || '').toLowerCase() === String(typeName).toLowerCase()
+        );
+        if (!selectedType) return;
+        const typeId = selectedType.PartyTypeId ?? selectedType.partyTypeId ?? selectedType.party_type_id ?? null;
+        if (!typeId) return;
+        setForm(prev => ({
+            ...prev,
+            Party: { ...prev.Party, PartyTypeId: typeId }
+        }));
+    }, [isOpen, isEdit, dropdowns.partyTypes, form.Party.PartyType, form.Party.PartyTypeId]);
 
     const fetchPartyData = async (id) => {
         setLoading(true);
@@ -243,6 +264,8 @@ const PartyMasterModal = ({ isOpen, toggle, partyId, isEdit, onSuccess, defaultT
                     Party: {
                         PartyId: p.PartyId ?? p.partyId ?? 0,
                         PartyType: p.PartyType ?? p.partyType ?? '',
+                        PartyTypeId: p.PartyTypeId ?? p.partyTypeId ?? p.party_type_id ?? null,
+                        ReportPartyType: p.ReportPartyType ?? p.reportPartyType ?? p.report_party_type ?? '',
                         Salutation: p.Salutation ?? p.salutation ?? '',
                         FirstName: p.FirstName ?? p.firstName ?? '',
                         LastName: p.LastName ?? p.lastName ?? '',
@@ -366,14 +389,43 @@ const PartyMasterModal = ({ isOpen, toggle, partyId, isEdit, onSuccess, defaultT
 
     const handlePartyChange = (e) => {
         const { name, value, type, checked } = e.target;
-        setForm(prev => ({
-            ...prev,
-            Party: {
+        setForm(prev => {
+            const nextValue = type === 'checkbox' ? checked : value;
+            const nextParty = {
                 ...prev.Party,
-                [name]: type === 'checkbox' ? checked : value
+                [name]: nextValue
+            };
+            // When party type changes, keep party_type_id in sync and clear invalid report type
+            if (name === 'PartyType') {
+                const selectedType = (dropdowns.partyTypes || []).find(pt =>
+                    String(pt.PartyTypeName || pt.partyTypeName || '').toLowerCase() === String(nextValue || '').toLowerCase()
+                );
+                nextParty.PartyTypeId = selectedType
+                    ? (selectedType.PartyTypeId ?? selectedType.partyTypeId ?? selectedType.party_type_id ?? null)
+                    : null;
+                const stillValid = (dropdowns.reportPartyTypes || []).some(rt => {
+                    const rtPartyType = rt.PartyType ?? rt.partyType ?? '';
+                    const rtName = rt.ReportPartyType ?? rt.reportPartyType ?? '';
+                    return String(rtPartyType).toLowerCase() === String(nextValue || '').toLowerCase()
+                        && String(rtName) === String(prev.Party.ReportPartyType || '');
+                });
+                if (!stillValid) nextParty.ReportPartyType = '';
             }
-        }));
+            return { ...prev, Party: nextParty };
+        });
     };
+
+    const reportPartyTypeOptions = useMemo(() => {
+        const selectedPartyType = String(form.Party.PartyType || '').toLowerCase();
+        if (!selectedPartyType) return [];
+        return (dropdowns.reportPartyTypes || [])
+            .filter(rt => String(rt.PartyType ?? rt.partyType ?? '').toLowerCase() === selectedPartyType)
+            .map(rt => {
+                const name = rt.ReportPartyType ?? rt.reportPartyType ?? '';
+                return { label: name, value: name };
+            })
+            .filter(opt => opt.value);
+    }, [dropdowns.reportPartyTypes, form.Party.PartyType]);
 
     const handlePreviewCalculatedAddPrice = async () => {
         const id = form.Party?.PartyId || partyId;
@@ -505,6 +557,7 @@ const PartyMasterModal = ({ isOpen, toggle, partyId, isEdit, onSuccess, defaultT
                     AccountsPayableAccount: form.Party.AccountsPayableAccount ? parseInt(form.Party.AccountsPayableAccount) : null,
                     OpeningBalance: parseFloat(form.Party.OpeningBalance) || 0,
                     PartyId: parseInt(form.Party.PartyId || partyId) || 0,
+                    PartyTypeId: form.Party.PartyTypeId ? parseInt(form.Party.PartyTypeId) : null,
                     RateDiff: parseFloat(form.Party.RateDiff) || 0,
                     DailySaleLimit: form.Party.DailySaleLimit === '' || form.Party.DailySaleLimit == null
                         ? null
@@ -560,9 +613,43 @@ const PartyMasterModal = ({ isOpen, toggle, partyId, isEdit, onSuccess, defaultT
 
     return (
         <Modal isOpen={isOpen} toggle={toggle} size="xl" centered modalClassName="zoomIn">
-            <ModalHeader toggle={toggle}>
-                {isEdit ? "Edit Party" : "New " + (defaultType || "Party")}
-            </ModalHeader>
+            {/* <div className="modal-header align-items-center">
+                <h5 className="modal-title">
+                    {isEdit ? "Edit Party" : "New " + (defaultType || "Party")}
+                </h5>
+                <div className="ms-auto d-flex gap-2">
+                    <Button color="dark" outline size="sm" onClick={toggle} disabled={loading}>Cancel</Button>
+                    <Button color="success" size="sm" onClick={handleSave} disabled={loading}>
+                        {loading ? "Saving..." : isEdit ? "Update Party" : "Save Party"}
+                    </Button>
+                </div>
+                <button type="button" className="btn-close" aria-label="Close" onClick={toggle} disabled={loading} />
+            </div> */}
+
+            <div className="modal-header align-items-center">
+                <h5 className="modal-title">
+                    {isEdit ? "Edit Party" : "New " + (defaultType || "Party")}
+                </h5>
+            
+
+                <div className="d-flex gap-2 ms-auto">
+                    <Button color="dark" outline size="sm" onClick={toggle} disabled={loading}>
+                        Cancel
+                    </Button>
+                    <Button color="success" size="sm" onClick={handleSave} disabled={loading}>
+                        {loading ? "Saving..." : isEdit ? "Update Party" : "Save Party"}
+                    </Button>
+                <button
+                    type="button"
+                    className="btn-close"
+                    aria-label="Close"
+                    onClick={toggle}
+                    disabled={loading}
+                />
+                </div>
+            </div>
+
+
             <ModalBody className="p-0">
                 <Nav tabs className="nav-tabs-custom nav-success px-4 pt-2">
                     <NavItem>
@@ -588,7 +675,7 @@ const PartyMasterModal = ({ isOpen, toggle, partyId, isEdit, onSuccess, defaultT
                 <TabContent activeTab={activeTab} className="p-4" style={{ minHeight: '520px' }}>
                     <TabPane tabId="1">
                         <Row className="g-3">
-                            <Col md={6}>
+                            <Col md={4}>
                                 <FormGroup>
                                     <Label>Party Type <span className="text-danger">*</span></Label>
                                     <Select
@@ -620,7 +707,22 @@ const PartyMasterModal = ({ isOpen, toggle, partyId, isEdit, onSuccess, defaultT
                                     <FormFeedback>{validationErrors.PartyType}</FormFeedback>
                                 </FormGroup>
                             </Col>
-                            <Col md={6}>
+                            <Col md={4}>
+                                <FormGroup>
+                                    <Label>Report Party Type</Label>
+                                    <Select
+                                        name="ReportPartyType"
+                                        value={reportPartyTypeOptions.find(opt => opt.value === form.Party.ReportPartyType) || null}
+                                        onChange={(opt) => handlePartyChange({ target: { name: 'ReportPartyType', value: opt ? opt.value : '' } })}
+                                        options={reportPartyTypeOptions}
+                                        placeholder={form.Party.PartyType ? "Select report type" : "Select party type first"}
+                                        isSearchable
+                                        isClearable
+                                        isDisabled={!form.Party.PartyType}
+                                    />
+                                </FormGroup>
+                            </Col>
+                            <Col md={4}>
                                 <FormGroup>
                                     <Label>Display Name <span className="text-danger">*</span></Label>
                                     <Input name="DisplayName" value={form.Party.DisplayName} onChange={handlePartyChange} invalid={!!validationErrors.DisplayName} />
@@ -1273,12 +1375,12 @@ const PartyMasterModal = ({ isOpen, toggle, partyId, isEdit, onSuccess, defaultT
                     </TabPane>
                 </TabContent>
             </ModalBody>
-            <ModalFooter className="bg-light">
+            {/* <ModalFooter className="bg-light">
                 <Button color="dark" outline onClick={toggle} disabled={loading}>Cancel</Button>
                 <Button color="success" onClick={handleSave} disabled={loading}>
                     {loading ? "Saving..." : isEdit ? "Update Party" : "Save Party"}
                 </Button>
-            </ModalFooter>
+            </ModalFooter> */}
 
             <ResultModal
                 show={resultModal.show}

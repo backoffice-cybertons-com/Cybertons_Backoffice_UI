@@ -147,6 +147,7 @@ const PartyMasterList = () => {
         { label: "Display Name", accessor: row => pickField(row, "display_name", "displayName", "DisplayName") },
         { label: "Company Name", accessor: row => pickField(row, "company_name", "companyName", "CompanyName") },
         { label: "Party Type", accessor: row => pickField(row, "party_type", "partyType", "PartyType") },
+        { label: "Report Party Type", accessor: row => pickField(row, "report_party_type", "reportPartyType", "ReportPartyType") },
         { label: "Email", accessor: row => pickField(row, "email", "Email") },
         { label: "Phone Mobile", accessor: row => pickField(row, "phone_mobile", "phoneMobile", "PhoneMobile", "phone_work", "phoneWork", "PhoneWork") },
         { label: "Opening Balance", accessor: row => pickField(row, "opening_balance", "openingBalance", "OpeningBalance") },
@@ -195,6 +196,12 @@ const PartyMasterList = () => {
             selector: row => pickField(row, "party_type", "partyType", "PartyType"),
             sortable: true,
             width: "140px"
+        },
+        {
+            name: renderHeader("Report Party Type", "report_party_type"),
+            selector: row => pickField(row, "report_party_type", "reportPartyType", "ReportPartyType"),
+            sortable: true,
+            width: "160px"
         },
         {
             name: "Status",

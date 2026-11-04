@@ -67,6 +67,27 @@ export const masterConfig = {
             { name: "SortOrder", label: "Sort Order", type: "number" }
         ]
     },
+    // Report Party Type -> tab_party_report_type_master
+    reportPartyTypes: {
+        pk: "Id",
+        label: "Report Party Type",
+        fields: [
+            {
+                name: "PartyType",
+                label: "Party Type",
+                type: "select",
+                url: "/api/partytypemaster",
+                valueKey: "name",
+                required: true
+            },
+            {
+                name: "ReportPartyType",
+                label: "Report Name",
+                type: "text",
+                required: true
+            }
+        ]
+    },
     // 1. Product (Complex, handled by dedicated page usually, but kept here for ref)
     products: {
         pk: "productId",

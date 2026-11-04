@@ -17,6 +17,7 @@ const MastersDashboard = () => {
             items: [
                 { id: "party", label: "Party Master", customRoute: "/party" },
                 { id: "partyTypes", label: "Party Type" },
+                { id: "reportPartyTypes", label: "Report Party Type" },
                 { id: "bank", label: "Bank" },
                 { id: "fiscalYears", label: "Fiscal Year" },
                 { id: "currency", label: "Currency" },
@@ -80,6 +81,7 @@ const MastersDashboard = () => {
         products: "Maintain items/services including pricing and tax details.",
         party: "Manage all ledgers including Customers, Vendors, and Traders.",
         partyTypes: "Define accounting natures and report mapping for all party classifications.",
+        reportPartyTypes: "Define and manage subgroups under each party type to organize and classify accounts.",
         users: "Manage access controls, roles, and user profiles.",
         units: "Define units of measurement for products.",
         taxes: "Configure GST/VAT and other tax rates.",

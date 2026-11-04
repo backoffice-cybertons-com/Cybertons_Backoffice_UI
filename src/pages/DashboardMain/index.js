@@ -285,12 +285,23 @@ const DashboardMain = () => {
                     <Row className="mt-4">
                         <BarLineChart
                             seriesData={dashboardData?.bar_line_graph}
+                            kpiTotals={{
+                                totalSales: dashboardData?.kpi_cards?.total_sales ?? dashboardData?.kpi_cards?.totalSales ?? dashboardData?.total_sales,
+                                totalPurchase: dashboardData?.kpi_cards?.total_purchase ?? dashboardData?.kpi_cards?.totalPurchase ?? dashboardData?.total_purchase,
+                                totalExpense: dashboardData?.kpi_cards?.total_expense ?? dashboardData?.kpi_cards?.totalExpense ?? dashboardData?.total_expense,
+                                totalPL: dashboardData?.kpi_cards?.net_profit ?? dashboardData?.kpi_cards?.netProfit ?? dashboardData?.net_profit,
+                            }}
                             dataColors='["--vz-primary", "--vz-info", "--vz-warning", "--vz-success"]'
                             filter={filter}
                             loading={loading && !isIndependentUpdate}
                         />
                         <SalesTrendChart
                             seriesData={dashboardData?.sales_trend}
+                            kpiTotals={{
+                                totalSales: dashboardData?.kpi_cards?.total_sales ?? dashboardData?.kpi_cards?.totalSales ?? dashboardData?.total_sales,
+                                totalPurchase: dashboardData?.kpi_cards?.total_purchase ?? dashboardData?.kpi_cards?.totalPurchase ?? dashboardData?.total_purchase,
+                                totalExpense: dashboardData?.kpi_cards?.total_expense ?? dashboardData?.kpi_cards?.totalExpense ?? dashboardData?.total_expense,
+                            }}
                             dataColors='["--vz-success", "--vz-warning", "--vz-danger"]'
                             filter={filter}
                             loading={loading && !isIndependentUpdate}
@@ -306,6 +317,13 @@ const DashboardMain = () => {
                         />
                         <ExpenseBreakdownDonut
                             expenseData={dashboardData?.expense_breakdown}
+                            totalQtySold={
+                                dashboardData?.kpi_cards?.total_qty_sold
+                                ?? dashboardData?.total_qty_sold
+                                ?? dashboardData?.kpi_cards?.totalQtySold
+                                ?? dashboardData?.totalQtySold
+                                ?? 0
+                            }
                             partyTypesList={partyTypesList}
                             selectedPartyTypes={selectedPartyTypes}
                             onPartyTypesChange={handleExpensePartyTypesChange}

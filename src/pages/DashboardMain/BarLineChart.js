@@ -4,7 +4,21 @@ import CountUp from "react-countup";
 import { Card, CardBody, CardHeader, Col, UncontrolledTooltip } from 'reactstrap';
 import getChartColorsArray from "../../Components/Common/ChartsDynamicColor";
 
-const BarLineChart = ({ dataColors, seriesData, filter, loading }) => {
+const toNumber = (val) => {
+    const n = Number(val);
+    return Number.isFinite(n) ? n : 0;
+};
+
+const formatCompactAmount = (num) => {
+    const n = toNumber(num);
+    const absNum = Math.abs(n);
+    if (absNum >= 10000000) return (n / 10000000).toFixed(2) + " Cr";
+    if (absNum >= 100000) return (n / 100000).toFixed(2) + " L";
+    if (absNum >= 1000) return (n / 1000).toFixed(2) + " K";
+    return n.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+};
+
+const BarLineChart = ({ dataColors, seriesData, kpiTotals, filter, loading }) => {
     const chartColors = getChartColorsArray(dataColors);
 
     // ─── Aggregate monthly data for THIS_YEAR (same logic as SalesTrendChart) ───
@@ -45,10 +59,10 @@ const BarLineChart = ({ dataColors, seriesData, filter, loading }) => {
             }
 
             if (monthName && grouped[monthName]) {
-                grouped[monthName].total_sales += (item.total_sales || item.sales || 0);
-                grouped[monthName].total_purchase += (item.total_purchase || item.purchase || 0);
-                grouped[monthName].total_expense += (item.total_expense || item.expense || 0);
-                grouped[monthName].profit_loss += (item.profit_loss || 0);
+                grouped[monthName].total_sales += toNumber(item.total_sales || item.sales);
+                grouped[monthName].total_purchase += toNumber(item.total_purchase || item.purchase);
+                grouped[monthName].total_expense += toNumber(item.total_expense || item.expense);
+                grouped[monthName].profit_loss += toNumber(item.profit_loss);
             }
         });
 
@@ -96,22 +110,22 @@ const BarLineChart = ({ dataColors, seriesData, filter, loading }) => {
         {
             name: 'Total Sales',
             type: 'bar',
-            data: processedData?.map(item => item.total_sales || item.sales || 0) || []
+            data: processedData?.map(item => toNumber(item.total_sales || item.sales)) || []
         },
         {
             name: 'Total Purchase',
             type: 'bar',
-            data: processedData?.map(item => item.total_purchase || item.purchase || 0) || []
+            data: processedData?.map(item => toNumber(item.total_purchase || item.purchase)) || []
         },
         {
             name: 'Total Expense',
             type: 'line',
-            data: processedData?.map(item => item.total_expense || item.expense || 0) || []
+            data: processedData?.map(item => toNumber(item.total_expense || item.expense)) || []
         },
         {
             name: 'Profit / Loss',
             type: 'line',
-            data: processedData?.map(item => item.profit_loss || 0) || []
+            data: processedData?.map(item => toNumber(item.profit_loss)) || []
         }
     ];
 
@@ -163,10 +177,7 @@ const BarLineChart = ({ dataColors, seriesData, filter, loading }) => {
         yaxis: {
             labels: {
                 formatter: function (value) {
-                    if (value >= 10000000) return (value / 10000000).toFixed(1) + " Cr";
-                    if (value >= 100000) return (value / 100000).toFixed(1) + " L";
-                    if (value >= 1000) return (value / 1000).toFixed(1) + " K";
-                    return value;
+                    return formatCompactAmount(value);
                 },
                 style: {
                     colors: '#878a99',
@@ -224,27 +235,25 @@ const BarLineChart = ({ dataColors, seriesData, filter, loading }) => {
         }
     };
 
-    // ─── Header totals ─────────────────────────────────────────────────────────
+    // Header totals match dashboard summary cards (kpi_cards), not a sum of chart buckets
     const totals = useMemo(() => {
         const src = seriesData || [];
+        const seriesSales = src.reduce((a, c) => a + toNumber(c.total_sales || c.sales), 0);
+        const seriesPurchase = src.reduce((a, c) => a + toNumber(c.total_purchase || c.purchase), 0);
+        const seriesExpense = src.reduce((a, c) => a + toNumber(c.total_expense || c.expense), 0);
+        const seriesPL = src.reduce((a, c) => a + toNumber(c.profit_loss), 0);
+        const pick = (kpiVal, fallback) =>
+            kpiVal != null && kpiVal !== '' ? toNumber(kpiVal) : fallback;
         return {
-            totalSales: src.reduce((a, c) => a + (c.total_sales || c.sales || 0), 0),
-            totalPurchase: src.reduce((a, c) => a + (c.total_purchase || c.purchase || 0), 0),
-            totalExpense: src.reduce((a, c) => a + (c.total_expense || c.expense || 0), 0),
-            totalPL: src.reduce((a, c) => a + (c.profit_loss || 0), 0),
+            totalSales: pick(kpiTotals?.totalSales, seriesSales),
+            totalPurchase: pick(kpiTotals?.totalPurchase, seriesPurchase),
+            totalExpense: pick(kpiTotals?.totalExpense, seriesExpense),
+            totalPL: pick(kpiTotals?.totalPL, seriesPL),
         };
-    }, [seriesData]);
-
-    const fmt = (val) => {
-        const abs = Math.abs(val);
-        if (abs >= 10000000) return (val / 10000000).toFixed(2) + "Cr";
-        if (abs >= 100000) return (val / 100000).toFixed(2) + "L";
-        if (abs >= 1000) return (val / 1000).toFixed(2) + "K";
-        return val.toFixed(2);
-    };
+    }, [seriesData, kpiTotals]);
 
     const fullCurrency = val =>
-        "₹ " + val.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        "₹ " + toNumber(val).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
     return (
         <Col xl={6}>
@@ -261,7 +270,7 @@ const BarLineChart = ({ dataColors, seriesData, filter, loading }) => {
                         <div className="col-6 col-sm-3">
                             <div className="p-3 border border-dashed border-start-0">
                                 <h5 className="mb-1 text-primary" id="bl-sales-header">
-                                    ₹<CountUp start={0} end={totals.totalSales} duration={3} formattingFn={fmt} />
+                                    ₹<CountUp start={0} end={totals.totalSales} duration={3} formattingFn={formatCompactAmount} />
                                 </h5>
                                 <p className="text-muted mb-0 fs-13">Sales</p>
                                 <UncontrolledTooltip placement="top" target="bl-sales-header">
@@ -273,7 +282,7 @@ const BarLineChart = ({ dataColors, seriesData, filter, loading }) => {
                         <div className="col-6 col-sm-3">
                             <div className="p-3 border border-dashed border-start-0">
                                 <h5 className="mb-1" id="bl-purchase-header">
-                                    ₹<CountUp start={0} end={totals.totalPurchase} duration={3} formattingFn={fmt} />
+                                    ₹<CountUp start={0} end={totals.totalPurchase} duration={3} formattingFn={formatCompactAmount} />
                                 </h5>
                                 <p className="text-muted mb-0 fs-13">Purchase</p>
                                 <UncontrolledTooltip placement="top" target="bl-purchase-header">
@@ -285,7 +294,7 @@ const BarLineChart = ({ dataColors, seriesData, filter, loading }) => {
                         <div className="col-6 col-sm-3">
                             <div className="p-3 border border-dashed border-start-0">
                                 <h5 className="mb-1 text-danger" id="bl-expense-header">
-                                    ₹<CountUp start={0} end={totals.totalExpense} duration={3} formattingFn={fmt} />
+                                    ₹<CountUp start={0} end={totals.totalExpense} duration={3} formattingFn={formatCompactAmount} />
                                 </h5>
                                 <p className="text-muted mb-0 fs-13">Expense</p>
                                 <UncontrolledTooltip placement="top" target="bl-expense-header">
@@ -300,7 +309,7 @@ const BarLineChart = ({ dataColors, seriesData, filter, loading }) => {
                                     className={`mb-1 ${totals.totalPL >= 0 ? 'text-success' : 'text-danger'}`}
                                     id="bl-pl-header"
                                 >
-                                    ₹<CountUp start={0} end={Math.abs(totals.totalPL)} duration={3} formattingFn={fmt} />
+                                    ₹<CountUp start={0} end={Math.abs(totals.totalPL)} duration={3} formattingFn={formatCompactAmount} />
                                     {totals.totalPL < 0 && <span className="fs-12 ms-1">(Loss)</span>}
                                 </h5>
                                 <p className="text-muted mb-0 fs-13">Profit / Loss</p>

@@ -28,6 +28,12 @@ const SIDE_LABELS = {
     INCOMES: "INCOMES"
 };
 
+const normalizeGroupLabel = (value) =>
+    (value || "").toString().trim().toUpperCase().replace(/S$/, "");
+
+const isSameAsReportSide = (subGroupName, reportSide) =>
+    normalizeGroupLabel(subGroupName) === normalizeGroupLabel(reportSide);
+
 const ProfitLossReport = () => {
     const [asOfDate, setAsOfDate] = useState(new Date());
     const [reportData, setReportData] = useState(null);
@@ -89,6 +95,7 @@ const ProfitLossReport = () => {
             reportSide: (row.reportSide || row.ReportSide || "").toString().toUpperCase(),
             rowType: (row.rowType || row.RowType || "").toString().toUpperCase(),
             groupName: (row.groupName || row.GroupName || "Other").toString(),
+            subGroupName: (row.subGroupName || row.SubGroupName || row.sub_group_name || "").toString().trim() || "Other",
             ledgerId: row.ledgerId ?? row.LedgerId ?? row.accountId ?? row.AccountId ?? null,
             ledgerName: (row.ledgerName || row.LedgerName || "").toString(),
             amount: Number(row.amount ?? row.Amount ?? 0)
@@ -105,6 +112,7 @@ const ProfitLossReport = () => {
             return (
                 row.ledgerName.toLowerCase().includes(q) ||
                 row.groupName.toLowerCase().includes(q) ||
+                row.subGroupName.toLowerCase().includes(q) ||
                 row.reportSide.toLowerCase().includes(q)
             );
         });
@@ -116,17 +124,45 @@ const ProfitLossReport = () => {
             .filter(row => row.reportSide === side)
             .forEach(row => {
                 if (!groups.has(row.groupName)) {
-                    groups.set(row.groupName, { groupName: row.groupName, rows: [], total: 0 });
+                    groups.set(row.groupName, {
+                        groupName: row.groupName,
+                        directRows: [],
+                        subGroups: new Map(),
+                        total: 0
+                    });
                 }
                 const group = groups.get(row.groupName);
-                group.rows.push(row);
                 group.total += row.amount;
+
+                // Same as report side (e.g. Expense under EXPENSES) → no extra sub-group header
+                if (isSameAsReportSide(row.subGroupName, side)) {
+                    group.directRows.push(row);
+                    return;
+                }
+
+                if (!group.subGroups.has(row.subGroupName)) {
+                    group.subGroups.set(row.subGroupName, {
+                        subGroupName: row.subGroupName,
+                        rows: [],
+                        total: 0
+                    });
+                }
+                const subGroup = group.subGroups.get(row.subGroupName);
+                subGroup.rows.push(row);
+                subGroup.total += row.amount;
             });
 
         return Array.from(groups.values())
             .map(group => ({
-                ...group,
-                rows: group.rows.sort((a, b) => a.ledgerName.localeCompare(b.ledgerName))
+                groupName: group.groupName,
+                total: group.total,
+                directRows: group.directRows.sort((a, b) => a.ledgerName.localeCompare(b.ledgerName)),
+                subGroups: Array.from(group.subGroups.values())
+                    .map(subGroup => ({
+                        ...subGroup,
+                        rows: subGroup.rows.sort((a, b) => a.ledgerName.localeCompare(b.ledgerName))
+                    }))
+                    .sort((a, b) => a.subGroupName.localeCompare(b.subGroupName))
             }))
             .sort((a, b) => a.groupName.localeCompare(b.groupName));
     };
@@ -143,8 +179,14 @@ const ProfitLossReport = () => {
         const flattened = [];
         groups.forEach(group => {
             flattened.push({ label: group.groupName, amount: group.total, isGroup: true });
-            group.rows.forEach(row => {
-                flattened.push({ label: row.ledgerName, amount: row.amount, isGroup: false });
+            group.directRows.forEach(row => {
+                flattened.push({ label: `  ${row.ledgerName}`, amount: row.amount, isGroup: false });
+            });
+            group.subGroups.forEach(subGroup => {
+                flattened.push({ label: `  ${subGroup.subGroupName}`, amount: subGroup.total, isSubGroup: true });
+                subGroup.rows.forEach(row => {
+                    flattened.push({ label: `    ${row.ledgerName}`, amount: row.amount, isGroup: false });
+                });
             });
         });
         flattened.push({ label: totalLabel, amount: totalAmount, isTotal: true });
@@ -280,7 +322,15 @@ const ProfitLossReport = () => {
             <div className="bs-side-heading">
                 <div>
                     <div className="bs-side-title">{SIDE_LABELS[side]}</div>
-                    <div className="bs-side-subtitle">{groups.reduce((count, group) => count + group.rows.length, 0)} ledgers</div>
+                    <div className="bs-side-subtitle">
+                        {groups.reduce(
+                            (count, group) =>
+                                count +
+                                group.directRows.length +
+                                group.subGroups.reduce((subCount, sub) => subCount + sub.rows.length, 0),
+                            0
+                        )} ledgers
+                    </div>
                 </div>
                 <div className="bs-side-total">{formatMoney(total)}</div>
             </div>
@@ -308,8 +358,8 @@ const ProfitLossReport = () => {
                                     <td>{group.groupName}</td>
                                     <td className="text-end">{formatMoney(group.total)}</td>
                                 </tr>
-                                {group.rows.map(row => (
-                                    <tr key={`${side}-${group.groupName}-${row.ledgerId ?? row.ledgerName}`}>
+                                {group.directRows.map(row => (
+                                    <tr key={`${side}-${group.groupName}-direct-${row.ledgerId ?? row.ledgerName}`}>
                                         <td>
                                             {row.ledgerId ? (
                                                 <span
@@ -333,6 +383,40 @@ const ProfitLossReport = () => {
                                         </td>
                                         <td className="text-end">{formatMoney(row.amount)}</td>
                                     </tr>
+                                ))}
+                                {group.subGroups.map(subGroup => (
+                                    <React.Fragment key={`${side}-${group.groupName}-${subGroup.subGroupName}`}>
+                                        <tr className="bs-subgroup-row">
+                                            <td>{subGroup.subGroupName}</td>
+                                            <td className="text-end">{formatMoney(subGroup.total)}</td>
+                                        </tr>
+                                        {subGroup.rows.map(row => (
+                                            <tr key={`${side}-${group.groupName}-${subGroup.subGroupName}-${row.ledgerId ?? row.ledgerName}`}>
+                                                <td>
+                                                    {row.ledgerId ? (
+                                                        <span
+                                                            className="bs-ledger-name bs-ledger-link"
+                                                            role="button"
+                                                            tabIndex={0}
+                                                            title="Open account ledger"
+                                                            onClick={() => openAccountLedger(row)}
+                                                            onKeyDown={(event) => {
+                                                                if (event.key === "Enter" || event.key === " ") {
+                                                                    event.preventDefault();
+                                                                    openAccountLedger(row);
+                                                                }
+                                                            }}
+                                                        >
+                                                            {row.ledgerName}
+                                                        </span>
+                                                    ) : (
+                                                        <span className="bs-ledger-name">{row.ledgerName}</span>
+                                                    )}
+                                                </td>
+                                                <td className="text-end">{formatMoney(row.amount)}</td>
+                                            </tr>
+                                        ))}
+                                    </React.Fragment>
                                 ))}
                             </React.Fragment>
                         ))}
@@ -390,7 +474,7 @@ const ProfitLossReport = () => {
                                         <Input
                                             value={query}
                                             onChange={(event) => setQuery(event.target.value)}
-                                            placeholder="Type ledger or group name..."
+                                            placeholder="Type ledger, group or sub-group..."
                                         />
                                         <div className="bs-actions">
                                             <div className="form-check form-switch">

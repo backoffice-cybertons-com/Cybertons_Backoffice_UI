@@ -56,11 +56,18 @@ const Widgets = ({ kpiData, loading }) => {
             decimals: 2,
             prefix: "₹",
             separator: ",",
+            // extras: [
+            //     {
+            //         label: "Qty Sold",
+            //         displayValue: Number(kpiData?.total_qty_sold ?? kpiData?.totalQtySold ?? 0).toLocaleString('en-IN', { maximumFractionDigits: 0 }),
+            //         prefix: "",
+            //     },
+            // ],
             extras: [
                 {
-                    label: "Qty Sold",
-                    displayValue: Number(kpiData?.total_qty_sold ?? kpiData?.totalQtySold ?? 0).toLocaleString('en-IN', { maximumFractionDigits: 0 }),
-                    prefix: "",
+                    label: "COGS",
+                    displayValue: formatAmount2(kpiData?.total_cogs_amount ?? kpiData?.totalCogsAmount ?? 0),
+                    prefix: "₹",
                 },
             ],
         },
@@ -78,11 +85,18 @@ const Widgets = ({ kpiData, loading }) => {
             decimals: 2,
             prefix: "₹",
             separator: ",",
+            // extras: [
+            //     {
+            //         label: "COGS",
+            //         displayValue: formatAmount2(kpiData?.total_cogs_amount ?? kpiData?.totalCogsAmount ?? 0),
+            //         prefix: "₹",
+            //     },
+            // ],
             extras: [
                 {
-                    label: "COGS",
-                    displayValue: formatAmount2(kpiData?.total_cogs_amount ?? kpiData?.totalCogsAmount ?? 0),
-                    prefix: "₹",
+                    label: "Qty Sold",
+                    displayValue: Number(kpiData?.total_qty_sold ?? kpiData?.totalQtySold ?? 0).toLocaleString('en-IN', { maximumFractionDigits: 0 }),
+                    prefix: "",
                 },
             ],
         },
@@ -195,7 +209,7 @@ const Widgets = ({ kpiData, loading }) => {
                                             <div className="flex-grow-1 ms-3">
                                                 <h2 className={`mb-0 fs-20 ${(item.label.includes("Profit") && item.counter < 0) ? "text-danger" :
                                                     (item.label.includes("Profit") && item.counter > 0) ? "text-success" : ""
-                                                    }`} id={`kpi-tooltip-${key}`} title={`${item.prefix || ""}${(item.formatFn || formatNumber)(item.counter)} ${item.suffix || ""}`.trim()}>
+                                                    }`} id={`kpi-tooltip-${key}`}>
                                                     <span className="counter-value">
                                                         {item.prefix}
                                                         <CountUp
@@ -208,6 +222,9 @@ const Widgets = ({ kpiData, loading }) => {
                                                         {item.suffix}
                                                     </span>
                                                 </h2>
+                                                <UncontrolledTooltip placement="top" target={`kpi-tooltip-${key}`}>
+                                                    {`${item.prefix || ""}${item.formatFn ? item.formatFn(item.counter) : formatAmount2(item.counter)}${item.suffix || ""}`}
+                                                </UncontrolledTooltip>
                                             </div>
                                         </div>
                                         <div className="d-flex align-items-center justify-content-between mt-3">
