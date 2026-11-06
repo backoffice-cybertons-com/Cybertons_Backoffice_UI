@@ -55,7 +55,7 @@ const formatDisplayDate = (d) => {
 };
 
 const CustomerOrderPaymentReport = () => {
-  document.title = "Customer Order Limit Report | SoftBook";
+  document.title = "Customer Order Limit Report | BookSoft";
 
   const { layoutModeType } = useSelector(selectLayoutProperties);
   const isDarkMode = layoutModeType === "dark";

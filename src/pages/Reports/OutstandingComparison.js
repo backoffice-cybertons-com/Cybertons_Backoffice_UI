@@ -43,9 +43,9 @@ const fmt = (v, dec = 2) =>
   isNaN(Number(v)) || v === null || v === undefined
     ? ""
     : Number(v).toLocaleString("en-IN", {
-      minimumFractionDigits: dec,
-      maximumFractionDigits: dec,
-    });
+        minimumFractionDigits: dec,
+        maximumFractionDigits: dec,
+      });
 
 const plClass = (val) =>
   val >= 0 ? "oc-summary-pl oc-pl-profit" : "oc-summary-pl oc-pl-loss";
@@ -327,11 +327,7 @@ const OutstandingComparison = () => {
       cell: (r) => {
         const val = r.diff || 0;
         const cls =
-          val > 0
-            ? "oc-diff-positive"
-            : val < 0
-              ? "oc-diff-negative"
-              : "";
+          val > 0 ? "oc-diff-positive" : val < 0 ? "oc-diff-negative" : "";
         return (
           <span className={cls}>
             {Number(val).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
@@ -504,7 +500,7 @@ const OutstandingComparison = () => {
     w.document.close();
   };
 
-  document.title = "Outstanding Comparison | SoftBook";
+  document.title = "Outstanding Comparison | BookSoft";
 
   const selectStyles = useMemo(
     () => buildSelectStyles(isDarkMode),
@@ -522,7 +518,6 @@ const OutstandingComparison = () => {
               <div className="page-title-box d-sm-flex align-items-center justify-content-between">
                 <div>
                   <h4 className="mb-sm-0">Outstanding Comparison Report</h4>
-                  
                 </div>
               </div>
             </Col>
@@ -650,7 +645,9 @@ const OutstandingComparison = () => {
                     data={
                       appliedSummary
                         ? reportData
-                        : (filteredData !== null ? filteredData : paginatedData)
+                        : filteredData !== null
+                          ? filteredData
+                          : paginatedData
                     }
                     date={date1}
                     isSummary={appliedSummary}

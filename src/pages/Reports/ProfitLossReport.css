@@ -214,6 +214,8 @@
   flex: 1 1 0;
   min-height: 0;
   overflow: auto;
+  display: flex;
+  flex-direction: column;
 }
 
 .bs-side-table {
@@ -241,42 +243,71 @@
   vertical-align: middle;
 }
 
-.bs-side-table tfoot td {
+.bs-side-foot {
+  margin-top: auto;
   position: sticky;
   bottom: 0;
   z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  min-width: 420px;
   background: #eef2f7;
   color: #111827;
   font-size: 0.82rem;
   font-weight: 800;
-  padding: 0.55rem 0.75rem !important;
+  padding: 0.55rem 0.75rem;
   border-top: 2px solid #d8dee9;
 }
 
+.bs-side-foot span:last-child {
+  white-space: nowrap;
+  text-align: right;
+}
+
 .bs-group-row td {
-  background: #f8fafc;
-  color: #1f2937;
-  font-weight: 800;
-  border-top: 1px solid #e5e7eb;
+  background: #f3f5f8 !important;
+  color: #1e293b;
+  font-weight: 700;
+  border-top: 1px solid #e6eaef;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+.bs-group-row td:first-child {
+  box-shadow: inset 2px 0 0 #c5ced8;
 }
 
 .bs-subgroup-row td {
-  background: #f1f5f9;
-  color: #334155;
-  font-weight: 700;
-  border-top: 1px solid #e8edf3;
+  background: #f7f6f3 !important;
+  color: #3f4a57;
+  font-weight: 600;
+  border-top: 1px solid #eeebe6;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
 }
 
 .bs-subgroup-row td:first-child {
-  padding-left: 1.1rem !important;
+  padding-left: 1.55rem !important;
+  box-shadow: inset 2px 0 0 #ddd6cc;
+}
+
+.bs-direct-row td {
+  background: #fff !important;
+  font-weight: 400;
 }
 
 .bs-ledger-name {
   display: inline-block;
   color: #334155;
-  padding-left: 1.7rem;
+  padding-left: 1.15rem;
   max-width: 100%;
   overflow-wrap: anywhere;
+}
+
+.bs-nested-ledger {
+  padding-left: 2.45rem;
 }
 
 .bs-ledger-link {

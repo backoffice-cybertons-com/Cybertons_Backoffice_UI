@@ -52,7 +52,7 @@ const TrialBalanceReport = () => {
         return new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
     };
 
-    const companyName = secureStorage.getPlain('companyName') || secureStorage.getPlain('CompanyName') || 'SoftBook';
+    const companyName = secureStorage.getPlain('companyName') || secureStorage.getPlain('CompanyName') || 'BookSoft';
 
     const fetchReport = async (mode = viewMode) => {
         if (!asOfDate) {
@@ -440,7 +440,7 @@ const TrialBalanceReport = () => {
         w.document.close();
     };
 
-    document.title = "Trial Balance | SoftBook";
+    document.title = "Trial Balance | BookSoft";
 
     return (
         <React.Fragment>

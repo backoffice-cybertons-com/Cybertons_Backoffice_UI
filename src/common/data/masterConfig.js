@@ -67,23 +67,23 @@ export const masterConfig = {
             { name: "SortOrder", label: "Sort Order", type: "number" }
         ]
     },
-    // Report Party Type -> tab_party_report_type_master
+    // Account Group (report party type) -> tab_party_report_type_master
     reportPartyTypes: {
         pk: "Id",
-        label: "Report Party Type",
+        label: "Account Group",
         fields: [
             {
-                name: "PartyType",
-                label: "Party Type",
-                type: "select",
-                url: "/api/partytypemaster",
-                valueKey: "name",
+                name: "ReportPartyType",
+                label: "Account Group",
+                type: "text",
                 required: true
             },
             {
-                name: "ReportPartyType",
-                label: "Report Name",
-                type: "text",
+                name: "PartyType",
+                label: "Account Type",
+                type: "select",
+                url: "/api/partytypemaster",
+                valueKey: "name",
                 required: true
             }
         ]

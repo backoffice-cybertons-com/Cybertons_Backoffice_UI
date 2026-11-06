@@ -1,9 +1,17 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import {
-  Card, CardHeader, CardBody, Col, Container, Row,
-  Input, Button, Label, Spinner
-} from 'reactstrap';
-import Select from 'react-select';
+  Card,
+  CardHeader,
+  CardBody,
+  Col,
+  Container,
+  Row,
+  Input,
+  Button,
+  Label,
+  Spinner,
+} from "reactstrap";
+import Select from "react-select";
 import { useSelector } from "react-redux";
 import { createSelector } from "reselect";
 import { APIClient } from "../../helpers/api_helper";
@@ -31,15 +39,17 @@ const PayebleReceivableReport = () => {
 
   const [partys, setPartys] = useState([]);
   const [selectedParty, setSelectedParty] = useState(null);
-  const [asOfDate, setAsOfDate] = useState(new Date().toISOString().split("T")[0]);
+  const [asOfDate, setAsOfDate] = useState(
+    new Date().toISOString().split("T")[0],
+  );
 
   const partyTypeOptions = [
     { value: "Customer", label: "Customer" },
-    { value: "Vendor", label: "Vendor" }
+    { value: "Vendor", label: "Vendor" },
   ];
 
   const [selectedPartyType, setSelectedPartyType] = useState(
-    partyTypeOptions[0] // default Customer
+    partyTypeOptions[0], // default Customer
   );
 
   const [generated, setGenerated] = useState(false);
@@ -47,15 +57,18 @@ const PayebleReceivableReport = () => {
   const [loading, setLoading] = useState(false);
   const [reportData, setReportData] = useState([]);
 
-  const groupByOptions = useMemo(() => [
-    { value: "none", label: "None (Party Wise)" },
-    { value: "zone", label: "Zone Wise" },
-    { value: "kam", label: "KAM Wise" },
-    { value: "recovery_agent", label: "Recovery Agent Wise" },
-    { value: "sales_person", label: "Sales Person Wise" },
-    { value: "transporter", label: "Transporter Wise" },
-    { value: "sumul_incharge", label: "Sumul Area Incharge Wise" }
-  ], []);
+  const groupByOptions = useMemo(
+    () => [
+      { value: "none", label: "None (Party Wise)" },
+      { value: "zone", label: "Zone Wise" },
+      { value: "kam", label: "KAM Wise" },
+      { value: "recovery_agent", label: "Recovery Agent Wise" },
+      { value: "sales_person", label: "Sales Person Wise" },
+      { value: "transporter", label: "Transporter Wise" },
+      { value: "sumul_incharge", label: "Sumul Area Incharge Wise" },
+    ],
+    [],
+  );
 
   const [selectedGroupBy, setSelectedGroupBy] = useState(groupByOptions[0]);
   const [selectedSubGroupFilter, setSelectedSubGroupFilter] = useState(null);
@@ -73,22 +86,30 @@ const PayebleReceivableReport = () => {
       recovery_agent: "recoveryAgent",
       sales_person: "salespersonName",
       transporter: "transporterName",
-      sumul_incharge: "sumulIncharge"
+      sumul_incharge: "sumulIncharge",
     };
     const targetProp = propMap[groupKey];
     const uniqueValues = new Set();
-    reportData.forEach(row => {
-      const rawVal = row[targetProp] || row[targetProp.charAt(0).toUpperCase() + targetProp.slice(1)];
+    reportData.forEach((row) => {
+      const rawVal =
+        row[targetProp] ||
+        row[targetProp.charAt(0).toUpperCase() + targetProp.slice(1)];
       const groupVal = rawVal ? rawVal.toString().trim() : "Unassigned";
       uniqueValues.add(groupVal);
     });
-    return Array.from(uniqueValues).sort().map(v => ({ value: v, label: v }));
+    return Array.from(uniqueValues)
+      .sort()
+      .map((v) => ({ value: v, label: v }));
   }, [reportData, selectedGroupBy]);
 
   const processedData = useMemo(() => {
     let dataToProcess = reportData;
 
-    if (selectedGroupBy && selectedGroupBy.value !== "none" && selectedSubGroupFilter) {
+    if (
+      selectedGroupBy &&
+      selectedGroupBy.value !== "none" &&
+      selectedSubGroupFilter
+    ) {
       const groupKey = selectedGroupBy.value;
       const propMap = {
         zone: "zoneName",
@@ -96,17 +117,22 @@ const PayebleReceivableReport = () => {
         recovery_agent: "recoveryAgent",
         sales_person: "salespersonName",
         transporter: "transporterName",
-        sumul_incharge: "sumulIncharge"
+        sumul_incharge: "sumulIncharge",
       };
       const targetProp = propMap[groupKey];
-      dataToProcess = dataToProcess.filter(row => {
-        const rawVal = row[targetProp] || row[targetProp.charAt(0).toUpperCase() + targetProp.slice(1)];
+      dataToProcess = dataToProcess.filter((row) => {
+        const rawVal =
+          row[targetProp] ||
+          row[targetProp.charAt(0).toUpperCase() + targetProp.slice(1)];
         const groupVal = rawVal ? rawVal.toString().trim() : "Unassigned";
         return groupVal === selectedSubGroupFilter.value;
       });
     }
 
-    const isNone = !selectedGroupBy || selectedGroupBy.value === "none" || !!selectedSubGroupFilter;
+    const isNone =
+      !selectedGroupBy ||
+      selectedGroupBy.value === "none" ||
+      !!selectedSubGroupFilter;
 
     if (isNone) {
       return dataToProcess;
@@ -119,14 +145,16 @@ const PayebleReceivableReport = () => {
       recovery_agent: "recoveryAgent",
       sales_person: "salespersonName",
       transporter: "transporterName",
-      sumul_incharge: "sumulIncharge"
+      sumul_incharge: "sumulIncharge",
     };
 
     const targetProp = propMap[groupKey];
     const groups = {};
 
-    dataToProcess.forEach(row => {
-      const rawVal = row[targetProp] || row[targetProp.charAt(0).toUpperCase() + targetProp.slice(1)];
+    dataToProcess.forEach((row) => {
+      const rawVal =
+        row[targetProp] ||
+        row[targetProp.charAt(0).toUpperCase() + targetProp.slice(1)];
       const groupVal = rawVal ? rawVal.toString().trim() : "Unassigned";
 
       if (!groups[groupVal]) {
@@ -140,7 +168,7 @@ const PayebleReceivableReport = () => {
           weekly: 0,
           monthly: 0,
           count: 0,
-          subRows: []
+          subRows: [],
         };
       }
 
@@ -155,9 +183,9 @@ const PayebleReceivableReport = () => {
       g.subRows.push(row);
     });
 
-    return Object.values(groups).map(g => {
+    return Object.values(groups).map((g) => {
       g.contact = `${g.count} Parties`;
-      
+
       if (selectedPartyType?.value === "Customer") {
         g.creditDebit = g.outstanding >= 0 ? "D" : "C";
       } else {
@@ -165,7 +193,7 @@ const PayebleReceivableReport = () => {
       }
 
       g.terms = g.weekly > 0 ? g.outstanding / g.weekly : 0;
-      g.monthlyTerm = g.monthly > 0 ? (g.outstanding / g.monthly) / 30.0 : 0;
+      g.monthlyTerm = g.monthly > 0 ? g.outstanding / g.monthly / 30.0 : 0;
 
       g.outstanding = Math.round(g.outstanding * 100) / 100;
       g.weekly = Math.round(g.weekly * 100) / 100;
@@ -204,11 +232,14 @@ const PayebleReceivableReport = () => {
 
   const renderExpandedRow = (row) => {
     if (!row.subRows || row.subRows.length === 0) return null;
-    
+
     return (
       <div className="p-3 bg-light border-bottom">
         <h6 className="mb-2 text-primary">{row.displayName} - Parties</h6>
-        <div className="table-responsive" style={{ maxHeight: "300px", overflowY: "auto" }}>
+        <div
+          className="table-responsive"
+          style={{ maxHeight: "300px", overflowY: "auto" }}
+        >
           <table className="table table-sm table-bordered table-nowrap align-middle mb-0 bg-white">
             <thead className="table-light sticky-top">
               <tr>
@@ -229,7 +260,7 @@ const PayebleReceivableReport = () => {
                 const subOut = Number(sub.outstanding || sub.Outstanding || 0);
                 const subWeek = Number(sub.weekly || sub.Weekly || 0);
                 const subMonth = Number(sub.monthly || sub.Monthly || 0);
-                
+
                 let cd = "";
                 if (selectedPartyType?.value === "Customer") {
                   cd = subOut >= 0 ? "D" : "C";
@@ -238,20 +269,31 @@ const PayebleReceivableReport = () => {
                 }
 
                 const wTerm = subWeek > 0 ? subOut / subWeek : 0;
-                const mTerm = subMonth > 0 ? (subOut / subMonth) / 30.0 : 0;
+                const mTerm = subMonth > 0 ? subOut / subMonth / 30.0 : 0;
 
                 return (
                   <tr key={idx}>
                     <td>
-                      <span 
-                        className="text-primary" 
-                        style={{ cursor: "pointer", textDecoration: "underline" }}
+                      <span
+                        className="text-primary"
+                        style={{
+                          cursor: "pointer",
+                          textDecoration: "underline",
+                        }}
                         onClick={() => {
                           const date = new Date(asOfDate);
-                          const firstDay = new Date(date.getFullYear(), date.getMonth(), 1);
-                          const lastDay = new Date(date.getFullYear(), date.getMonth() + 1, 0);
-                          const fromStr = `${firstDay.getFullYear()}-${String(firstDay.getMonth() + 1).padStart(2, '0')}-01`;
-                          const toStr = `${lastDay.getFullYear()}-${String(lastDay.getMonth() + 1).padStart(2, '0')}-${String(lastDay.getDate()).padStart(2, '0')}`;
+                          const firstDay = new Date(
+                            date.getFullYear(),
+                            date.getMonth(),
+                            1,
+                          );
+                          const lastDay = new Date(
+                            date.getFullYear(),
+                            date.getMonth() + 1,
+                            0,
+                          );
+                          const fromStr = `${firstDay.getFullYear()}-${String(firstDay.getMonth() + 1).padStart(2, "0")}-01`;
+                          const toStr = `${lastDay.getFullYear()}-${String(lastDay.getMonth() + 1).padStart(2, "0")}-${String(lastDay.getDate()).padStart(2, "0")}`;
                           const url = `/report/daily-outstanding-report?viewMode=calendar&partyId=${sub.partyId || sub.PartyId}&fromDate=${fromStr}&toDate=${toStr}`;
                           window.open(url, "_blank");
                         }}
@@ -262,12 +304,37 @@ const PayebleReceivableReport = () => {
                     <td>{sub.zoneName || sub.ZoneName}</td>
                     <td>{sub.sumulIncharge || sub.SumulIncharge}</td>
                     <td>{sub.transporterName || sub.TransporterName}</td>
-                    <td className="text-end">{subOut.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                    <td className="text-end">
+                      {subOut.toLocaleString("en-IN", {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}
+                    </td>
                     <td className="text-end">{cd}</td>
-                    <td className="text-end">{subWeek.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                    <td className="text-end">{wTerm.toLocaleString("en-IN", { minimumFractionDigits: 3, maximumFractionDigits: 3 })}</td>
-                    <td className="text-end">{subMonth.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                    <td className="text-end">{mTerm.toLocaleString("en-IN", { minimumFractionDigits: 3, maximumFractionDigits: 3 })}</td>
+                    <td className="text-end">
+                      {subWeek.toLocaleString("en-IN", {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}
+                    </td>
+                    <td className="text-end">
+                      {wTerm.toLocaleString("en-IN", {
+                        minimumFractionDigits: 3,
+                        maximumFractionDigits: 3,
+                      })}
+                    </td>
+                    <td className="text-end">
+                      {subMonth.toLocaleString("en-IN", {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}
+                    </td>
+                    <td className="text-end">
+                      {mTerm.toLocaleString("en-IN", {
+                        minimumFractionDigits: 3,
+                        maximumFractionDigits: 3,
+                      })}
+                    </td>
                   </tr>
                 );
               })}
@@ -277,7 +344,6 @@ const PayebleReceivableReport = () => {
       </div>
     );
   };
-
 
   useEffect(() => {
     const loadParties = async () => {
@@ -289,7 +355,7 @@ const PayebleReceivableReport = () => {
         setPartys(
           partyList
             .filter(
-              p => (p.partyType || p.PartyType) === selectedPartyType?.value
+              (p) => (p.partyType || p.PartyType) === selectedPartyType?.value,
             )
             .map((p) => ({
               value: p.partyId || p.PartyId,
@@ -314,31 +380,41 @@ const PayebleReceivableReport = () => {
     loadCompanyInfo();
   }, [selectedPartyType]);
 
-
   /* ── excel export ── */
 
   const exportColumns = useMemo(() => {
-    const isNone = !selectedGroupBy || selectedGroupBy.value === "none" || !!selectedSubGroupFilter;
+    const isNone =
+      !selectedGroupBy ||
+      selectedGroupBy.value === "none" ||
+      !!selectedSubGroupFilter;
     const cols = [
-      { 
-        accessor: "displayName", 
-        label: isNone 
-          ? "Party" 
-          : selectedGroupBy.label.replace(" Wise", "") 
+      {
+        accessor: "displayName",
+        label: isNone ? "Party" : selectedGroupBy.label.replace(" Wise", ""),
       },
-      { 
-        accessor: "contact", 
-        label: isNone 
-          ? "Contact" 
-          : "Party Count" 
-      }
+      {
+        accessor: "contact",
+        label: isNone ? "Contact" : "Party Count",
+      },
     ];
 
     if (isNone) {
       cols.push(
-        { accessor: "zoneName", label: "Zone", accessorFn: (row) => row.zoneName || row.ZoneName || "" },
-        { accessor: "sumulIncharge", label: "Sumul Area Incharge", accessorFn: (row) => row.sumulIncharge || row.SumulIncharge || "" },
-        { accessor: "transporterName", label: "Transporter", accessorFn: (row) => row.transporterName || row.TransporterName || "" }
+        {
+          accessor: "zoneName",
+          label: "Zone",
+          accessorFn: (row) => row.zoneName || row.ZoneName || "",
+        },
+        {
+          accessor: "sumulIncharge",
+          label: "Sumul Area Incharge",
+          accessorFn: (row) => row.sumulIncharge || row.SumulIncharge || "",
+        },
+        {
+          accessor: "transporterName",
+          label: "Transporter",
+          accessorFn: (row) => row.transporterName || row.TransporterName || "",
+        },
       );
     }
 
@@ -348,17 +424,33 @@ const PayebleReceivableReport = () => {
       { accessor: "weekly", label: "Weekly Avg" },
       { accessor: "terms", label: "Weekly Term" },
       { accessor: "monthly", label: "Monthly Avg" },
-      { accessor: "monthlyTerm", label: "Monthly Term" }
+      { accessor: "monthlyTerm", label: "Monthly Term" },
     );
 
     return cols;
   }, [selectedGroupBy, selectedSubGroupFilter]);
 
-  const headerRows = useMemo(() => [
-    [{ v: "Payable Receivable Report", s: { font: { bold: true, sz: 14 }, alignment: { horizontal: "center" } } }],
-    [{ v: companyInfo?.companyName || "SoftBook", s: { font: { bold: true }, alignment: { horizontal: "center" } } }],
-    [""] // spacing
-  ], [companyInfo]);
+  const headerRows = useMemo(
+    () => [
+      [
+        {
+          v: "Payable Receivable Report",
+          s: {
+            font: { bold: true, sz: 14 },
+            alignment: { horizontal: "center" },
+          },
+        },
+      ],
+      [
+        {
+          v: companyInfo?.companyName || "SoftBook",
+          s: { font: { bold: true }, alignment: { horizontal: "center" } },
+        },
+      ],
+      [""], // spacing
+    ],
+    [companyInfo],
+  );
 
   const tableRef = useRef(null);
   const fetchExportData = async () => {
@@ -376,31 +468,40 @@ const PayebleReceivableReport = () => {
   };
 
   const columns = useMemo(() => {
-    const isNone = !selectedGroupBy || selectedGroupBy.value === "none" || !!selectedSubGroupFilter;
-    
+    const isNone =
+      !selectedGroupBy ||
+      selectedGroupBy.value === "none" ||
+      !!selectedSubGroupFilter;
+
     const cols = [
       {
         key: "displayName",
-        label: isNone
-          ? "Party"
-          : selectedGroupBy.label.replace(" Wise", ""),
+        label: isNone ? "Party" : selectedGroupBy.label.replace(" Wise", ""),
         width: "280px",
         align: "left",
         sortType: "string",
         cell: (row) => {
           if (isNone) {
             return (
-              <span 
-                className="text-primary" 
+              <span
+                className="text-primary"
                 style={{ cursor: "pointer", textDecoration: "underline" }}
                 onClick={() => {
                   const date = new Date(asOfDate);
-                  const firstDay = new Date(date.getFullYear(), date.getMonth(), 1);
-                  const lastDay = new Date(date.getFullYear(), date.getMonth() + 1, 0);
-                  
-                  const fromStr = `${firstDay.getFullYear()}-${String(firstDay.getMonth() + 1).padStart(2, '0')}-01`;
-                  const toStr = `${lastDay.getFullYear()}-${String(lastDay.getMonth() + 1).padStart(2, '0')}-${String(lastDay.getDate()).padStart(2, '0')}`;
-                  
+                  const firstDay = new Date(
+                    date.getFullYear(),
+                    date.getMonth(),
+                    1,
+                  );
+                  const lastDay = new Date(
+                    date.getFullYear(),
+                    date.getMonth() + 1,
+                    0,
+                  );
+
+                  const fromStr = `${firstDay.getFullYear()}-${String(firstDay.getMonth() + 1).padStart(2, "0")}-01`;
+                  const toStr = `${lastDay.getFullYear()}-${String(lastDay.getMonth() + 1).padStart(2, "0")}-${String(lastDay.getDate()).padStart(2, "0")}`;
+
                   const url = `/report/daily-outstanding-report?viewMode=calendar&partyId=${row.partyId || row.PartyId}&fromDate=${fromStr}&toDate=${toStr}`;
                   window.open(url, "_blank");
                 }}
@@ -410,7 +511,7 @@ const PayebleReceivableReport = () => {
             );
           }
           return <span>{row.displayName}</span>;
-        }
+        },
       },
       {
         key: "contact",
@@ -435,8 +536,8 @@ const PayebleReceivableReport = () => {
             );
           }
           return <span>{row.contact}</span>;
-        }
-      }
+        },
+      },
     ];
 
     if (isNone) {
@@ -447,7 +548,7 @@ const PayebleReceivableReport = () => {
           width: "150px",
           align: "left",
           sortType: "string",
-          cell: (row) => <span>{row.zoneName || row.ZoneName || ""}</span>
+          cell: (row) => <span>{row.zoneName || row.ZoneName || ""}</span>,
         },
         {
           key: "sumulIncharge",
@@ -455,7 +556,9 @@ const PayebleReceivableReport = () => {
           width: "200px",
           align: "left",
           sortType: "string",
-          cell: (row) => <span>{row.sumulIncharge || row.SumulIncharge || ""}</span>
+          cell: (row) => (
+            <span>{row.sumulIncharge || row.SumulIncharge || ""}</span>
+          ),
         },
         {
           key: "transporterName",
@@ -463,8 +566,10 @@ const PayebleReceivableReport = () => {
           width: "180px",
           align: "left",
           sortType: "string",
-          cell: (row) => <span>{row.transporterName || row.TransporterName || ""}</span>
-        }
+          cell: (row) => (
+            <span>{row.transporterName || row.TransporterName || ""}</span>
+          ),
+        },
       );
     }
 
@@ -498,9 +603,7 @@ const PayebleReceivableReport = () => {
         width: "110px",
         align: "right",
         sortType: "number",
-        totalFn: (t) => t.weekly > 0
-          ? t.outstanding / t.weekly
-          : 0
+        totalFn: (t) => (t.weekly > 0 ? t.outstanding / t.weekly : 0),
       },
       {
         key: "monthly",
@@ -516,17 +619,20 @@ const PayebleReceivableReport = () => {
         width: "110px",
         align: "right",
         sortType: "number",
-        totalFn: (t) => t.monthly > 0
-          ? t.outstanding / t.monthly
-          : 0
-      }
+        totalFn: (t) => (t.monthly > 0 ? t.outstanding / t.monthly : 0),
+      },
     );
 
     return cols;
-  }, [selectedGroupBy, asOfDate, selectedPartyType, selectedSubGroupFilter, expandedRows]);
+  }, [
+    selectedGroupBy,
+    asOfDate,
+    selectedPartyType,
+    selectedSubGroupFilter,
+    expandedRows,
+  ]);
 
   const handleGenerate = async () => {
-
     if (!asOfDate) {
       alert("Select As Of Date");
       return;
@@ -534,7 +640,7 @@ const PayebleReceivableReport = () => {
 
     try {
       setLoading(true);
-      debugger
+      debugger;
       const response = await api.get(url.GET_PAYRECRPT_REPORT, {
         params: {
           companyId: companyId,
@@ -546,9 +652,7 @@ const PayebleReceivableReport = () => {
           partyType: selectedPartyType ? selectedPartyType.value : null,
         },
       });
-      const rows = Array.isArray(response)
-        ? response
-        : response?.data || [];
+      const rows = Array.isArray(response) ? response : response?.data || [];
 
       console.log(rows.length); // should show 41
       setGenerated(true);
@@ -560,11 +664,13 @@ const PayebleReceivableReport = () => {
     }
   };
 
-  document.title = "Payable Receivable Report | SoftBook";
+  document.title = "Payable Receivable Report | BookSoft";
 
   return (
     <React.Fragment>
-      <div className={`page-content payrec-page${isDarkMode ? " payrec-page--dark" : ""}`}>
+      <div
+        className={`page-content payrec-page${isDarkMode ? " payrec-page--dark" : ""}`}
+      >
         <Container fluid>
           <Row>
             <Col xs={12}>
@@ -575,10 +681,8 @@ const PayebleReceivableReport = () => {
           </Row>
 
           <Card className="mb-3 payrec-filter-card">
-
             <CardBody>
               <Row className="g-3">
-
                 <Col xs={12} md={6} xl={3}>
                   <Label>Party Type</Label>
                   <Select
@@ -589,14 +693,14 @@ const PayebleReceivableReport = () => {
                     menuPortalTarget={document.body}
                     menuPosition="fixed"
                     styles={{
-                      menuPortal: base => ({
+                      menuPortal: (base) => ({
                         ...base,
-                        zIndex: 999999
+                        zIndex: 999999,
                       }),
-                      menu: base => ({
+                      menu: (base) => ({
                         ...base,
-                        zIndex: 999999
-                      })
+                        zIndex: 999999,
+                      }),
                     }}
                   />
                 </Col>
@@ -612,14 +716,14 @@ const PayebleReceivableReport = () => {
                     menuPortalTarget={document.body}
                     menuPosition="fixed"
                     styles={{
-                      menuPortal: base => ({
+                      menuPortal: (base) => ({
                         ...base,
-                        zIndex: 999999
+                        zIndex: 999999,
                       }),
-                      menu: base => ({
+                      menu: (base) => ({
                         ...base,
-                        zIndex: 999999
-                      })
+                        zIndex: 999999,
+                      }),
                     }}
                   />
                 </Col>
@@ -643,14 +747,14 @@ const PayebleReceivableReport = () => {
                     menuPortalTarget={document.body}
                     menuPosition="fixed"
                     styles={{
-                      menuPortal: base => ({
+                      menuPortal: (base) => ({
                         ...base,
-                        zIndex: 999999
+                        zIndex: 999999,
                       }),
-                      menu: base => ({
+                      menu: (base) => ({
                         ...base,
-                        zIndex: 999999
-                      })
+                        zIndex: 999999,
+                      }),
                     }}
                   />
                 </Col>
@@ -667,14 +771,14 @@ const PayebleReceivableReport = () => {
                       menuPortalTarget={document.body}
                       menuPosition="fixed"
                       styles={{
-                        menuPortal: base => ({
+                        menuPortal: (base) => ({
                           ...base,
-                          zIndex: 999999
+                          zIndex: 999999,
                         }),
-                        menu: base => ({
+                        menu: (base) => ({
                           ...base,
-                          zIndex: 999999
-                        })
+                          zIndex: 999999,
+                        }),
                       }}
                     />
                   </Col>
@@ -684,7 +788,12 @@ const PayebleReceivableReport = () => {
                 <Col md={8}>
                   <div className="d-flex align-items-center gap-3">
                     <div className="d-flex align-items-center gap-2">
-                      <Label className="mb-0 small" style={{ whiteSpace: "nowrap" }}>Rows:</Label>
+                      <Label
+                        className="mb-0 small"
+                        style={{ whiteSpace: "nowrap" }}
+                      >
+                        Rows:
+                      </Label>
                       <Input
                         type="select"
                         bsSize="sm"
@@ -707,18 +816,29 @@ const PayebleReceivableReport = () => {
                         color="light"
                         size="sm"
                         disabled={currentPage <= 1}
-                        onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                        onClick={() =>
+                          setCurrentPage((prev) => Math.max(prev - 1, 1))
+                        }
                       >
                         <i className="ri-arrow-left-s-line"></i>
                       </Button>
-                      <Button color="primary" size="sm" style={{ minWidth: "30px" }}>
+                      <Button
+                        color="primary"
+                        size="sm"
+                        style={{ minWidth: "30px" }}
+                      >
                         {currentPage}
                       </Button>
                       <Button
                         color="light"
                         size="sm"
-                        disabled={totalEntries === 0 || (rowsPerPage !== 'all' && currentPage >= Math.ceil(totalEntries / Number(rowsPerPage)))}
-                        onClick={() => setCurrentPage(prev => prev + 1)}
+                        disabled={
+                          totalEntries === 0 ||
+                          (rowsPerPage !== "all" &&
+                            currentPage >=
+                              Math.ceil(totalEntries / Number(rowsPerPage)))
+                        }
+                        onClick={() => setCurrentPage((prev) => prev + 1)}
                       >
                         <i className="ri-arrow-right-s-line"></i>
                       </Button>
@@ -731,11 +851,11 @@ const PayebleReceivableReport = () => {
                     )}
                   </div>
                 </Col>
-                <Col md={4} className="d-flex justify-content-end gap-2 text-end">
-                  <Button
-                    color="soft-secondary"
-                    onClick={handleClear}
-                  >
+                <Col
+                  md={4}
+                  className="d-flex justify-content-end gap-2 text-end"
+                >
+                  <Button color="soft-secondary" onClick={handleClear}>
                     Clear
                   </Button>
 
@@ -755,8 +875,8 @@ const PayebleReceivableReport = () => {
                     columns={exportColumns}
                     headerRows={headerRows}
                     fileName={`Payable_Receivable_Report${
-                      selectedGroupBy && selectedGroupBy.value !== "none" 
-                        ? `_Grouped_By_${selectedGroupBy.value}` 
+                      selectedGroupBy && selectedGroupBy.value !== "none"
+                        ? `_Grouped_By_${selectedGroupBy.value}`
                         : ""
                     }`}
                     iconOnly
@@ -767,12 +887,10 @@ const PayebleReceivableReport = () => {
           </Card>
           {(processedData.length > 0 || loading || generated) && (
             <Card className="payrec-report-card">
-
               {/*COMMON HEADER */}
               <div className="text-start">
                 <HeaderForAllReport reportName="Payable Receivable Report" />
               </div>
-
 
               <CardBody className="payrec-report-body">
                 <CommonTable
@@ -793,8 +911,6 @@ const PayebleReceivableReport = () => {
 
               {/* COMMON FOOTER */}
               <FooterForAllRpt />
-
-
             </Card>
           )}
         </Container>

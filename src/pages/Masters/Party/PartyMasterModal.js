@@ -45,7 +45,7 @@ const PartyMasterModal = ({ isOpen, toggle, partyId, isEdit, onSuccess, defaultT
 
     const initialPartyState = {
         Party: {
-            PartyType: defaultType || '',
+            PartyType: '',
             PartyTypeId: null,
             ReportPartyType: '',
             Salutation: '',
@@ -192,7 +192,7 @@ const PartyMasterModal = ({ isOpen, toggle, partyId, isEdit, onSuccess, defaultT
             } else {
                 setForm({
                     ...initialPartyState,
-                    Party: { ...initialPartyState.Party, PartyType: defaultType || '' }
+                    Party: { ...initialPartyState.Party }
                 });
                 setActiveTab('1');
             }
@@ -395,37 +395,41 @@ const PartyMasterModal = ({ isOpen, toggle, partyId, isEdit, onSuccess, defaultT
                 ...prev.Party,
                 [name]: nextValue
             };
-            // When party type changes, keep party_type_id in sync and clear invalid report type
-            if (name === 'PartyType') {
+            if (name === 'ReportPartyType') {
+                const typeName = e.target.partyType || '';
+                nextParty.PartyType = typeName;
                 const selectedType = (dropdowns.partyTypes || []).find(pt =>
-                    String(pt.PartyTypeName || pt.partyTypeName || '').toLowerCase() === String(nextValue || '').toLowerCase()
+                    String(pt.PartyTypeName || pt.partyTypeName || '').toLowerCase() === String(typeName).toLowerCase()
                 );
                 nextParty.PartyTypeId = selectedType
                     ? (selectedType.PartyTypeId ?? selectedType.partyTypeId ?? selectedType.party_type_id ?? null)
                     : null;
-                const stillValid = (dropdowns.reportPartyTypes || []).some(rt => {
-                    const rtPartyType = rt.PartyType ?? rt.partyType ?? '';
-                    const rtName = rt.ReportPartyType ?? rt.reportPartyType ?? '';
-                    return String(rtPartyType).toLowerCase() === String(nextValue || '').toLowerCase()
-                        && String(rtName) === String(prev.Party.ReportPartyType || '');
-                });
-                if (!stillValid) nextParty.ReportPartyType = '';
             }
             return { ...prev, Party: nextParty };
         });
     };
 
-    const reportPartyTypeOptions = useMemo(() => {
-        const selectedPartyType = String(form.Party.PartyType || '').toLowerCase();
-        if (!selectedPartyType) return [];
-        return (dropdowns.reportPartyTypes || [])
-            .filter(rt => String(rt.PartyType ?? rt.partyType ?? '').toLowerCase() === selectedPartyType)
-            .map(rt => {
-                const name = rt.ReportPartyType ?? rt.reportPartyType ?? '';
-                return { label: name, value: name };
-            })
-            .filter(opt => opt.value);
-    }, [dropdowns.reportPartyTypes, form.Party.PartyType]);
+    const accountGroupOptions = useMemo(() => {
+        const rows = (dropdowns.reportPartyTypes || [])
+            .map(rt => ({
+                name: String(rt.ReportPartyType ?? rt.reportPartyType ?? '').trim(),
+                partyType: String(rt.PartyType ?? rt.partyType ?? '').trim()
+            }))
+            .filter(row => row.name);
+        const nameCounts = rows.reduce((counts, row) => {
+            const key = row.name.toLowerCase();
+            counts[key] = (counts[key] || 0) + 1;
+            return counts;
+        }, {});
+        return rows.map(row => ({
+            label: nameCounts[row.name.toLowerCase()] > 1 && row.partyType
+                ? `${row.name} (${row.partyType})`
+                : row.name,
+            value: `${row.name}|||${row.partyType}`,
+            groupName: row.name,
+            partyType: row.partyType
+        }));
+    }, [dropdowns.reportPartyTypes]);
 
     const handlePreviewCalculatedAddPrice = async () => {
         const id = form.Party?.PartyId || partyId;
@@ -531,7 +535,8 @@ const PartyMasterModal = ({ isOpen, toggle, partyId, isEdit, onSuccess, defaultT
 
     const validate = () => {
         const errors = {};
-        if (!form.Party.PartyType) errors.PartyType = "Party Type is required";
+        if (!form.Party.ReportPartyType) errors.ReportPartyType = "Account Group is required";
+        else if (!form.Party.PartyType) errors.PartyType = "Account Type is required";
         if (!form.Party.DisplayName) errors.DisplayName = "Display Name is required";
         if (!form.Party.GSTTreatment) errors.GSTTreatment = "GST Treatment is required";
 
@@ -677,49 +682,54 @@ const PartyMasterModal = ({ isOpen, toggle, partyId, isEdit, onSuccess, defaultT
                         <Row className="g-3">
                             <Col md={4}>
                                 <FormGroup>
-                                    <Label>Party Type <span className="text-danger">*</span></Label>
+                                    <Label>Account Group <span className="text-danger">*</span></Label>
                                     <Select
-                                        name="PartyType"
-                                        value={dropdowns.partyTypes.map(pt => ({
-                                            label: pt.PartyTypeName || pt.partyTypeName,
-                                            value: pt.PartyTypeName || pt.partyTypeName
-                                        })).find(opt => opt.value === form.Party.PartyType) || null}
-                                        onChange={(opt) => handlePartyChange({ target: { name: 'PartyType', value: opt ? opt.value : '' } })}
-                                        options={dropdowns.partyTypes.map(pt => ({
-                                            label: pt.PartyTypeName || pt.partyTypeName,
-                                            value: pt.PartyTypeName || pt.partyTypeName
-                                        }))}
-                                        placeholder="Select Category"
+                                        name="ReportPartyType"
+                                        value={accountGroupOptions.find(opt =>
+                                            opt.groupName === form.Party.ReportPartyType
+                                            && (!form.Party.PartyType || opt.partyType.toLowerCase() === String(form.Party.PartyType).toLowerCase())
+                                        ) || null}
+                                        onChange={(opt) => handlePartyChange({
+                                            target: {
+                                                name: 'ReportPartyType',
+                                                value: opt ? opt.groupName : '',
+                                                partyType: opt ? opt.partyType : ''
+                                            }
+                                        })}
+                                        options={accountGroupOptions}
+                                        placeholder="Select account group"
                                         isSearchable
                                         isClearable
-                                        isDisabled={!!defaultType}
-                                        className={validationErrors.PartyType ? "is-invalid" : ""}
+                                        className={validationErrors.ReportPartyType ? "is-invalid" : ""}
                                         styles={{
                                             control: (base) => ({
                                                 ...base,
-                                                borderColor: validationErrors.PartyType ? "#f06548" : base.borderColor,
+                                                borderColor: validationErrors.ReportPartyType ? "#f06548" : base.borderColor,
                                                 '&:hover': {
-                                                    borderColor: validationErrors.PartyType ? "#f06548" : base.borderColor
+                                                    borderColor: validationErrors.ReportPartyType ? "#f06548" : base.borderColor
                                                 }
                                             })
                                         }}
                                     />
-                                    <FormFeedback>{validationErrors.PartyType}</FormFeedback>
+                                    <FormFeedback>{validationErrors.ReportPartyType}</FormFeedback>
                                 </FormGroup>
                             </Col>
                             <Col md={4}>
                                 <FormGroup>
-                                    <Label>Report Party Type</Label>
+                                    <Label>Account Type</Label>
                                     <Select
-                                        name="ReportPartyType"
-                                        value={reportPartyTypeOptions.find(opt => opt.value === form.Party.ReportPartyType) || null}
-                                        onChange={(opt) => handlePartyChange({ target: { name: 'ReportPartyType', value: opt ? opt.value : '' } })}
-                                        options={reportPartyTypeOptions}
-                                        placeholder={form.Party.PartyType ? "Select report type" : "Select party type first"}
-                                        isSearchable
-                                        isClearable
-                                        isDisabled={!form.Party.PartyType}
+                                        name="PartyType"
+                                        value={form.Party.PartyType
+                                            ? { label: form.Party.PartyType, value: form.Party.PartyType }
+                                            : null}
+                                        options={form.Party.PartyType
+                                            ? [{ label: form.Party.PartyType, value: form.Party.PartyType }]
+                                            : []}
+                                        placeholder="Select account group first"
+                                        isDisabled
+                                        className={validationErrors.PartyType ? "is-invalid" : ""}
                                     />
+                                    <FormFeedback>{validationErrors.PartyType}</FormFeedback>
                                 </FormGroup>
                             </Col>
                             <Col md={4}>

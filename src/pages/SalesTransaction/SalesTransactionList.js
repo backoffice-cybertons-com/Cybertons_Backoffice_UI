@@ -347,7 +347,7 @@ const SalesTransactionList = () => {
         }, { totalQuantity: 0, grandTotal: 0 });
     }, [visibleRows, SalesTransactions]);
 
-    document.title = "Sales Transactions | SoftBook";
+    document.title = "Sales Transactions | BookSoft";
 
     return (
         <React.Fragment>

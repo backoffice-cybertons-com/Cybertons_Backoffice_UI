@@ -173,7 +173,7 @@ const PaymentReceiptList = () => {
         []
     );
 
-    document.title = "Payment & Receipt | SoftBook";
+    document.title = "Payment & Receipt | BookSoft";
 
     return (
         <React.Fragment>

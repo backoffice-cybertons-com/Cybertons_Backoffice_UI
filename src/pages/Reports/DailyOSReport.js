@@ -198,7 +198,7 @@ const selectMenuStyles = {
 };
 
 const DailyOSReport = () => {
-  document.title = "Daily Outstanding Report | SoftBook";
+  document.title = "Daily Outstanding Report | BookSoft";
 
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
@@ -220,7 +220,9 @@ const DailyOSReport = () => {
   const [datePreset, setDatePreset] = useState("month");
   const [partyOptions, setPartyOptions] = useState([ALL_PARTIES_OPTION]);
   const [selectedParty, setSelectedParty] = useState(
-    routeState.partyId ? { value: routeState.partyId, label: "Loading..." } : ALL_PARTIES_OPTION
+    routeState.partyId
+      ? { value: routeState.partyId, label: "Loading..." }
+      : ALL_PARTIES_OPTION,
   );
 
   const [viewMode, setViewMode] = useState(
@@ -263,9 +265,11 @@ const DailyOSReport = () => {
           label: p.displayName ?? p.DisplayName ?? p.partyName ?? p.PartyName,
         }));
         setPartyOptions([ALL_PARTIES_OPTION, ...options]);
-        
+
         if (routeState.partyId) {
-          const preselected = options.find((p) => String(p.value) === String(routeState.partyId));
+          const preselected = options.find(
+            (p) => String(p.value) === String(routeState.partyId),
+          );
           if (preselected) {
             setSelectedParty(preselected);
           }
@@ -991,11 +995,17 @@ const DailyOSReport = () => {
                 <Col md={8}>
                   <div className="dos-date-presets d-print-none">
                     <span className="dos-preset-label">Quick:</span>
-                    <div className="dos-preset-group" role="group" aria-label="Quick date range">
+                    <div
+                      className="dos-preset-group"
+                      role="group"
+                      aria-label="Quick date range"
+                    >
                       <Button
                         type="button"
                         size="sm"
-                        color={datePreset === "month" ? "soft-primary" : "light"}
+                        color={
+                          datePreset === "month" ? "soft-primary" : "light"
+                        }
                         className={`dos-preset-btn rounded-pill${datePreset === "month" ? " dos-preset-active" : ""}`}
                         onClick={() => applyDatePreset("month")}
                       >
@@ -1004,7 +1014,9 @@ const DailyOSReport = () => {
                       <Button
                         type="button"
                         size="sm"
-                        color={datePreset === "last30" ? "soft-primary" : "light"}
+                        color={
+                          datePreset === "last30" ? "soft-primary" : "light"
+                        }
                         className={`dos-preset-btn rounded-pill${datePreset === "last30" ? " dos-preset-active" : ""}`}
                         onClick={() => applyDatePreset("last30")}
                       >

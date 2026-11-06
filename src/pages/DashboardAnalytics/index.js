@@ -14,7 +14,7 @@ import TopPages from './TopPages';
 
 
 const DashboardAnalytics = () => {
-document.title="Analytics | SoftBook - React Admin & Dashboard Template";
+document.title="Analytics | BookSoft - React Admin & Dashboard Template";
     return (
         <React.Fragment>
             <div className="page-content">

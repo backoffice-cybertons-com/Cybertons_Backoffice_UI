@@ -5,7 +5,7 @@ import BreadCrumb from "../../Components/Common/BreadCrumb";
 import secureStorage from "../../utils/secureStorage";
 
 const GstReportCa = () => {
-    document.title = "GST Report for CA | SoftBook";
+    document.title = "GST Report for CA | BookSoft";
 
     const [fromDate, setFromDate] = useState(new Date());
     const [toDate, setToDate] = useState(new Date());

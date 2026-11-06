@@ -60,7 +60,7 @@ const formatDisplayDate = (d) => {
 };
 
 const MonthlyCommissionReport = () => {
-  document.title = "Monthly Commission Report | SoftBook";
+  document.title = "Monthly Commission Report | BookSoft";
 
   const { layoutModeType } = useSelector(selectLayoutProperties);
   const isDarkMode = layoutModeType === "dark";
